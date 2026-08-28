@@ -4,6 +4,7 @@
 
 - `id`
 - `title`
+- `archived_at`
 
 ## `scores`
 

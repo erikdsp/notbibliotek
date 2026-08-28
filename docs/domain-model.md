@@ -14,6 +14,7 @@ erDiagram
     SONG {
         int id
         string title
+        datetime archived_at
     }
 
     SCORE {
