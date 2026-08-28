@@ -1,5 +1,7 @@
 # API rough sketch
 
+Arbetsmaterial med ungefärlig struktur som grund för att skapa openapi.yml
+
 ## 1.1 skapa låt
 
 auth: admin
@@ -41,7 +43,7 @@ GET /songs?archived=true
 inkluderar alla
 
 200:
-response
+SongResponse
 {
 id
 title
@@ -52,7 +54,7 @@ title
 GET /songs?search=
 
 200:
-response
+SongResponse
 {
 id
 title
@@ -134,7 +136,7 @@ auth: admin
 multipart/form-data:
 file: PDF
 
-PartVersionResponse
+VersionResponse
 201:
 {
     id: 146
@@ -222,7 +224,7 @@ Aktuell version = senast publicerade version.
 
 `GET /parts/{part_id}/versions`
 
-PartVersionResponse[]
+VersionResponse[]
 
 [
   {
@@ -248,13 +250,12 @@ Returnerar filen för en specifik version.
 ## 2.X Motsvarande operationer för score
 
 ```yml
-POST /songs/{id}/score
-POST /scores/{score_id}/versions
-POST /scores/{score_id}/versions/{version_id}/publish
+POST /songs/{id}/score/versions
+POST /songs/{song_id}/score/versions/{version_id}/publish
 
-GET /scores/{score_id}/file
-GET /scores/{score_id}/versions
-GET /scores/{score_id}/versions/{version_id}/file
+GET /songs/{id}/score/file
+GET /songs/{id}/score/versions
+GET /songs/{song_id}/score/versions/{version_id}/file
 ```
 
 ## 3.1 Skapa spelning
