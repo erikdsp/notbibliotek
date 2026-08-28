@@ -1,0 +1,209 @@
+openapi: 3.0.0
+info:
+  title: notbibliotek API
+  version: 1.0.0
+  description: organize sheet music for an orchestra
+servers:
+  - url: http://localhost/api/v1
+    description: Local Development Server
+paths:
+  /songs:
+    get:
+      operationId: get-songs
+      responses:
+        '200':
+          description: Response for status 200
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SongResponse'
+      security:
+        - libraryAccess: []
+      parameters:
+        - name: archived
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+    post:
+      operationId: post-song
+      responses:
+        '201':
+          description: Response for status 201
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SongResponse'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSongRequest'
+components:
+  schemas:
+    CreateSongRequest:
+      type: object
+      properties:
+        title:
+          type: string
+      required:
+        - title
+    PartResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      required:
+        - id
+        - name
+    PartVersionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        filename:
+          type: string
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - filename
+        - published_at
+    SongArchivedResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        archived_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - archived_at
+    SongResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+      required:
+        - id
+        - title
+    CreatePartInstrumentRequest:
+      type: object
+      properties:
+        instrument_id:
+          type: string
+      required:
+        - instrument_id
+    CreateInstrumentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+    InstrumentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      required:
+        - id
+        - name
+    CreateConcertRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        date:
+          type: string
+          format: date
+      required:
+        - name
+        - date
+    ConcertResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        date:
+          type: string
+          format: date
+      required:
+        - id
+        - name
+        - date
+    UpdateConcertRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        date:
+          type: string
+          format: date
+    AddSongToConcertRequest:
+      type: object
+      properties:
+        song_id:
+          type: string
+      required:
+        - song_id
+    ConcertPartResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        song_id:
+          type: string
+        song_title:
+          type: string
+        name:
+          type: string
+        file:
+          $ref: '#/components/schemas/FileResponse'
+          nullable: true
+      required:
+        - id
+        - song_id
+        - song_title
+        - name
+        - file
+    FileResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        filename:
+          type: string
+      required:
+        - id
+        - filename
+  securitySchemes:
+    adminAuth:
+      type: http
+      description: Admin Authentication
+      scheme: bearer
+      bearerFormat: JWT
+    libraryAccess:
+      type: apiKey
+      description: Link with library access
+      name: access_token
+      in: query
+security: []
