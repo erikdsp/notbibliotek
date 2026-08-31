@@ -12,49 +12,49 @@ erDiagram
     CONCERT }o--o{ SONG : contains
 
     SONG {
-        int id
+        ULID id
         string title
         datetime archived_at
     }
 
     SCORE {
-        int id
-        int song_id
+        ULID id
+        ULID song_id
     }
 
     PART {
-        int id
-        int song_id
+        ULID id
+        ULID song_id
         string name
     }
 
     INSTRUMENT {
-        int id
+        ULID id
         string name
     }
 
     PART_VERSION {
-        int id
-        int part_id
-        int file_id
+        ULID id
+        ULID part_id
+        ULID file_id
         datetime published_at
     }
 
     SCORE_VERSION {
-        int id
-        int score_id
-        int file_id
+        ULID id
+        ULID score_id
+        ULID file_id
         datetime published_at
     }
 
     FILE {
-        int id
+        ULID id
         string storage_key
         string filename
     }
 
     CONCERT {
-        int id
+        ULID id
         string name
         date date
     }
