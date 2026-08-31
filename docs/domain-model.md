@@ -49,8 +49,7 @@ erDiagram
 
     FILE {
         ULID id
-        string storage_key
-        string filename
+        string file_name
     }
 
     CONCERT {
@@ -66,10 +65,9 @@ erDiagram
 - `Song` represents a musical work in the library.
 - `Score` represents the full score for a song and is optional.
 - `Part` represents an individual part for a song.
-- `PartVersion` and `ScoreVersion` keep track of published versions of
+- `PartVersion` and `ScoreVersion` keep track of version of
   the corresponding material.
-- `File` represents the physical file stored in object storage and is
-  kept separate from the domain metadata.
+- `File` contains metadata about a stored file, while the actual file contents are managed by the file storage implementation.
 - A `Part` can be associated with multiple `Instrument` records.
 - A `Concert` consists of a set of `Song` records.
 ```
