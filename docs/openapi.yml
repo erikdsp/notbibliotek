@@ -129,27 +129,28 @@ paths:
               $ref: '#/components/schemas/UpdateSongRequest'
       security:
         - adminAuth: []
-  /songs/{song_id}/score/file:
-    get:
-      tags:
-        - Scores
-      summary: Get score file
-      operationId: get-score-file
+  /songs/{song_id}/versions:
+    post:
+      tags: 
+        - Songs
+      summary: Create a new song version draft
+      description: Create a new song version draft
+      operationId: post-song-version
       responses:
-        '200':
-          description: Score file.
+        '201':
+          description: Version created.
           content:
-            application/pdf:
+            application/json:
               schema:
-                $ref: '#/components/schemas/PdfContent'
-        '401':
-          description: Authentication required.
+                $ref: '#/components/schemas/SongVersion'
+        '400':
+          description: Invalid request.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Song not found.
+        '401':
+          description: Authentication required.
           content:
             application/json:
               schema:
@@ -161,45 +162,11 @@ paths:
           schema:
             $ref: "#/components/schemas/ULID"
       security:
-        - libraryAccess: []
-  /songs/{song_id}/score/versions:
-    get:
-      tags:
-        - Scores
-      summary: Get score versions
-      operationId: get-score-versions
-      responses:
-        '200':
-          description: Score versions.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ScoreVersion'
-        '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Song not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      parameters:
-        - name: song_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-      security:
-        - libraryAccess: []
+        - adminAuth: []
+  /songs/{song_id}/versions/{version_id}/score:
     post:
       tags:
-        - Scores
+        - Songs
       summary: Post score version
       operationId: post-score-version
       responses:
@@ -233,6 +200,11 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/ULID"
+        - name: version_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"
       requestBody:
         content:
           multipart/form-data:
@@ -240,119 +212,10 @@ paths:
               $ref: '#/components/schemas/UploadScoreVersionRequest'
       security:
         - adminAuth: []
-  /songs/{song_id}/score/versions/{version_id}/publish:
-    post:
-      tags:
-        - Scores
-      summary: Publish score version
-      operationId: post-score-version-publish
-      responses:
-        '200':
-          description: Score version published.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ScoreVersion'
-        '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Resource not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      parameters:
-        - name: song_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-        - name: version_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-      security:
-        - adminAuth: []
-  /songs/{song_id}/score/versions/{version_id}/file:
-    get:
-      tags:
-        - Scores
-      summary: Get score version file
-      operationId: get-score-version-file
-      responses:
-        '200':
-          description: Score Version File.
-          content:
-            application/pdf:
-              schema:
-                $ref: '#/components/schemas/PdfContent'
-        '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Resource not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      parameters:
-        - name: song_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-        - name: version_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-      security:
-        - libraryAccess: []
-  /parts/{part_id}/file:
-    get:
-      tags:
-        - Parts
-      summary: Get part file
-      operationId: get-part-file
-      responses:
-        '200':
-          description: Part file.
-          content:
-            application/pdf:
-              schema:
-                $ref: '#/components/schemas/PdfContent'
-        '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Resource not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      parameters:
-        - name: part_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-      security:
-        - libraryAccess: []
   /songs/{song_id}/parts:
     post:
       tags:
-        - Parts
+        - Songs
       summary: Create a new part for a song
       operationId: post-part
       responses:
@@ -387,49 +250,15 @@ paths:
               $ref: '#/components/schemas/CreatePartRequest'
       security:
         - adminAuth: []
-  /parts/{part_id}/versions:
-    get:
-      tags:
-        - Parts
-      summary: Get part versions
-      operationId: get-part-versions
-      responses:
-        '200':
-          description: Part versions.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PartVersion'
-        '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Part not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      parameters:
-        - name: part_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-      security:
-        - libraryAccess: []
+  /songs/{song_id}/versions/{version_id}/parts/{part_id}:
     post:
       tags:
-        - Parts
+        - Songs
       summary: Post part version
       operationId: post-part-version
       responses:
         '201':
-          description: Part Version created.
+          description: Part version created.
           content:
             application/json:
               schema:
@@ -447,12 +276,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: Part not found.
+          description: Song not found.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
       parameters:
+        - name: song_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"
+        - name: version_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"
         - name: part_id
           in: path
           required: true
@@ -465,19 +304,19 @@ paths:
               $ref: '#/components/schemas/UploadPartVersionRequest'
       security:
         - adminAuth: []
-  /parts/{part_id}/versions/{version_id}/publish:
+  /songs/{song_id}/versions/{version_id}/publish:
     post:
       tags:
-        - Parts
-      summary: Publish part version
-      operationId: post-part-version-publish
+        - Songs
+      summary: Publish song version
+      operationId: publish-song-version
       responses:
         '200':
-          description: Part version published.
+          description: Song version published.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PartVersion'
+                $ref: '#/components/schemas/SongVersion'
         '401':
           description: Authentication required.
           content:
@@ -491,7 +330,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
       parameters:
-        - name: part_id
+        - name: song_id
           in: path
           required: true
           schema:
@@ -503,15 +342,84 @@ paths:
             $ref: "#/components/schemas/ULID"
       security:
         - adminAuth: []
-  /parts/{part_id}/versions/{version_id}/file:
+  /songs/{song_id}/score/file:
+    get:
+      tags:
+        - Scores
+      summary: Get score file (old API)
+      description: Get score file. From old API version, might change 
+      operationId: get-score-file
+      responses:
+        '200':
+          description: Score file.
+          content:
+            application/pdf:
+              schema:
+                $ref: '#/components/schemas/PdfContent'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Song not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      parameters:
+        - name: song_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"
+      security:
+        - libraryAccess: []
+  /songs/{song_id}/score/versions:
+    get:
+      tags:
+        - Scores
+      summary: Get score versions (old API)
+      operationId: get-score-versions
+      responses:
+        '200':
+          description: Score versions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ScoreVersion'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Song not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      parameters:
+        - name: song_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"
+      security:
+        - libraryAccess: []
+  /parts/{part_id}/file:
     get:
       tags:
         - Parts
-      summary: Get part version file
-      operationId: get-part-version-file
+      summary: Get part file (old API)
+      operationId: get-part-file
       responses:
         '200':
-          description: Part Version File.
+          description: Part file.
           content:
             application/pdf:
               schema:
@@ -530,11 +438,6 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
       parameters:
         - name: part_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-        - name: version_id
           in: path
           required: true
           schema:
@@ -1069,42 +972,53 @@ components:
       required:
         - id
         - name
+    SongVersion:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/ULID"
+        song_id:
+          $ref: "#/components/schemas/ULID"
+        published_at:
+          type: string
+          format: date-time
+          nullable: true          
+      required:
+        - id
+        - song_id
+        - published_at      
     PartVersion:
       type: object
       properties:
         id:
           $ref: "#/components/schemas/ULID"
+        song_version_id:
+          $ref: "#/components/schemas/ULID"
         part_id:
           $ref: "#/components/schemas/ULID"
         file_id:
           $ref: "#/components/schemas/ULID"
-        published_at:
-          type: string
-          format: date-time
-          nullable: true          
       required:
         - id
+        - song_version_id
         - part_id
         - file_id
-        - published_at        
     ScoreVersion:
       type: object
       properties:
         id:
           $ref: "#/components/schemas/ULID"
+        song_version_id:
+          $ref: "#/components/schemas/ULID"
         score_id:
           $ref: "#/components/schemas/ULID"
         file_id:
           $ref: "#/components/schemas/ULID"
-        published_at:
-          type: string
-          format: date-time
-          nullable: true          
       required:
         - id
+        - song_version_id
         - score_id
         - file_id
-        - published_at
     File:
       type: object
       nullable: true

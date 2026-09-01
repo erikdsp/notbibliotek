@@ -33,18 +33,24 @@ erDiagram
         string name
     }
 
+    SONG_VERSION {
+        ULID id
+        ULID song_id
+        datetime published_at
+    }
+
     PART_VERSION {
         ULID id
+        ULID song_version_id
         ULID part_id
         ULID file_id
-        datetime published_at
     }
 
     SCORE_VERSION {
         ULID id
+        ULID song_version_id
         ULID score_id
         ULID file_id
-        datetime published_at
     }
 
     FILE {
