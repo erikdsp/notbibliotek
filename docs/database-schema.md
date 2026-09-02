@@ -6,6 +6,12 @@
 - `title`
 - `archived_at`
 
+## `song_versions`
+
+- `id`
+- `song_id` → `songs.id`
+- `published_at`
+
 ## `scores`
 
 - `id`
@@ -14,8 +20,8 @@
 ## `score_versions`
 
 - `id`
+- `song_version_id` → `song_versions.id`
 - `score_id` → `scores.id`
-- `published_at`
 - `file_id` → `files.id`
 
 ## `parts`
@@ -27,8 +33,8 @@
 ## `part_versions`
 
 - `id`
+- `song_version_id` → `song_versions.id`
 - `part_id` → `parts.id`
-- `published_at`
 - `file_id` → `files.id`
 
 ## `instruments`
