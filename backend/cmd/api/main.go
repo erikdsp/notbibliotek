@@ -5,10 +5,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/erikdsp/notbibliotek/backend/internal/domain"
+	"github.com/erikdsp/notbibliotek/backend/internal/application"
 	"github.com/erikdsp/notbibliotek/backend/internal/infrastructure/postgres"
 	"github.com/joho/godotenv"
-	"github.com/oklog/ulid/v2"
 )
 
 func main() {
@@ -26,17 +25,14 @@ func main() {
 	defer db.Close()
 
 	songRepository := postgres.NewPostgresSongRepository(db)
+	songService := application.NewSongService(songRepository)
 
-	song := domain.Song{
-		ID:    ulid.Make(),
-		Title: "Test Song",
-	}
-
-	if err := songRepository.Create(song); err != nil {
+	song, err := songService.CreateSong("Service Test Song")
+	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Song created:", song.ID)
+	fmt.Println("Song created:", song.ID, song.Title)
 
 	testSong, err := songRepository.GetByID(song.ID)
 	if err != nil {
