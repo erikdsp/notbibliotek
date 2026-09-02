@@ -2,15 +2,12 @@ package postgres
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/erikdsp/notbibliotek/backend/internal/domain"
 	"github.com/google/uuid"
 	"github.com/oklog/ulid/v2"
 )
-
-type PostgresSongRepository struct {
-	db *sql.DB
-}
 
 const insertSongQuery = `
 	INSERT INTO songs (id, title)
@@ -18,17 +15,35 @@ const insertSongQuery = `
 `
 
 const getSongByIDQuery = `
-	SELECT id, title
+	SELECT id, title, archived_at
 	FROM songs
 	WHERE id = $1
 `
 
 const getAllSongsQuery = `
-	SELECT id, title
+	SELECT id, title, archived_at
 	FROM songs
 	WHERE archived_at IS NULL
 	ORDER BY title
 `
+
+type PostgresSongRepository struct {
+	db *sql.DB
+}
+
+type dbSong struct {
+	ID         uuid.UUID
+	Title      string
+	ArchivedAt *time.Time
+}
+
+func (s dbSong) toDomain() domain.Song {
+	return domain.Song{
+		ID:         ulid.ULID(s.ID),
+		Title:      s.Title,
+		ArchivedAt: s.ArchivedAt,
+	}
+}
 
 func NewPostgresSongRepository(db *sql.DB) *PostgresSongRepository {
 	return &PostgresSongRepository{
@@ -48,22 +63,21 @@ func (r *PostgresSongRepository) Create(song domain.Song) error {
 }
 
 func (r *PostgresSongRepository) GetByID(id ulid.ULID) (domain.Song, error) {
-	var song domain.Song
-	var dbID uuid.UUID
+	var dbSong dbSong
 
 	err := r.db.QueryRow(
 		getSongByIDQuery,
 		uuid.UUID(id),
 	).Scan(
-		&dbID,
-		&song.Title,
+		&dbSong.ID,
+		&dbSong.Title,
+		&dbSong.ArchivedAt,
 	)
 	if err != nil {
-		return song, err
+		return domain.Song{}, err
 	}
-	song.ID = ulid.ULID(dbID)
 
-	return song, nil
+	return dbSong.toDomain(), nil
 }
 
 func (r *PostgresSongRepository) GetAll() ([]domain.Song, error) {
@@ -78,19 +92,18 @@ func (r *PostgresSongRepository) GetAll() ([]domain.Song, error) {
 	var songs []domain.Song
 
 	for rows.Next() {
-		var song domain.Song
-		var dbID uuid.UUID
+		var dbSong dbSong
 
 		err := rows.Scan(
-			&dbID,
-			&song.Title,
+			&dbSong.ID,
+			&dbSong.Title,
+			&dbSong.ArchivedAt,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		song.ID = ulid.ULID(dbID)
-		songs = append(songs, song)
+		songs = append(songs, dbSong.toDomain())
 	}
 
 	if err := rows.Err(); err != nil {
