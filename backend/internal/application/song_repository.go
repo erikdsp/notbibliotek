@@ -9,4 +9,5 @@ type SongRepository interface {
 	Create(song domain.Song) error
 	GetByID(id ulid.ULID) (domain.Song, error)
 	GetAll() ([]domain.Song, error)
+	Update(song domain.Song) error
 }

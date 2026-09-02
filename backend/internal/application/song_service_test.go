@@ -32,6 +32,10 @@ func (m *mockSongRepository) GetAll() ([]domain.Song, error) {
 	return m.songs, m.err
 }
 
+func (m *mockSongRepository) Update(song domain.Song) error {
+	return nil
+}
+
 func TestSongService_CreateSong(t *testing.T) {
 	repository := &mockSongRepository{}
 	service := NewSongService(repository)
@@ -116,7 +120,7 @@ func TestSongService_GetSongByID(t *testing.T) {
 	}
 }
 
-func TestSongService_GetAll(t *testing.T) {
+func TestSongService_GetAllSongs(t *testing.T) {
 	song := domain.Song{
 		ID:    ulid.Make(),
 		Title: "Test Song",
@@ -159,4 +163,63 @@ func TestSongService_GetAll(t *testing.T) {
 			songsFromService[1].ID,
 		)
 	}
+}
+
+func TestSongService_UpdateSong(t *testing.T) {
+	song := domain.Song{
+		ID:    ulid.Make(),
+		Title: "Test Song",
+	}
+	repository := &mockSongRepository{
+		songs: []domain.Song{song},
+	}
+
+	service := NewSongService(repository)
+
+	newTitle := "New Title"
+	songFromService, err := service.UpdateSong(song.ID, &newTitle, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(repository.songs) != 1 {
+		t.Fatalf("expected repository to contain 1 song, got %d", len(repository.songs))
+	}
+
+	if songFromService.ID != song.ID {
+		t.Errorf(
+			"expected song ID %s, got %s",
+			song.ID,
+			songFromService.ID,
+		)
+	}
+
+	if songFromService.Title != newTitle {
+		t.Errorf(
+			"expected song Title %s, got %s",
+			newTitle,
+			songFromService.Title,
+		)
+	}
+
+	archived := true
+	archivedSongFromService, err := service.UpdateSong(song.ID, nil, &archived)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if archivedSongFromService.ArchivedAt == nil {
+		t.Error("expected song to be archived")
+	}
+
+	archived = false
+	archivedSongFromService, err = service.UpdateSong(song.ID, nil, &archived)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if archivedSongFromService.ArchivedAt != nil {
+		t.Error("expected song to be archived")
+	}
+
 }

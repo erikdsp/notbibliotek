@@ -27,6 +27,13 @@ const getAllSongsQuery = `
 	ORDER BY title
 `
 
+const updateSongQuery = `
+    UPDATE songs
+	SET title = $2,
+	    archived_at = $3
+	WHERE id = $1
+`
+
 type PostgresSongRepository struct {
 	db *sql.DB
 }
@@ -111,4 +118,16 @@ func (r *PostgresSongRepository) GetAll() ([]domain.Song, error) {
 	}
 
 	return songs, nil
+}
+
+func (r *PostgresSongRepository) Update(song domain.Song) error {
+	_, err := r.db.Exec(
+		updateSongQuery,
+		uuid.UUID(song.ID),
+		song.Title,
+		song.ArchivedAt,
+	)
+
+	return err
+
 }
