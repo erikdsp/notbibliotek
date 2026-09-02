@@ -9,6 +9,8 @@ servers:
 tags:
   - name: Songs
     description: Songs in the library
+  - name: Song Versions
+    description: Song versions and related file operations
   - name: Scores
     description: Score and score file operations
   - name: Parts
@@ -86,6 +88,33 @@ paths:
       security:
         - adminAuth: []
   /songs/{song_id}:
+    get:
+      tags: 
+        - Songs
+      summary: Get song by ID
+      description: Returns songs in the library.
+      operationId: get-song-by-id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Song'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      parameters:
+        - name: song_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"
+      security:
+        - libraryAccess: []
     patch:
       tags: 
         - Songs
@@ -132,7 +161,7 @@ paths:
   /songs/{song_id}/versions:
     post:
       tags: 
-        - Songs
+        - Song Versions
       summary: Create a new song version draft
       description: Create a new song version draft
       operationId: post-song-version
@@ -166,7 +195,7 @@ paths:
   /songs/{song_id}/versions/{version_id}/score:
     post:
       tags:
-        - Songs
+        - Song Versions
       summary: Post score version
       operationId: post-score-version
       responses:
@@ -215,7 +244,7 @@ paths:
   /songs/{song_id}/parts:
     post:
       tags:
-        - Songs
+        - Song Versions
       summary: Create a new part for a song
       operationId: post-part
       responses:
@@ -253,7 +282,7 @@ paths:
   /songs/{song_id}/versions/{version_id}/parts/{part_id}:
     post:
       tags:
-        - Songs
+        - Song Versions
       summary: Post part version
       operationId: post-part-version
       responses:
@@ -307,7 +336,7 @@ paths:
   /songs/{song_id}/versions/{version_id}/publish:
     post:
       tags:
-        - Songs
+        - Song Versions
       summary: Publish song version
       operationId: publish-song-version
       responses:
