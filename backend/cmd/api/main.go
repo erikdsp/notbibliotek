@@ -1,11 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/erikdsp/notbibliotek/backend/internal/application"
+	httpHandler "github.com/erikdsp/notbibliotek/backend/internal/http"
 	"github.com/erikdsp/notbibliotek/backend/internal/infrastructure/postgres"
 	"github.com/joho/godotenv"
 )
@@ -26,29 +27,9 @@ func main() {
 
 	songRepository := postgres.NewPostgresSongRepository(db)
 	songService := application.NewSongService(songRepository)
+	songHandler := httpHandler.NewSongHandler(songService)
+	router := httpHandler.NewRouter(songHandler)
 
-	song, err := songService.CreateSong("Service Test Song")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("Song created:", song.ID, song.Title)
-
-	testSong, err := songRepository.GetByID(song.ID)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("Song fetched from database:", testSong.ID)
-
-	songs, err := songRepository.GetAll()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("All songs fetched from database:")
-	for _, song := range songs {
-		fmt.Println(song.ID, song.Title)
-	}
+	log.Fatal(http.ListenAndServe(":8080", router))
 
 }
