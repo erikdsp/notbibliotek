@@ -107,8 +107,6 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/ULID"
-        - $ref: "#/components/parameters/archivedQuery"
-        - $ref: "#/components/parameters/searchQuery"
         - $ref: "#/components/parameters/partQuery"
         - $ref: "#/components/parameters/instrumentQuery"
         - $ref: "#/components/parameters/includeScoreQuery"
