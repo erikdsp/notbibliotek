@@ -21,16 +21,16 @@
 ## `parts`
 
 - `id`
-- `name`
 - `key`
+- `name`
 - `song_version_id` → `song_versions.id`
 - `file_id` → `files.id`
 
 ## `instruments`
 
 - `id`
-- `name`
 - `key`
+- `name`
 
 ## `files`
 
@@ -40,6 +40,7 @@
 ## `concerts`
 
 - `id`
+- `key`
 - `name`
 - `date`
 
