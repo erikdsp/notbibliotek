@@ -45,6 +45,7 @@ paths:
         - $ref: "#/components/parameters/searchQuery"
         - $ref: "#/components/parameters/concertQuery"
         - $ref: "#/components/parameters/partQuery"
+        - $ref: "#/components/parameters/instrumentQuery"
         - $ref: "#/components/parameters/includeScoreQuery"
       security:
         - libraryAccess: []
@@ -109,6 +110,7 @@ paths:
         - $ref: "#/components/parameters/archivedQuery"
         - $ref: "#/components/parameters/searchQuery"
         - $ref: "#/components/parameters/partQuery"
+        - $ref: "#/components/parameters/instrumentQuery"
         - $ref: "#/components/parameters/includeScoreQuery"
       security:
         - libraryAccess: []
@@ -751,6 +753,8 @@ components:
           $ref: "#/components/schemas/ULID"
         name:
           type: string
+        key:
+          type: string
         song_version_id:
           $ref: "#/components/schemas/ULID"
         file_id:
@@ -758,6 +762,7 @@ components:
       required:
         - id
         - name
+        - key
         - song_version_id
         - file_id
     Instrument:
@@ -767,9 +772,12 @@ components:
           $ref: "#/components/schemas/ULID"
         name:
           type: string
+        key:
+          type: string
       required:
         - id
         - name
+        - key
     File:
       type: object
       properties:
@@ -967,6 +975,12 @@ components:
         type: string
     partQuery:
       name: part
+      in: query
+      required: false
+      schema:
+        type: string
+    instrumentQuery:
+      name: instrument
       in: query
       required: false
       schema:
