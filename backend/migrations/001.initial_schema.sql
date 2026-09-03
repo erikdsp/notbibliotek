@@ -15,80 +15,56 @@ CREATE TABLE song_versions (
     published_at TIMESTAMP WITH TIME ZONE
 );
 
-CREATE TABLE scores (
-    id UUID PRIMARY KEY,
-    song_id UUID NOT NULL,
-
-    CONSTRAINT fk_song_versions_song
-    FOREIGN KEY (song_id)
-    REFERENCES songs (id)
-);
-
 CREATE TABLE files (
     id UUID PRIMARY KEY,
-    file_name TEXT NOT NULL
+    name TEXT NOT NULL
 );
 
-CREATE TABLE score_versions (
+CREATE TABLE scores (
     id UUID PRIMARY KEY,
     song_version_id UUID NOT NULL,
 
-    CONSTRAINT fk_score_version_song_version
+    CONSTRAINT fk_score_song_version
     FOREIGN KEY (song_version_id)
     REFERENCES song_versions (id),
 
-    score_id UUID NOT NULL,
-
-    CONSTRAINT fk_score_version_score
-    FOREIGN KEY (score_id)
-    REFERENCES scores (id),
-
     file_id UUID NOT NULL,
 
-    CONSTRAINT fk_score_version_file
+    CONSTRAINT fk_score_file
     FOREIGN KEY (file_id)
     REFERENCES files (id)
 );
 
 CREATE TABLE parts (
     id UUID PRIMARY KEY,
-    song_id UUID NOT NULL,
+    key TEXT NOT NULL,
 
-    CONSTRAINT fk_song_versions_song
-    FOREIGN KEY (song_id)
-    REFERENCES songs (id),
+    CONSTRAINT uq_part_song_version_key
+    UNIQUE (song_version_id, key),
 
-    name TEXT NOT NULL
-);
-
-CREATE TABLE part_versions (
-    id UUID PRIMARY KEY,
+    name TEXT NOT NULL,
     song_version_id UUID NOT NULL,
 
-    CONSTRAINT fk_part_version_song_version
+    CONSTRAINT fk_part_song_version
     FOREIGN KEY (song_version_id)
     REFERENCES song_versions (id),
 
-    part_id UUID NOT NULL,
-
-    CONSTRAINT fk_part_version_part
-    FOREIGN KEY (part_id)
-    REFERENCES parts (id),
-
     file_id UUID NOT NULL,
 
-    CONSTRAINT fk_part_version_file
+    CONSTRAINT fk_part_file
     FOREIGN KEY (file_id)
     REFERENCES files (id)
 );
 
 CREATE TABLE instruments (
     id UUID PRIMARY KEY,
+    key TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL
 );
 
 CREATE TABLE concerts (
     id UUID PRIMARY KEY,
+    key TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL,
     date DATE
 );
