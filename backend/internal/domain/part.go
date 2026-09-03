@@ -7,6 +7,7 @@ import (
 type Part struct {
 	ID            ulid.ULID
 	Name          string
+	Key           string
 	SongVersionID ulid.ULID
 	FileID        ulid.ULID
 }
