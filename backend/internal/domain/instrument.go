@@ -6,6 +6,6 @@ import (
 
 type Instrument struct {
 	ID   ulid.ULID
-	Name string
 	Key  string
+	Name string
 }
