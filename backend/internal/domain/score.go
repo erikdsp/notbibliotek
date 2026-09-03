@@ -5,6 +5,7 @@ import (
 )
 
 type Score struct {
-	ID     ulid.ULID
-	SongID ulid.ULID
+	ID            ulid.ULID
+	SongVersionID ulid.ULID
+	FileID        ulid.ULID
 }

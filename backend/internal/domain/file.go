@@ -5,6 +5,6 @@ import (
 )
 
 type File struct {
-	ID       ulid.ULID
-	FileName string
+	ID   ulid.ULID
+	Name string
 }

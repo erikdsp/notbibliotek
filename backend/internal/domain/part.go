@@ -5,7 +5,8 @@ import (
 )
 
 type Part struct {
-	ID     ulid.ULID
-	SongID ulid.ULID
-	Name   string
+	ID            ulid.ULID
+	Name          string
+	SongVersionID ulid.ULID
+	FileID        ulid.ULID
 }
