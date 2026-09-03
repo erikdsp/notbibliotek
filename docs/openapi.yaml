@@ -9,14 +9,12 @@ servers:
 tags:
   - name: Songs
     description: Songs in the library
+  - name: Downloads
+    description: Download files from the library
   - name: Song Versions
-    description: Song versions and related file operations
-  - name: Scores
-    description: Score and score file operations
-  - name: Parts
-    description: Part and part file operations
+    description: Song versions and handling file uploads
   - name: Instruments
-    description: Instruments in the library
+    description: Instruments in the library and their connections
   - name: Concerts
     description: Concerts and their songs
 paths:
@@ -25,7 +23,7 @@ paths:
       tags: 
         - Songs
       summary: Get songs
-      description: Returns songs in the library.
+      description: Get songs in the library with rich version data.
       operationId: get-songs
       responses:
         '200':
@@ -35,7 +33,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Song'
+                  $ref: '#/components/schemas/SongResponse'
         '401':
           description: Authentication required.
           content:
@@ -43,16 +41,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
       parameters:
-        - name: archived
-          in: query
-          required: false
-          schema:
-            type: boolean
-        - name: search
-          in: query
-          required: false
-          schema:
-            type: string
+        - $ref: "#/components/parameters/archivedQuery"
+        - $ref: "#/components/parameters/searchQuery"
+        - $ref: "#/components/parameters/concertQuery"
+        - $ref: "#/components/parameters/partQuery"
+        - $ref: "#/components/parameters/includeScoreQuery"
       security:
         - libraryAccess: []
     post:
@@ -92,7 +85,7 @@ paths:
       tags: 
         - Songs
       summary: Get song by ID
-      description: Returns songs in the library.
+      description: Get a song from the library with rich version data.
       operationId: get-song-by-id
       responses:
         '200':
@@ -100,7 +93,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Song'
+                $ref: '#/components/schemas/SongResponse'
         '401':
           description: Authentication required.
           content:
@@ -113,6 +106,10 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/ULID"
+        - $ref: "#/components/parameters/archivedQuery"
+        - $ref: "#/components/parameters/searchQuery"
+        - $ref: "#/components/parameters/partQuery"
+        - $ref: "#/components/parameters/includeScoreQuery"
       security:
         - libraryAccess: []
     patch:
@@ -196,15 +193,15 @@ paths:
     post:
       tags:
         - Song Versions
-      summary: Post score version
-      operationId: post-score-version
+      summary: Upload score
+      operationId: upload-score
       responses:
         '201':
-          description: Score version created.
+          description: Score uploaded.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ScoreVersion'
+                $ref: '#/components/schemas/ScoreResponse'
         '400':
           description: Invalid request.
           content:
@@ -238,60 +235,22 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UploadScoreVersionRequest'
+              $ref: '#/components/schemas/UploadScoreRequest'
       security:
         - adminAuth: []
-  /songs/{song_id}/parts:
+  /songs/{song_id}/versions/{version_id}/part:
     post:
       tags:
         - Song Versions
-      summary: Create a new part for a song
-      operationId: post-part
+      summary: Upload part
+      operationId: upload-part
       responses:
         '201':
-          description: Song part created.
+          description: Part uploaded.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Part'
-        '400':
-          description: Invalid request.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      parameters:
-        - name: song_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreatePartRequest'
-      security:
-        - adminAuth: []
-  /songs/{song_id}/versions/{version_id}/parts/{part_id}:
-    post:
-      tags:
-        - Song Versions
-      summary: Post part version
-      operationId: post-part-version
-      responses:
-        '201':
-          description: Part version created.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PartVersion'
+                $ref: '#/components/schemas/PartResponse'
         '400':
           description: Invalid request.
           content:
@@ -321,16 +280,11 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/ULID"
-        - name: part_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
       requestBody:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UploadPartVersionRequest'
+              $ref: '#/components/schemas/UploadPartRequest'
       security:
         - adminAuth: []
   /songs/{song_id}/versions/{version_id}/publish:
@@ -345,7 +299,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SongVersion'
+                $ref: '#/components/schemas/Version'
         '401':
           description: Authentication required.
           content:
@@ -365,182 +319,6 @@ paths:
           schema:
             $ref: "#/components/schemas/ULID"
         - name: version_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-      security:
-        - adminAuth: []
-  /songs/{song_id}/score/file:
-    get:
-      tags:
-        - Scores
-      summary: Get score file (old API)
-      description: Get score file. From old API version, might change 
-      operationId: get-score-file
-      responses:
-        '200':
-          description: Score file.
-          content:
-            application/pdf:
-              schema:
-                $ref: '#/components/schemas/PdfContent'
-        '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Song not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      parameters:
-        - name: song_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-      security:
-        - libraryAccess: []
-  /songs/{song_id}/score/versions:
-    get:
-      tags:
-        - Scores
-      summary: Get score versions (old API)
-      operationId: get-score-versions
-      responses:
-        '200':
-          description: Score versions.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ScoreVersion'
-        '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Song not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      parameters:
-        - name: song_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-      security:
-        - libraryAccess: []
-  /parts/{part_id}/file:
-    get:
-      tags:
-        - Parts
-      summary: Get part file (old API)
-      operationId: get-part-file
-      responses:
-        '200':
-          description: Part file.
-          content:
-            application/pdf:
-              schema:
-                $ref: '#/components/schemas/PdfContent'
-        '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Resource not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      parameters:
-        - name: part_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-      security:
-        - libraryAccess: []
-  /parts/{part_id}/instruments:
-    post:
-      tags:
-        - Parts
-      summary: Post part instrument connection
-      operationId: post-part-instrument
-      responses:
-        '201':
-          description: Part Instrument created.
-        '400':
-          description: Invalid request.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Part not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      parameters:
-        - name: part_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreatePartInstrumentRequest'
-      security:
-        - adminAuth: []
-  /parts/{part_id}/instruments/{instrument_id}:
-    delete:
-      tags:
-        - Parts
-      summary: Delete part instrument connection
-      operationId: delete-part-instrument
-      responses:
-        '200':
-          description: Part instrument deleted.
-        '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Resource not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      parameters:
-        - name: part_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-        - name: instrument_id
           in: path
           required: true
           schema:
@@ -629,7 +407,81 @@ paths:
           schema:
             $ref: "#/components/schemas/ULID"
       security:
-        - adminAuth: []        
+        - adminAuth: []
+  /parts/{part_id}/instruments:
+    post:
+      tags:
+        - Instruments
+      summary: Post part instrument connection
+      operationId: post-part-instrument
+      responses:
+        '201':
+          description: Part Instrument created.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Part not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      parameters:
+        - name: part_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePartInstrumentRequest'
+      security:
+        - adminAuth: []
+  /parts/{part_id}/instruments/{instrument_id}:
+    delete:
+      tags:
+        - Instruments
+      summary: Delete part instrument connection
+      operationId: delete-part-instrument
+      responses:
+        '200':
+          description: Part instrument deleted.
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      parameters:
+        - name: part_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"
+        - name: instrument_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"
+      security:
+        - adminAuth: []
   /concerts:
     get:
       tags:
@@ -638,13 +490,13 @@ paths:
       operationId: get-concerts
       responses:
         '200':
-          description: Concerts in library.
+          description: Concerts in library and associated songs.
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Concert'
+                  $ref: '#/components/schemas/ConcertResponse'
         '401':
           description: Authentication required.
           content:
@@ -692,11 +544,11 @@ paths:
       operationId: get-concert
       responses:
         '200':
-          description: Concert.
+          description: Concert with songs.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Concert'
+                $ref: '#/components/schemas/ConcertResponse'
         '401':
           description: Authentication required.
           content:
@@ -761,40 +613,6 @@ paths:
       security:
         - adminAuth: []
   /concerts/{concert_id}/songs:
-    get:
-      tags:
-        - Concerts
-      summary: Get concert songs
-      operationId: get-concert-songs
-      responses:
-        '200':
-          description: Concert songs.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Song'
-        '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Concert not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      parameters:
-        - name: concert_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-      security:
-        - libraryAccess: []
     post:
       tags:
         - Concerts
@@ -802,7 +620,7 @@ paths:
       operationId: post-song-to-concert
       responses:
         '201':
-          description: Song created in concert.
+          description: Song connected to concert.
           content:
             application/json:
               schema:
@@ -842,11 +660,11 @@ paths:
     delete:
       tags:
         - Concerts
-      summary: Delete song from concert
-      operationId: delete-song-from-concert
+      summary: Remove song from concert
+      operationId: remove-song-from-concert
       responses:
         '200':
-          description: Song deleted from concert.
+          description: Song removed from concert.
         '401':
           description: Authentication required.
           content:
@@ -872,87 +690,17 @@ paths:
             $ref: "#/components/schemas/ULID"
       security:
         - adminAuth: []
-  /concerts/{concert_id}/scores:
-    get:
-      tags:
-        - Concerts
-      summary: Get concert scores
-      operationId: get-concert-scores
-      responses:
-        '200':
-          description: Concert Scores.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ConcertScoreResponse'
-        '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Concert not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      parameters:
-        - name: concert_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-      security:
-        - libraryAccess: []
-  /concerts/{concert_id}/parts:
-    get:
-      tags:
-        - Concerts
-      summary: Get concert parts
-      operationId: get-concert-parts
-      responses:
-        '200':
-          description: Concert parts.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ConcertPartResponse'
-        '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Concert not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      parameters:
-        - name: instrument_id
-          in: query
-          required: false
-          schema:
-            $ref: "#/components/schemas/ULID"
-        - name: concert_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-      security:
-        - libraryAccess: []
 components:
   schemas:
     ULID:
       type: string
       minLength: 26
       maxLength: 26
+    NullableULID:
+      type: string
+      minLength: 26
+      maxLength: 26
+      nullable: true
     Song:
       type: object
       properties:
@@ -968,39 +716,6 @@ components:
         - id
         - title
         - archived_at
-    Score:
-      type: object
-      properties:
-        id:
-          $ref: "#/components/schemas/ULID"
-        song_id:
-          $ref: "#/components/schemas/ULID"
-      required:
-        - id
-        - song_id
-    Part: 
-      type: object
-      properties:
-        id:
-          $ref: "#/components/schemas/ULID"
-        song_id:
-          $ref: "#/components/schemas/ULID"
-        name:
-          type: string
-      required:
-        - id
-        - song_id
-        - name
-    Instrument:
-      type: object
-      properties: 
-        id:
-          $ref: "#/components/schemas/ULID"
-        name:
-          type: string
-      required:
-        - id
-        - name
     SongVersion:
       type: object
       properties:
@@ -1016,49 +731,55 @@ components:
         - id
         - song_id
         - published_at      
-    PartVersion:
+    Score:
       type: object
       properties:
         id:
           $ref: "#/components/schemas/ULID"
         song_version_id:
           $ref: "#/components/schemas/ULID"
-        part_id:
-          $ref: "#/components/schemas/ULID"
         file_id:
           $ref: "#/components/schemas/ULID"
       required:
         - id
         - song_version_id
-        - part_id
         - file_id
-    ScoreVersion:
+    Part: 
       type: object
       properties:
         id:
           $ref: "#/components/schemas/ULID"
+        name:
+          type: string
         song_version_id:
           $ref: "#/components/schemas/ULID"
-        score_id:
-          $ref: "#/components/schemas/ULID"
         file_id:
           $ref: "#/components/schemas/ULID"
       required:
         - id
+        - name
         - song_version_id
-        - score_id
         - file_id
-    File:
+    Instrument:
       type: object
-      nullable: true
-      properties:
+      properties: 
         id:
           $ref: "#/components/schemas/ULID"
-        file_name:
+        name:
           type: string
       required:
         - id
-        - file_name
+        - name
+    File:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/ULID"
+        name:
+          type: string
+      required:
+        - id
+        - name
     Concert:
       type: object
       properties:
@@ -1073,24 +794,81 @@ components:
         - id
         - name
         - date
-    ConcertPartResponse:
+    SongResponse:
       allOf:
-        - $ref: "#/components/schemas/Part"
-        - type: object
-          properties:
-            file:
-              $ref: '#/components/schemas/File'
-          required:
-            - file
-    ConcertScoreResponse:
+        - $ref: "#/components/schemas/Song"
+        - $ref: "#/components/schemas/CurrentVersionId"
+        - $ref: "#/components/schemas/Versions"
+    CurrentVersionId:
+      type: object
+      required:
+        - current_version_id
+      properties: 
+        current_version_id:
+          $ref: "#/components/schemas/NullableULID"
+    Version:
+      type: object
+      properties: 
+        song_version_id:
+          $ref: "#/components/schemas/ULID"
+        published_at:
+          type: string
+          format: date-time
+          nullable: true      
+        score:
+          $ref: "#/components/schemas/Score"
+        parts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Part"
+      required:
+        - song_version_id
+        - published_at
+        - score
+        - parts
+    Versions:
+      type: object
+      required:
+        - versions
+      properties: 
+        versions:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Version"
+    ScoreResponse:
+      type: object
+      properties: 
+        score: 
+          $ref: "#/components/schemas/Score"
+        file:
+          $ref: "#/components/schemas/File"
+      required:
+        - score
+        - file
+    PartResponse: 
+      type: object
+      properties: 
+        part:
+          $ref: "#/components/schemas/Part"
+        file:
+          $ref: "#/components/schemas/File"
+      required:
+        - part
+        - file
+    Songs:
+      type: object
+      nullable: true
+      required:
+        - songs
+      properties: 
+        songs:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Song"
+    ConcertResponse:
       allOf:
-        - $ref: "#/components/schemas/Score"
-        - type: object
-          properties:
-            file:
-              $ref: '#/components/schemas/File'
-          required:
-            - file
+        - $ref: "#/components/schemas/Concert"
+        - $ref: "#/components/schemas/Songs"
     ErrorResponse:
       type: object
       properties:
@@ -1152,25 +930,20 @@ components:
           type: string
         archived:
           type: boolean
-    CreatePartRequest:
+    UploadPartRequest:
       type: object
       properties:
         name:
           type: string
+        file:
+          $ref: "#/components/schemas/PdfContent"
       required:
         - name
-    UploadPartVersionRequest:
-      type: object
-      properties:
-        file:
-          type: string
-          format: binary
-      required:
         - file
     PdfContent:
       type: string
       format: binary
-    UploadScoreVersionRequest:
+    UploadScoreRequest:
       type: object
       properties:
         file:
@@ -1178,6 +951,39 @@ components:
           format: binary
       required:
         - file
+  parameters: 
+    archivedQuery:
+      name: archived
+      in: query
+      required: false
+      schema:
+        type: boolean
+        default: false
+    searchQuery:
+      name: search
+      in: query
+      required: false
+      schema:
+        type: string
+    partQuery:
+      name: part
+      in: query
+      required: false
+      schema:
+        type: string
+    concertQuery:
+      name: concert
+      in: query
+      required: false
+      schema:
+        type: string
+    includeScoreQuery:
+      name: include_score
+      in: query
+      required: false
+      schema:
+        type: boolean
+        default: true      
   securitySchemes:
     adminAuth:
       type: http
