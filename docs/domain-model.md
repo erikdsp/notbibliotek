@@ -31,6 +31,7 @@ erDiagram
     PART {
         ULID id
         string name
+        string key
         ULID song_version_id
         ULID file_id
     }
@@ -38,6 +39,7 @@ erDiagram
     INSTRUMENT {
         ULID id
         string name
+        string key
     }
 
     FILE {

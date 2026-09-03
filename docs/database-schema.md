@@ -22,6 +22,7 @@
 
 - `id`
 - `name`
+- `key`
 - `song_version_id` → `song_versions.id`
 - `file_id` → `files.id`
 
@@ -29,6 +30,7 @@
 
 - `id`
 - `name`
+- `key`
 
 ## `files`
 
