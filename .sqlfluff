@@ -2,4 +2,4 @@
 dialect = postgres
 
 [sqlfluff:rules:references.keywords]
-ignore_words = name,date
+ignore_words = name,date,key

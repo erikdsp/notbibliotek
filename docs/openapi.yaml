@@ -751,9 +751,9 @@ components:
       properties:
         id:
           $ref: "#/components/schemas/ULID"
-        name:
-          type: string
         key:
+          type: string
+        name:
           type: string
         song_version_id:
           $ref: "#/components/schemas/ULID"
@@ -761,8 +761,8 @@ components:
           $ref: "#/components/schemas/ULID"
       required:
         - id
-        - name
         - key
+        - name
         - song_version_id
         - file_id
     Instrument:
@@ -770,14 +770,14 @@ components:
       properties: 
         id:
           $ref: "#/components/schemas/ULID"
-        name:
-          type: string
         key:
+          type: string
+        name:
           type: string
       required:
         - id
-        - name
         - key
+        - name
     File:
       type: object
       properties:
@@ -793,6 +793,8 @@ components:
       properties:
         id:
           $ref: "#/components/schemas/ULID"
+        key:
+          type: string
         name:
           type: string
         date:
@@ -800,6 +802,7 @@ components:
           format: date
       required:
         - id
+        - key
         - name
         - date
     SongResponse:

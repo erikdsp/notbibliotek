@@ -30,16 +30,16 @@ erDiagram
 
     PART {
         ULID id
-        string name
         string key
+        string name
         ULID song_version_id
         ULID file_id
     }
 
     INSTRUMENT {
         ULID id
-        string name
         string key
+        string name
     }
 
     FILE {
@@ -49,6 +49,7 @@ erDiagram
 
     CONCERT {
         ULID id
+        string key
         string name
         date date
     }
