@@ -173,7 +173,7 @@ func (r *PostgresSongRepository) GetAllWithDetails(query application.SongQuery) 
 	}
 	defer rows.Close()
 
-	var songs []application.SongDetails
+	songs := []application.SongDetails{}
 
 	for rows.Next() {
 		var dbSong dbSong
