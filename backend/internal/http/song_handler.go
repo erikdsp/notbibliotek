@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -129,6 +130,11 @@ func (h *SongHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	song, err := h.service.GetSongByIDWithQuery(songID, query)
 	if err != nil {
+		if errors.Is(err, application.ErrSongNotFound) {
+			http.Error(w, "song not found", http.StatusNotFound)
+			return
+		}
+
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -184,6 +190,11 @@ func (h *SongHandler) Update(w http.ResponseWriter, r *http.Request) {
 		request.Archived,
 	)
 	if err != nil {
+		if errors.Is(err, application.ErrSongNotFound) {
+			http.Error(w, "song not found", http.StatusNotFound)
+			return
+		}
+
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}

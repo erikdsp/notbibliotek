@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/erikdsp/notbibliotek/backend/internal/application"
@@ -89,6 +90,10 @@ func (r *PostgresSongRepository) GetByID(id ulid.ULID) (domain.Song, error) {
 		&dbSong.ArchivedAt,
 	)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.Song{}, application.ErrSongNotFound
+		}
+
 		return domain.Song{}, err
 	}
 
