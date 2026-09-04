@@ -965,6 +965,7 @@ components:
       name: archived
       in: query
       required: false
+      description: Filter songs by archive status. When true, only archived songs are returned. When false, only non-archived songs are returned. 
       schema:
         type: boolean
         default: false
@@ -972,30 +973,35 @@ components:
       name: search
       in: query
       required: false
+      description: Free text search on title, part, instrument and concert. When present, only songs matching the search are returned.
       schema:
         type: string
     partQuery:
       name: part
       in: query
       required: false
+      description: When present, only parts matching the query are returned; otherwise all parts are returned.
       schema:
         type: string
     instrumentQuery:
       name: instrument
       in: query
       required: false
+      description: When present, only parts connected to an instrument matching the query are returned; otherwise all parts are returned.
       schema:
         type: string
     concertQuery:
       name: concert
       in: query
       required: false
+      description: When present, only songs included in the concert(s) are included; otherwise all songs are returned.
       schema:
         type: string
     includeScoreQuery:
       name: include_score
       in: query
       required: false
+      description: When true, the score is included in the response; otherwise, it is not included.
       schema:
         type: boolean
         default: true      
