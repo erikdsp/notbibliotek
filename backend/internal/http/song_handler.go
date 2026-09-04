@@ -73,7 +73,6 @@ func (h *SongHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	fmt.Println("Query instrument: ", query.Instrument)
 
 	songs, err := h.service.GetAllSongsWithQuery(query)
 	if err != nil {
@@ -90,6 +89,31 @@ func (h *SongHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func parseGetByIDQuery(rawQuery string) (application.SongByIDQuery, error) {
+	queryValues, err := url.ParseQuery(rawQuery)
+	if err != nil {
+		return application.SongByIDQuery{}, err
+	}
+
+	query := application.SongByIDQuery{
+		Part:       queryValues.Get("part"),
+		Instrument: queryValues.Get("instrument"),
+	}
+
+	if includeScore := queryValues.Get("include_score"); includeScore != "" {
+		queryValue, err := strconv.ParseBool(includeScore)
+		if err != nil {
+			return application.SongByIDQuery{}, fmt.Errorf("invalid include_score: %w", err)
+		}
+
+		query.IncludeScore = queryValue
+	} else {
+		query.IncludeScore = true
+	}
+
+	return query, nil
+}
+
 func (h *SongHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	songID, err := ulid.Parse(r.PathValue("song_id"))
 	if err != nil {
@@ -97,7 +121,13 @@ func (h *SongHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	song, err := h.service.GetSongByID(songID)
+	query, err := parseGetByIDQuery(r.URL.RawQuery)
+	if err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	song, err := h.service.GetSongByIDWithQuery(songID, query)
 	if err != nil {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return

@@ -141,8 +141,14 @@ func (r *PostgresSongRepository) Update(song domain.Song) error {
 }
 
 func (r *PostgresSongRepository) GetByIDWithDetails(id ulid.ULID, query application.SongByIDQuery) (application.SongDetails, error) {
-	temp := application.SongDetails{}
-	return temp, nil
+	song := application.SongDetails{}
+	domainSong, err := r.GetByID(id)
+	if err != nil {
+		return song, err
+	}
+	song.Song = domainSong
+
+	return song, nil
 }
 
 func (r *PostgresSongRepository) GetAllWithDetails(query application.SongQuery) ([]application.SongDetails, error) {

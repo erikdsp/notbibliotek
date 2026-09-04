@@ -35,6 +35,10 @@ func (s *SongService) GetSongByID(id ulid.ULID) (domain.Song, error) {
 	return s.repository.GetByID(id)
 }
 
+func (s *SongService) GetSongByIDWithQuery(id ulid.ULID, query SongByIDQuery) (SongDetails, error) {
+	return s.repository.GetByIDWithDetails(id, query)
+}
+
 func (s *SongService) GetAllSongs() ([]domain.Song, error) {
 	return s.repository.GetAll()
 }
