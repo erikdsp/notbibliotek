@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/erikdsp/notbibliotek/backend/internal/application"
 	"github.com/erikdsp/notbibliotek/backend/internal/domain"
 	"github.com/google/uuid"
 	"github.com/oklog/ulid/v2"
@@ -25,6 +26,13 @@ const getAllSongsQuery = `
 	FROM songs
 	WHERE archived_at IS NULL
 	ORDER BY title
+`
+
+const getAllArchivedSongsQuery = `
+    SELECT id, title, archived_at
+    FROM songs
+    WHERE archived_at IS NOT NULL
+    ORDER BY title
 `
 
 const updateSongQuery = `
@@ -129,5 +137,55 @@ func (r *PostgresSongRepository) Update(song domain.Song) error {
 	)
 
 	return err
+
+}
+
+func (r *PostgresSongRepository) GetByIDWithDetails(id ulid.ULID, query application.SongByIDQuery) (application.SongDetails, error) {
+	temp := application.SongDetails{}
+	return temp, nil
+}
+
+func (r *PostgresSongRepository) GetAllWithDetails(query application.SongQuery) ([]application.SongDetails, error) {
+	var sqlQuery string
+
+	if query.Archived {
+		sqlQuery = getAllArchivedSongsQuery
+	} else {
+		sqlQuery = getAllSongsQuery
+	}
+
+	rows, err := r.db.Query(
+		sqlQuery,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var songs []application.SongDetails
+
+	for rows.Next() {
+		var dbSong dbSong
+
+		err := rows.Scan(
+			&dbSong.ID,
+			&dbSong.Title,
+			&dbSong.ArchivedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		songs = append(
+			songs, application.SongDetails{
+				Song: dbSong.toDomain(),
+			})
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return songs, nil
 
 }

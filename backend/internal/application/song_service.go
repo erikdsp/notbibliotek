@@ -39,6 +39,10 @@ func (s *SongService) GetAllSongs() ([]domain.Song, error) {
 	return s.repository.GetAll()
 }
 
+func (s *SongService) GetAllSongsWithQuery(query SongQuery) ([]SongDetails, error) {
+	return s.repository.GetAllWithDetails(query)
+}
+
 func (s *SongService) UpdateSong(id ulid.ULID, title *string, archived *bool) (domain.Song, error) {
 	song, err := s.repository.GetByID(id)
 	if err != nil {

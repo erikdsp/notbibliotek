@@ -2,7 +2,10 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/url"
+	"strconv"
 
 	"github.com/erikdsp/notbibliotek/backend/internal/application"
 
@@ -28,8 +31,51 @@ func NewSongHandler(service *application.SongService) *SongHandler {
 	}
 }
 
+func parseGetAllQuery(rawQuery string) (application.SongQuery, error) {
+	queryValues, err := url.ParseQuery(rawQuery)
+	if err != nil {
+		return application.SongQuery{}, err
+	}
+
+	query := application.SongQuery{
+		Search:     queryValues.Get("search"),
+		Concert:    queryValues.Get("concert"),
+		Part:       queryValues.Get("part"),
+		Instrument: queryValues.Get("instrument"),
+	}
+
+	if archived := queryValues.Get("archived"); archived != "" {
+		queryValue, err := strconv.ParseBool(archived)
+		if err != nil {
+			return application.SongQuery{}, fmt.Errorf("invalid archived: %w", err)
+		}
+		query.Archived = queryValue
+	}
+
+	if includeScore := queryValues.Get("include_score"); includeScore != "" {
+		queryValue, err := strconv.ParseBool(includeScore)
+		if err != nil {
+			return application.SongQuery{}, fmt.Errorf("invalid include_score: %w", err)
+		}
+
+		query.IncludeScore = queryValue
+	} else {
+		query.IncludeScore = true
+	}
+
+	return query, nil
+}
+
 func (h *SongHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	songs, err := h.service.GetAllSongs()
+
+	query, err := parseGetAllQuery(r.URL.RawQuery)
+	if err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	fmt.Println("Query instrument: ", query.Instrument)
+
+	songs, err := h.service.GetAllSongsWithQuery(query)
 	if err != nil {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return

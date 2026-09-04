@@ -36,6 +36,16 @@ func (m *mockSongRepository) Update(song domain.Song) error {
 	return nil
 }
 
+func (m *mockSongRepository) GetAllWithDetails(query SongQuery) ([]SongDetails, error) {
+	songs := []SongDetails{}
+	return songs, nil
+}
+
+func (m *mockSongRepository) GetByIDWithDetails(id ulid.ULID, query SongByIDQuery) (SongDetails, error) {
+	song := SongDetails{}
+	return song, nil
+}
+
 func TestSongService_CreateSong(t *testing.T) {
 	repository := &mockSongRepository{}
 	service := NewSongService(repository)
