@@ -25,7 +25,7 @@ func (m *mockSongRepository) GetByID(id ulid.ULID) (domain.Song, error) {
 		}
 	}
 
-	return domain.Song{}, errors.New("song not found")
+	return domain.Song{}, ErrSongNotFound
 }
 
 func (m *mockSongRepository) GetAll() ([]domain.Song, error) {
