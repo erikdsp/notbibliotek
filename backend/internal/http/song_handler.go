@@ -82,12 +82,7 @@ func (h *SongHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-
-	if err := json.NewEncoder(w).Encode(songs); err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-
+	json.NewEncoder(w).Encode(songs)
 }
 
 func parseGetByIDQuery(rawQuery string) (application.SongByIDQuery, error) {
@@ -140,12 +135,7 @@ func (h *SongHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-
-	if err := json.NewEncoder(w).Encode(song); err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-
+	json.NewEncoder(w).Encode(song)
 }
 
 func (h *SongHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -164,10 +154,7 @@ func (h *SongHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-
-	if err := json.NewEncoder(w).Encode(song); err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-	}
+	json.NewEncoder(w).Encode(song)
 }
 
 func (h *SongHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -201,8 +188,5 @@ func (h *SongHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-
-	if err := json.NewEncoder(w).Encode(song); err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-	}
+	json.NewEncoder(w).Encode(song)
 }

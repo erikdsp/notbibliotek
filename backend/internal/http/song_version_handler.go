@@ -42,7 +42,5 @@ func (h *SongVersionHandler) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	if err := json.NewEncoder(w).Encode(songVersion); err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-	}
+	json.NewEncoder(w).Encode(songVersion)
 }
