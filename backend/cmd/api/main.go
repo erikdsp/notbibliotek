@@ -25,10 +25,16 @@ func main() {
 	}
 	defer db.Close()
 
+	// Wiring
 	songRepository := postgres.NewPostgresSongRepository(db)
 	songService := application.NewSongService(songRepository)
 	songHandler := httpHandler.NewSongHandler(songService)
-	router := httpHandler.NewRouter(songHandler)
+
+	songVersionRepository := postgres.NewPostgresSongVersionRepository(db)
+	songVersionService := application.NewSongVersionService(songVersionRepository, songRepository)
+	songVersionHandler := httpHandler.NewSongVersionHandler(songVersionService)
+
+	router := httpHandler.NewRouter(songHandler, songVersionHandler)
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 
