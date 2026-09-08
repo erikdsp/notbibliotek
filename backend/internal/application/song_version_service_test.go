@@ -19,19 +19,55 @@ func (m *mockSongVersionRepository) Create(songVersion domain.SongVersion) error
 	return m.err
 }
 
+type mockFileRepository struct {
+	files []domain.File
+	err   error
+}
+
+func (m *mockFileRepository) Create(file domain.File) error {
+	m.files = append(m.files, file)
+	return m.err
+}
+
+func (m *mockFileRepository) GetByID(id ulid.ULID) (domain.File, error) {
+	return domain.File{}, nil
+}
+func (m *mockFileRepository) Update(file domain.File) error {
+	return nil
+}
+
+type mockScoreRepository struct {
+	scores []domain.Score
+	err    error
+}
+
+func (m *mockScoreRepository) Create(score domain.Score) error {
+	m.scores = append(m.scores, score)
+	return m.err
+}
+
+func (m *mockScoreRepository) GetByID(id ulid.ULID) (domain.Score, error) {
+	return domain.Score{}, nil
+}
+
 func TestSongVersionService_CreateSongVersion(t *testing.T) {
-	songRepository := &mockSongRepository{}
-	songService := NewSongService(songRepository)
-
-	repository := &mockSongVersionRepository{}
-	service := NewSongVersionService(repository, songRepository)
-
-	song, err := songService.CreateSong("Test Song")
-	if err != nil {
-		t.Fatal(err)
+	songID := ulid.Make()
+	songRepository := &mockSongRepository{
+		songs: []domain.Song{
+			{
+				ID:    songID,
+				Title: "Test Song",
+			},
+		},
 	}
 
-	songVersion, err := service.CreateSongVersion(song.ID)
+	fileRepository := &mockFileRepository{}
+	scoreRepository := &mockScoreRepository{}
+
+	repository := &mockSongVersionRepository{}
+	service := NewSongVersionService(repository, songRepository, fileRepository, scoreRepository)
+
+	songVersion, err := service.CreateSongVersion(songID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,7 +86,7 @@ func TestSongVersionService_CreateSongVersion(t *testing.T) {
 		)
 	}
 
-	if repositorySongVersion.SongID != song.ID {
+	if repositorySongVersion.SongID != songID {
 		t.Error("expected repository version to contain the correct song ID")
 	}
 }
@@ -58,7 +94,10 @@ func TestSongVersionService_CreateSongVersion(t *testing.T) {
 func TestSongVersionService_CreateSongVersion_SongNotFound(t *testing.T) {
 	songRepository := &mockSongRepository{}
 	repository := &mockSongVersionRepository{}
-	service := NewSongVersionService(repository, songRepository)
+	fileRepository := &mockFileRepository{}
+	scoreRepository := &mockScoreRepository{}
+
+	service := NewSongVersionService(repository, songRepository, fileRepository, scoreRepository)
 
 	songID := ulid.Make()
 
@@ -93,7 +132,10 @@ func TestSongVersionService_CreateSongVersion_RepositoryError(t *testing.T) {
 		err: repositoryError,
 	}
 
-	service := NewSongVersionService(repository, songRepository)
+	fileRepository := &mockFileRepository{}
+	scoreRepository := &mockScoreRepository{}
+
+	service := NewSongVersionService(repository, songRepository, fileRepository, scoreRepository)
 
 	_, err := service.CreateSongVersion(songID)
 	if !errors.Is(err, repositoryError) {
