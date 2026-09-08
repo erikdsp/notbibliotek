@@ -17,6 +17,9 @@ coverage.*
 # OS X specific files
 .DS_Store
 
+# Local file storage
+backend/data/files/
+
 # Dependency/vendor directories
 vendor/
 
