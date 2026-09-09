@@ -119,7 +119,7 @@ func (h *SongHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	song, err := h.service.GetSongByID(songID, query)
 	if err != nil {
 		if errors.Is(err, application.ErrSongNotFound) {
-			http.Error(w, "song not found", http.StatusNotFound)
+			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
 
@@ -175,7 +175,7 @@ func (h *SongHandler) Update(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		if errors.Is(err, application.ErrSongNotFound) {
-			http.Error(w, "song not found", http.StatusNotFound)
+			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
 

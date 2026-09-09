@@ -62,3 +62,11 @@ func toSongDetailedResponse(song application.SongDetails) SongDetailedResponse {
 		Versions:         versions,
 	}
 }
+
+func toScoreResponse(score domain.Score) ScoreResponse {
+	return ScoreResponse{
+		ID:            score.ID,
+		SongVersionID: score.SongVersionID,
+		FileID:        score.FileID,
+	}
+}

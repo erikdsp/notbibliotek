@@ -32,7 +32,7 @@ func (h *SongVersionHandler) Create(w http.ResponseWriter, r *http.Request) {
 	songVersion, err := h.service.CreateSongVersion(songID)
 	if err != nil {
 		if errors.Is(err, application.ErrSongNotFound) {
-			http.Error(w, "song not found", http.StatusNotFound)
+			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
 
@@ -74,14 +74,25 @@ func (h *SongVersionHandler) UploadScore(w http.ResponseWriter, r *http.Request)
 	}
 	defer file.Close()
 
-	scoreResponse, err := h.service.UploadScore(songID, versionID, fileHeader.Filename, file)
+	score, err := h.service.UploadScore(songID, versionID, fileHeader.Filename, file)
 	if err != nil {
+		if errors.Is(err, application.ErrSongVersionNotFound) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		if errors.Is(err, application.ErrInvalidSongID) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
+	response := toScoreResponse(score)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(scoreResponse)
+	json.NewEncoder(w).Encode(response)
 
 }
