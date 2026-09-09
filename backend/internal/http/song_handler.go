@@ -66,7 +66,7 @@ func (h *SongHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	songs, err := h.service.GetAllSongsWithQuery(query)
+	songs, err := h.service.GetAllSongs(query)
 	if err != nil {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
@@ -116,7 +116,7 @@ func (h *SongHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	song, err := h.service.GetSongByIDWithQuery(songID, query)
+	song, err := h.service.GetSongByID(songID, query)
 	if err != nil {
 		if errors.Is(err, application.ErrSongNotFound) {
 			http.Error(w, "song not found", http.StatusNotFound)

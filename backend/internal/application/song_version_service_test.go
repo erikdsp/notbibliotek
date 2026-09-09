@@ -19,6 +19,10 @@ func (m *mockSongVersionRepository) Create(songVersion domain.SongVersion) error
 	return m.err
 }
 
+func (r *mockSongVersionRepository) GetByID(id ulid.ULID) (domain.SongVersion, error) {
+	return domain.SongVersion{}, nil
+}
+
 type mockFileRepository struct {
 	files []domain.File
 	err   error

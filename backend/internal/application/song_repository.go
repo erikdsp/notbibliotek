@@ -46,8 +46,6 @@ type SongByIDQuery struct {
 type SongRepository interface {
 	Create(song domain.Song) error
 	GetByID(id ulid.ULID) (domain.Song, error)
-	GetByIDWithDetails(id ulid.ULID, query SongByIDQuery) (SongDetails, error)
-	GetAll() ([]domain.Song, error)
-	GetAllWithDetails(query SongQuery) ([]SongDetails, error)
+	GetAll(archived bool) ([]domain.Song, error)
 	Update(song domain.Song) error
 }

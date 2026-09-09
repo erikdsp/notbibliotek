@@ -30,8 +30,11 @@ func main() {
 	songService := application.NewSongService(songRepository)
 	songHandler := httpHandler.NewSongHandler(songService)
 
+	fileRepository := postgres.NewPostgresFileRepository(db)
+	scoreRepository := postgres.NewPostgresScoreRepository(db)
+
 	songVersionRepository := postgres.NewPostgresSongVersionRepository(db)
-	songVersionService := application.NewSongVersionService(songVersionRepository, songRepository)
+	songVersionService := application.NewSongVersionService(songVersionRepository, songRepository, fileRepository, scoreRepository)
 	songVersionHandler := httpHandler.NewSongVersionHandler(songVersionService)
 
 	router := httpHandler.NewRouter(songHandler, songVersionHandler)

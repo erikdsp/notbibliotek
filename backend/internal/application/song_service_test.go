@@ -9,8 +9,10 @@ import (
 )
 
 type mockSongRepository struct {
-	songs []domain.Song
-	err   error
+	songs        []domain.Song
+	err          error
+	archivedArg  bool
+	getAllCalled bool
 }
 
 func (m *mockSongRepository) Create(song domain.Song) error {
@@ -28,22 +30,14 @@ func (m *mockSongRepository) GetByID(id ulid.ULID) (domain.Song, error) {
 	return domain.Song{}, ErrSongNotFound
 }
 
-func (m *mockSongRepository) GetAll() ([]domain.Song, error) {
+func (m *mockSongRepository) GetAll(archived bool) ([]domain.Song, error) {
+	m.archivedArg = archived
+	m.getAllCalled = true
 	return m.songs, m.err
 }
 
 func (m *mockSongRepository) Update(song domain.Song) error {
-	return nil
-}
-
-func (m *mockSongRepository) GetAllWithDetails(query SongQuery) ([]SongDetails, error) {
-	songs := []SongDetails{}
-	return songs, nil
-}
-
-func (m *mockSongRepository) GetByIDWithDetails(id ulid.ULID, query SongByIDQuery) (SongDetails, error) {
-	song := SongDetails{}
-	return song, nil
+	return m.err
 }
 
 func TestSongService_CreateSong(t *testing.T) {
@@ -102,30 +96,34 @@ func TestSongService_GetSongByID(t *testing.T) {
 		ID:    ulid.Make(),
 		Title: "Test Song",
 	}
+
 	repository := &mockSongRepository{
 		songs: []domain.Song{song},
 	}
 
 	service := NewSongService(repository)
 
-	songFromService, err := service.GetSongByID(song.ID)
+	songDetails, err := service.GetSongByID(
+		song.ID,
+		SongByIDQuery{},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if song.ID != songFromService.ID {
+	if songDetails.Song.ID != song.ID {
 		t.Errorf(
 			"expected song ID %s, got %s",
 			song.ID,
-			songFromService.ID,
+			songDetails.Song.ID,
 		)
 	}
 
-	if song.Title != songFromService.Title {
+	if songDetails.Song.Title != song.Title {
 		t.Errorf(
 			"expected song title %q, got %q",
 			song.Title,
-			songFromService.Title,
+			songDetails.Song.Title,
 		)
 	}
 }
@@ -135,43 +133,87 @@ func TestSongService_GetAllSongs(t *testing.T) {
 		ID:    ulid.Make(),
 		Title: "Test Song",
 	}
+
 	song2 := domain.Song{
 		ID:    ulid.Make(),
 		Title: "Test Song 2",
 	}
+
 	repository := &mockSongRepository{
 		songs: []domain.Song{song, song2},
 	}
 
 	service := NewSongService(repository)
 
-	songsFromService, err := service.GetAllSongs()
+	songsFromService, err := service.GetAllSongs(SongQuery{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(repository.songs) != 2 {
-		t.Fatalf("expected repository to contain 2 songs, got %d", len(repository.songs))
+	if !repository.getAllCalled {
+		t.Error("expected repository GetAll to be called")
+	}
+
+	if repository.archivedArg {
+		t.Error("expected archived argument to be false")
 	}
 
 	if len(songsFromService) != 2 {
 		t.Fatalf("expected service to return 2 songs, got %d", len(songsFromService))
 	}
 
-	if songsFromService[0].ID != song.ID {
+	if songsFromService[0].Song.ID != song.ID {
 		t.Errorf(
 			"expected first song ID %s, got %s",
 			song.ID,
-			songsFromService[0].ID,
+			songsFromService[0].Song.ID,
 		)
 	}
 
-	if songsFromService[1].ID != song2.ID {
+	if songsFromService[1].Song.ID != song2.ID {
 		t.Errorf(
 			"expected second song ID %s, got %s",
 			song2.ID,
-			songsFromService[1].ID,
+			songsFromService[1].Song.ID,
 		)
+	}
+}
+
+func TestSongService_GetAllSongs_Archived(t *testing.T) {
+	repository := &mockSongRepository{}
+
+	service := NewSongService(repository)
+
+	query := SongQuery{
+		Archived: true,
+	}
+
+	_, err := service.GetAllSongs(query)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !repository.getAllCalled {
+		t.Error("expected repository GetAll to be called")
+	}
+
+	if !repository.archivedArg {
+		t.Error("expected archived argument to be true")
+	}
+}
+
+func TestSongService_GetAllSongs_RepositoryError(t *testing.T) {
+	expectedErr := errors.New("database error")
+
+	repository := &mockSongRepository{
+		err: expectedErr,
+	}
+
+	service := NewSongService(repository)
+
+	_, err := service.GetAllSongs(SongQuery{})
+	if err != expectedErr {
+		t.Errorf("expected error %v, got %v", expectedErr, err)
 	}
 }
 
@@ -180,6 +222,7 @@ func TestSongService_UpdateSong(t *testing.T) {
 		ID:    ulid.Make(),
 		Title: "Test Song",
 	}
+
 	repository := &mockSongRepository{
 		songs: []domain.Song{song},
 	}
@@ -187,13 +230,21 @@ func TestSongService_UpdateSong(t *testing.T) {
 	service := NewSongService(repository)
 
 	newTitle := "New Title"
-	songFromService, err := service.UpdateSong(song.ID, &newTitle, nil)
+
+	songFromService, err := service.UpdateSong(
+		song.ID,
+		&newTitle,
+		nil,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if len(repository.songs) != 1 {
-		t.Fatalf("expected repository to contain 1 song, got %d", len(repository.songs))
+		t.Fatalf(
+			"expected repository to contain 1 song, got %d",
+			len(repository.songs),
+		)
 	}
 
 	if songFromService.ID != song.ID {
@@ -206,14 +257,19 @@ func TestSongService_UpdateSong(t *testing.T) {
 
 	if songFromService.Title != newTitle {
 		t.Errorf(
-			"expected song Title %s, got %s",
+			"expected song title %q, got %q",
 			newTitle,
 			songFromService.Title,
 		)
 	}
 
 	archived := true
-	archivedSongFromService, err := service.UpdateSong(song.ID, nil, &archived)
+
+	archivedSongFromService, err := service.UpdateSong(
+		song.ID,
+		nil,
+		&archived,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -223,13 +279,17 @@ func TestSongService_UpdateSong(t *testing.T) {
 	}
 
 	archived = false
-	archivedSongFromService, err = service.UpdateSong(song.ID, nil, &archived)
+
+	archivedSongFromService, err = service.UpdateSong(
+		song.ID,
+		nil,
+		&archived,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if archivedSongFromService.ArchivedAt != nil {
-		t.Error("expected song to be archived")
+		t.Error("expected song to be unarchived")
 	}
-
 }
