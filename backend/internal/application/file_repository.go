@@ -9,4 +9,5 @@ type FileRepository interface {
 	Create(file domain.File) error
 	GetByID(id ulid.ULID) (domain.File, error)
 	Update(file domain.File) error
+	Delete(id ulid.ULID) error
 }

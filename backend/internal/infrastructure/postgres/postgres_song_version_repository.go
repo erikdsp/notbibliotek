@@ -71,7 +71,7 @@ func (r *PostgresSongVersionRepository) GetByID(id ulid.ULID) (domain.SongVersio
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return domain.SongVersion{}, application.ErrSongNotFound
+			return domain.SongVersion{}, application.ErrSongVersionNotFound
 		}
 
 		return domain.SongVersion{}, err

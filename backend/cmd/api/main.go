@@ -7,6 +7,7 @@ import (
 
 	"github.com/erikdsp/notbibliotek/backend/internal/application"
 	httpHandler "github.com/erikdsp/notbibliotek/backend/internal/http"
+	"github.com/erikdsp/notbibliotek/backend/internal/infrastructure/filestorage"
 	"github.com/erikdsp/notbibliotek/backend/internal/infrastructure/postgres"
 	"github.com/joho/godotenv"
 )
@@ -34,7 +35,9 @@ func main() {
 	scoreRepository := postgres.NewPostgresScoreRepository(db)
 
 	songVersionRepository := postgres.NewPostgresSongVersionRepository(db)
-	songVersionService := application.NewSongVersionService(songVersionRepository, songRepository, fileRepository, scoreRepository)
+	fileStorage := filestorage.NewLocalFileStorage("./backend/data/files")
+
+	songVersionService := application.NewSongVersionService(songVersionRepository, songRepository, fileRepository, scoreRepository, fileStorage)
 	songVersionHandler := httpHandler.NewSongVersionHandler(songVersionService)
 
 	router := httpHandler.NewRouter(songHandler, songVersionHandler)

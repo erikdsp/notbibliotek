@@ -8,4 +8,6 @@ import (
 type ScoreRepository interface {
 	Create(score domain.Score) error
 	GetByID(id ulid.ULID) (domain.Score, error)
+	GetBySongVersionID(songVersionID ulid.ULID) (domain.Score, error)
+	Update(score domain.Score) error
 }

@@ -1,7 +1,9 @@
 package application
 
 import (
+	"errors"
 	"io"
+	"log"
 
 	"github.com/erikdsp/notbibliotek/backend/internal/domain"
 
@@ -13,16 +15,18 @@ type SongVersionService struct {
 	songRepository  SongRepository
 	fileRepository  FileRepository
 	scoreRepository ScoreRepository
+	fileStorage     FileStorage
 }
 
 func NewSongVersionService(repository SongVersionRepository,
 	songRepository SongRepository, fileRepository FileRepository,
-	scoreRepository ScoreRepository) *SongVersionService {
+	scoreRepository ScoreRepository, fileStorage FileStorage) *SongVersionService {
 	return &SongVersionService{
 		repository:      repository,
 		songRepository:  songRepository,
 		fileRepository:  fileRepository,
 		scoreRepository: scoreRepository,
+		fileStorage:     fileStorage,
 	}
 }
 
@@ -45,9 +49,91 @@ func (s *SongVersionService) CreateSongVersion(songID ulid.ULID) (domain.SongVer
 	return songVersion, nil
 }
 
-// ScoreDetails
 func (s *SongVersionService) UploadScore(songID ulid.ULID, versionID ulid.ULID,
 	fileName string, file io.Reader) (domain.Score, error) {
 
-	return domain.Score{}, nil
+	version, err := s.repository.GetByID(versionID)
+	if err != nil {
+		return domain.Score{}, err
+	}
+	if version.SongID != songID {
+		return domain.Score{}, ErrInvalidSongID
+	}
+	if version.PublishedAt != nil {
+		return domain.Score{}, ErrInvalidOperation
+	}
+
+	fileID := ulid.Make()
+
+	fileStorageRollback := func() {
+		if deleteErr := s.fileStorage.Delete(fileID); deleteErr != nil {
+			log.Printf("failed to delete file %s: %v during rollback", fileID, deleteErr)
+		}
+	}
+
+	fileRepositoryRollback := func() {
+		if deleteErr := s.fileRepository.Delete(fileID); deleteErr != nil {
+			log.Printf("failed to delete file metadata %s: %v during rollback", fileID, deleteErr)
+		}
+	}
+
+	err = s.fileStorage.Save(fileID, file)
+	if err != nil {
+		return domain.Score{}, err
+	}
+
+	err = s.fileRepository.Create(domain.File{ID: fileID, Name: fileName})
+
+	if err != nil {
+		fileStorageRollback()
+
+		return domain.Score{}, err
+	}
+
+	prevScore, err := s.scoreRepository.GetBySongVersionID(versionID)
+
+	if errors.Is(err, ErrScoreNotFound) {
+		score := domain.Score{
+			ID:            ulid.Make(),
+			SongVersionID: versionID,
+			FileID:        fileID,
+		}
+
+		err = s.scoreRepository.Create(score)
+
+		if err != nil {
+			fileRepositoryRollback()
+			fileStorageRollback()
+			return domain.Score{}, err
+		}
+
+		return score, nil
+	}
+
+	if err != nil {
+		fileRepositoryRollback()
+		fileStorageRollback()
+		return domain.Score{}, err
+	}
+
+	oldFileID := prevScore.FileID
+	prevScore.FileID = fileID
+
+	err = s.scoreRepository.Update(prevScore)
+	if err != nil {
+		fileRepositoryRollback()
+		fileStorageRollback()
+		return domain.Score{}, err
+	}
+
+	if err := s.fileRepository.Delete(oldFileID); err != nil {
+		log.Printf("failed to delete old file metadata %s: %v", oldFileID, err)
+	}
+
+	if err := s.fileStorage.Delete(oldFileID); err != nil {
+		log.Printf("failed to delete old file %s: %v", oldFileID, err)
+	}
+
+	return prevScore, nil
+
 }

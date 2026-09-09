@@ -22,6 +22,18 @@ const getScoreByIDQuery = `
 	WHERE id = $1
 `
 
+const getScoreBySongVersionIDQuery = `
+	SELECT id, song_version_id, file_id
+	FROM scores
+	WHERE song_version_id = $1
+`
+
+const updateScoreQuery = `
+    UPDATE scores
+	SET file_id = $2
+	WHERE id = $1
+`
+
 type PostgresScoreRepository struct {
 	db *sql.DB
 }
@@ -78,4 +90,37 @@ func (r *PostgresScoreRepository) GetByID(id ulid.ULID) (domain.Score, error) {
 	}
 
 	return dbScore.toDomain(), nil
+}
+
+func (r *PostgresScoreRepository) GetBySongVersionID(songVersionID ulid.ULID) (domain.Score, error) {
+	var dbScore dbScore
+
+	err := r.db.QueryRow(
+		getScoreBySongVersionIDQuery,
+		uuid.UUID(songVersionID),
+	).Scan(
+		&dbScore.ID,
+		&dbScore.SongVersionID,
+		&dbScore.FileID,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.Score{}, application.ErrScoreNotFound
+		}
+
+		return domain.Score{}, err
+	}
+
+	return dbScore.toDomain(), nil
+}
+
+func (r *PostgresScoreRepository) Update(score domain.Score) error {
+	_, err := r.db.Exec(
+		updateScoreQuery,
+		uuid.UUID(score.ID),
+		uuid.UUID(score.FileID),
+	)
+
+	return err
+
 }

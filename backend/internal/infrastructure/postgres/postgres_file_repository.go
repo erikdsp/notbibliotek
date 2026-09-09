@@ -27,6 +27,10 @@ const updateFileQuery = `
 	SET name = $2
 	WHERE id = $1
 `
+const deleteFileQuery = `
+    DELETE FROM files
+    WHERE id = $1
+`
 
 type PostgresFileRepository struct {
 	db *sql.DB
@@ -90,5 +94,10 @@ func (r *PostgresFileRepository) Update(file domain.File) error {
 		file.Name,
 	)
 
+	return err
+}
+
+func (r *PostgresFileRepository) Delete(id ulid.ULID) error {
+	_, err := r.db.Exec(deleteFileQuery, uuid.UUID(id))
 	return err
 }

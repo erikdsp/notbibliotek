@@ -28,6 +28,9 @@ CREATE TABLE scores (
     FOREIGN KEY (song_version_id)
     REFERENCES song_versions (id),
 
+    CONSTRAINT uq_score_song_version
+    UNIQUE (song_version_id),
+
     file_id UUID NOT NULL,
 
     CONSTRAINT fk_score_file
