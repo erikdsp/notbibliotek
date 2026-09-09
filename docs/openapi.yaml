@@ -280,7 +280,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ScoreResponse'
+                $ref: '#/components/schemas/Score'
         '400':
           description: Invalid request.
           content:
@@ -329,7 +329,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PartResponse'
+                $ref: '#/components/schemas/Part'
         '400':
           description: Invalid request.
           content:
@@ -855,16 +855,6 @@ components:
         - id
         - key
         - name
-    File:
-      type: object
-      properties:
-        id:
-          $ref: "#/components/schemas/ULID"
-        name:
-          type: string
-      required:
-        - id
-        - name
     Concert:
       type: object
       properties:
@@ -904,11 +894,33 @@ components:
           format: date-time
           nullable: true      
         score:
-          $ref: "#/components/schemas/Score"
+          type: object
+          properties: 
+            id:
+              $ref: "#/components/schemas/ULID"
+            file_id:
+              $ref: "#/components/schemas/ULID"
+          required:
+            - id
+            - file_id
         parts:
           type: array
           items:
-            $ref: "#/components/schemas/Part"
+            type: object
+            properties: 
+              id:
+                $ref: "#/components/schemas/ULID"
+              key:
+                type: string
+              name:
+                type: string
+              file_id:
+                $ref: "#/components/schemas/ULID"
+            required:
+              - id
+              - key
+              - name
+              - file_id
       required:
         - song_version_id
         - published_at
@@ -923,26 +935,6 @@ components:
           type: array
           items: 
             $ref: "#/components/schemas/Version"
-    ScoreResponse:
-      type: object
-      properties: 
-        score: 
-          $ref: "#/components/schemas/Score"
-        file:
-          $ref: "#/components/schemas/File"
-      required:
-        - score
-        - file
-    PartResponse: 
-      type: object
-      properties: 
-        part:
-          $ref: "#/components/schemas/Part"
-        file:
-          $ref: "#/components/schemas/File"
-      required:
-        - part
-        - file
     Songs:
       type: object
       nullable: true

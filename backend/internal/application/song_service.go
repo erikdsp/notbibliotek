@@ -31,20 +31,28 @@ func (s *SongService) CreateSong(title string) (domain.Song, error) {
 	return song, nil
 }
 
-func (s *SongService) GetSongByID(id ulid.ULID) (domain.Song, error) {
-	return s.repository.GetByID(id)
+func (s *SongService) GetSongByID(id ulid.ULID, query SongByIDQuery) (SongDetails, error) {
+	song, err := s.repository.GetByID(id)
+	if err != nil {
+		return SongDetails{}, err
+	}
+	return SongDetails{Song: song}, nil
+
 }
 
-func (s *SongService) GetSongByIDWithQuery(id ulid.ULID, query SongByIDQuery) (SongDetails, error) {
-	return s.repository.GetByIDWithDetails(id, query)
-}
+func (s *SongService) GetAllSongs(query SongQuery) ([]SongDetails, error) {
+	songs, err := s.repository.GetAll(query.Archived)
+	if err != nil {
+		return []SongDetails{}, err
+	}
 
-func (s *SongService) GetAllSongs() ([]domain.Song, error) {
-	return s.repository.GetAll()
-}
+	result := make([]SongDetails, 0, len(songs))
 
-func (s *SongService) GetAllSongsWithQuery(query SongQuery) ([]SongDetails, error) {
-	return s.repository.GetAllWithDetails(query)
+	for _, song := range songs {
+		result = append(result, SongDetails{Song: song})
+	}
+
+	return result, nil
 }
 
 func (s *SongService) UpdateSong(id ulid.ULID, title *string, archived *bool) (domain.Song, error) {

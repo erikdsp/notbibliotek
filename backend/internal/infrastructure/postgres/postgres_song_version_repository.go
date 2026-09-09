@@ -2,8 +2,10 @@ package postgres
 
 import (
 	"database/sql"
+	"errors"
 	"time"
 
+	"github.com/erikdsp/notbibliotek/backend/internal/application"
 	"github.com/erikdsp/notbibliotek/backend/internal/domain"
 
 	"github.com/google/uuid"
@@ -13,6 +15,12 @@ import (
 const insertSongVersionQuery = `
 	INSERT INTO song_versions (id, song_id)
 	VALUES ($1, $2)
+`
+
+const getSongVersionByIDQuery = `
+	SELECT id, song_id, published_at
+	FROM song_versions
+	WHERE id = $1
 `
 
 type PostgresSongVersionRepository struct {
@@ -48,4 +56,26 @@ func (r *PostgresSongVersionRepository) Create(songVersion domain.SongVersion) e
 	)
 
 	return err
+}
+
+func (r *PostgresSongVersionRepository) GetByID(id ulid.ULID) (domain.SongVersion, error) {
+	var dbSongVersion dbSongVersion
+
+	err := r.db.QueryRow(
+		getSongVersionByIDQuery,
+		uuid.UUID(id),
+	).Scan(
+		&dbSongVersion.ID,
+		&dbSongVersion.SongID,
+		&dbSongVersion.PublishedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.SongVersion{}, application.ErrSongVersionNotFound
+		}
+
+		return domain.SongVersion{}, err
+	}
+
+	return dbSongVersion.toDomain(), nil
 }

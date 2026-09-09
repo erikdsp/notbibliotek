@@ -15,6 +15,7 @@ func NewRouter(songHandler *SongHandler, songVersionHandler *SongVersionHandler)
 
 	// Song Versions
 	mux.HandleFunc("POST /api/v1/songs/{song_id}/versions", songVersionHandler.Create)
+	mux.HandleFunc("POST /api/v1/songs/{song_id}/versions/{version_id}/score", songVersionHandler.UploadScore)
 
 	return mux
 }

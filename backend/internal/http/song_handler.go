@@ -17,15 +17,6 @@ type SongHandler struct {
 	service *application.SongService
 }
 
-type CreateSongRequest struct {
-	Title string `json:"title"`
-}
-
-type UpdateSongRequest struct {
-	Title    *string `json:"title"`
-	Archived *bool   `json:"archived"`
-}
-
 func NewSongHandler(service *application.SongService) *SongHandler {
 	return &SongHandler{
 		service: service,
@@ -75,14 +66,16 @@ func (h *SongHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	songs, err := h.service.GetAllSongsWithQuery(query)
+	songs, err := h.service.GetAllSongs(query)
 	if err != nil {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
+	responses := toSongDetailedResponses(songs)
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(songs)
+	json.NewEncoder(w).Encode(responses)
 }
 
 func parseGetByIDQuery(rawQuery string) (application.SongByIDQuery, error) {
@@ -123,10 +116,10 @@ func (h *SongHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	song, err := h.service.GetSongByIDWithQuery(songID, query)
+	song, err := h.service.GetSongByID(songID, query)
 	if err != nil {
 		if errors.Is(err, application.ErrSongNotFound) {
-			http.Error(w, "song not found", http.StatusNotFound)
+			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
 
@@ -134,8 +127,10 @@ func (h *SongHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	response := toSongDetailedResponse(song)
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(song)
+	json.NewEncoder(w).Encode(response)
 }
 
 func (h *SongHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -152,9 +147,11 @@ func (h *SongHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	response := toSongResponse(song)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(song)
+	json.NewEncoder(w).Encode(response)
 }
 
 func (h *SongHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -178,7 +175,7 @@ func (h *SongHandler) Update(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		if errors.Is(err, application.ErrSongNotFound) {
-			http.Error(w, "song not found", http.StatusNotFound)
+			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
 
@@ -186,7 +183,9 @@ func (h *SongHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	response := toSongResponse(song)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(song)
+	json.NewEncoder(w).Encode(response)
 }

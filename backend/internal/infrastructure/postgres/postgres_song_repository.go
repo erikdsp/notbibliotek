@@ -100,16 +100,23 @@ func (r *PostgresSongRepository) GetByID(id ulid.ULID) (domain.Song, error) {
 	return dbSong.toDomain(), nil
 }
 
-func (r *PostgresSongRepository) GetAll() ([]domain.Song, error) {
+func (r *PostgresSongRepository) GetAll(archived bool) ([]domain.Song, error) {
+	var sqlQuery string
+	if archived {
+		sqlQuery = getAllArchivedSongsQuery
+	} else {
+		sqlQuery = getAllSongsQuery
+	}
+
 	rows, err := r.db.Query(
-		getAllSongsQuery,
+		sqlQuery,
 	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var songs []domain.Song
+	songs := []domain.Song{}
 
 	for rows.Next() {
 		var dbSong dbSong
@@ -142,61 +149,5 @@ func (r *PostgresSongRepository) Update(song domain.Song) error {
 	)
 
 	return err
-
-}
-
-func (r *PostgresSongRepository) GetByIDWithDetails(id ulid.ULID, query application.SongByIDQuery) (application.SongDetails, error) {
-	song := application.SongDetails{}
-	domainSong, err := r.GetByID(id)
-	if err != nil {
-		return song, err
-	}
-	song.Song = domainSong
-
-	return song, nil
-}
-
-func (r *PostgresSongRepository) GetAllWithDetails(query application.SongQuery) ([]application.SongDetails, error) {
-	var sqlQuery string
-
-	if query.Archived {
-		sqlQuery = getAllArchivedSongsQuery
-	} else {
-		sqlQuery = getAllSongsQuery
-	}
-
-	rows, err := r.db.Query(
-		sqlQuery,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	songs := []application.SongDetails{}
-
-	for rows.Next() {
-		var dbSong dbSong
-
-		err := rows.Scan(
-			&dbSong.ID,
-			&dbSong.Title,
-			&dbSong.ArchivedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		songs = append(
-			songs, application.SongDetails{
-				Song: dbSong.toDomain(),
-			})
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return songs, nil
 
 }
