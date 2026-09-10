@@ -153,7 +153,7 @@ func (m *mockFileStorage) Delete(fileID ulid.ULID) error {
 	return m.deleteErr
 }
 
-func TestSongVersionService_CreateSongVersion(t *testing.T) {
+func Test_WhenSongExistsThenCreateSongVersionCreatesSongVersion(t *testing.T) {
 	songID := ulid.Make()
 
 	songRepository := &mockSongRepository{
@@ -205,7 +205,7 @@ func TestSongVersionService_CreateSongVersion(t *testing.T) {
 	}
 }
 
-func TestSongVersionService_CreateSongVersion_SongNotFound(t *testing.T) {
+func Test_WhenSongDoesNotExistThenCreateSongVersionDoesNotCreateSongVersion(t *testing.T) {
 	songRepository := &mockSongRepository{}
 	repository := &mockSongVersionRepository{}
 	fileRepository := &mockFileRepository{}
@@ -235,7 +235,7 @@ func TestSongVersionService_CreateSongVersion_SongNotFound(t *testing.T) {
 	}
 }
 
-func TestSongVersionService_CreateSongVersion_RepositoryError(t *testing.T) {
+func Test_WhenSongVersionRepositoryReturnsErrorThenCreateSongVersionAlsoReturnsError(t *testing.T) {
 	songID := ulid.Make()
 
 	songRepository := &mockSongRepository{
@@ -275,7 +275,7 @@ func TestSongVersionService_CreateSongVersion_RepositoryError(t *testing.T) {
 	}
 }
 
-func TestSongVersionService_UploadScore(t *testing.T) {
+func Test_WhenSongVersionServiceUploadsValidScoreThenUploadScoreCreatesTheExpectedScore(t *testing.T) {
 	songID := ulid.Make()
 	versionID := ulid.Make()
 
@@ -358,7 +358,7 @@ func TestSongVersionService_UploadScore(t *testing.T) {
 	}
 }
 
-func TestSongVersionService_UploadScore_SongVersionNotFound(t *testing.T) {
+func Test_WhenSongVersionDoesNotExistThenUploadScoreReturnsSongVersionNotFound(t *testing.T) {
 	songID := ulid.Make()
 	versionID := ulid.Make()
 
@@ -396,7 +396,7 @@ func TestSongVersionService_UploadScore_SongVersionNotFound(t *testing.T) {
 	}
 }
 
-func TestSongVersionService_UploadScore_WrongSong(t *testing.T) {
+func Test_WhenSongVersionBelongsToTheWrongSongThenUploadScoreReturnsErrInvalidSongID(t *testing.T) {
 	songID := ulid.Make()
 	otherSongID := ulid.Make()
 	versionID := ulid.Make()
@@ -442,7 +442,7 @@ func TestSongVersionService_UploadScore_WrongSong(t *testing.T) {
 	}
 }
 
-func TestSongVersionService_UploadScore_FileStorageError(t *testing.T) {
+func Test_WhenFileStorageReturnsErrorThenSongVersionServiceUploadScoreAlsoReturnsError(t *testing.T) {
 	songID := ulid.Make()
 	versionID := ulid.Make()
 
@@ -495,7 +495,7 @@ func TestSongVersionService_UploadScore_FileStorageError(t *testing.T) {
 	}
 }
 
-func TestSongVersionService_UploadScore_FileRepositoryError(t *testing.T) {
+func Test_WhenFileRepositoryReturnsErrorThenSongVersionServiceUploadScoreAlsoReturnsError(t *testing.T) {
 	songID := ulid.Make()
 	versionID := ulid.Make()
 
@@ -556,75 +556,7 @@ func TestSongVersionService_UploadScore_FileRepositoryError(t *testing.T) {
 	}
 }
 
-func TestSongVersionService_UploadScore_ScoreRepositoryError(t *testing.T) {
-	songID := ulid.Make()
-	versionID := ulid.Make()
-
-	repository := &mockSongVersionRepository{
-		songVersions: []domain.SongVersion{
-			{
-				ID:          versionID,
-				SongID:      songID,
-				PublishedAt: nil,
-			},
-		},
-	}
-
-	fileRepository := &mockFileRepository{}
-
-	scoreRepository := &mockScoreRepository{
-		getByVersionErr: errors.New("database error"),
-	}
-
-	fileStorage := &mockFileStorage{}
-
-	service := NewSongVersionService(
-		repository,
-		&mockSongRepository{},
-		fileRepository,
-		scoreRepository,
-		fileStorage,
-	)
-
-	_, err := service.UploadScore(
-		songID,
-		versionID,
-		"score.pdf",
-		strings.NewReader("pdf content"),
-	)
-
-	if err == nil {
-		t.Fatal("expected error, got nil")
-	}
-
-	if len(fileStorage.savedFileIDs) != 1 {
-		t.Fatalf("expected 1 saved file, got %d", len(fileStorage.savedFileIDs))
-	}
-
-	fileID := fileStorage.savedFileIDs[0]
-
-	if len(fileRepository.files) != 1 {
-		t.Fatalf("expected 1 file metadata record, got %d", len(fileRepository.files))
-	}
-
-	if len(fileRepository.deletedFileIDs) != 1 {
-		t.Fatalf("expected 1 deleted file metadata record, got %d", len(fileRepository.deletedFileIDs))
-	}
-
-	if fileRepository.deletedFileIDs[0] != fileID {
-		t.Fatalf("expected deleted file %s, got %s", fileID, fileRepository.deletedFileIDs[0])
-	}
-
-	if len(fileStorage.deletedFileIDs) != 1 {
-		t.Fatalf("expected 1 deleted file, got %d", len(fileStorage.deletedFileIDs))
-	}
-
-	if fileStorage.deletedFileIDs[0] != fileID {
-		t.Fatalf("expected deleted file %s, got %s", fileID, fileStorage.deletedFileIDs[0])
-	}
-}
-
-func TestSongVersionService_UploadScore_PublishedVersion(t *testing.T) {
+func Test_WhenSongVersionIsAlreadyPublishedThenSongVersionServiceUploadScoreReturnsErrInvalidOperation(t *testing.T) {
 	songID := ulid.Make()
 	versionID := ulid.Make()
 
@@ -661,96 +593,9 @@ func TestSongVersionService_UploadScore_PublishedVersion(t *testing.T) {
 	}
 }
 
-func TestSongVersionService_UploadScore_UpdatesExistingScore(t *testing.T) {
+func Test_WhenScoreAlreadyExistsThenUploadScoreReturnsErrConflictingOperation(t *testing.T) {
 	songID := ulid.Make()
 	versionID := ulid.Make()
-	scoreID := ulid.Make()
-	oldFileID := ulid.Make()
-
-	repository := &mockSongVersionRepository{
-		songVersions: []domain.SongVersion{
-			{
-				ID:     versionID,
-				SongID: songID,
-			},
-		},
-	}
-
-	fileRepository := &mockFileRepository{
-		files: []domain.File{
-			{
-				ID:   oldFileID,
-				Name: "old.pdf",
-			},
-		},
-	}
-
-	scoreRepository := &mockScoreRepository{
-		scores: []domain.Score{
-			{
-				ID:            scoreID,
-				SongVersionID: versionID,
-				FileID:        oldFileID,
-			},
-		},
-	}
-
-	fileStorage := &mockFileStorage{}
-
-	service := NewSongVersionService(
-		repository,
-		&mockSongRepository{},
-		fileRepository,
-		scoreRepository,
-		fileStorage,
-	)
-
-	score, err := service.UploadScore(
-		songID,
-		versionID,
-		"new.pdf",
-		nil,
-	)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if score.ID != scoreID {
-		t.Error("expected existing score ID to be preserved")
-	}
-
-	if score.SongVersionID != versionID {
-		t.Error("expected score to contain correct song version ID")
-	}
-
-	if score.FileID == oldFileID {
-		t.Error("expected score to contain a new file ID")
-	}
-
-	if len(fileStorage.deletedFileIDs) != 1 {
-		t.Fatalf("expected old file to be deleted from storage, got %d", len(fileStorage.deletedFileIDs))
-	}
-
-	if fileStorage.deletedFileIDs[0] != oldFileID {
-		t.Error("expected old file to be deleted from storage")
-	}
-
-	if len(fileRepository.deletedFileIDs) != 1 {
-		t.Fatalf("expected old file metadata to be deleted, got %d", len(fileRepository.deletedFileIDs))
-	}
-
-	if fileRepository.deletedFileIDs[0] != oldFileID {
-		t.Error("expected old file metadata to be deleted")
-	}
-}
-
-func TestSongVersionService_UploadScore_ScoreUpdateError(t *testing.T) {
-	songID := ulid.Make()
-	versionID := ulid.Make()
-
-	oldFileID := ulid.Make()
-	scoreID := ulid.Make()
 
 	repository := &mockSongVersionRepository{
 		songVersions: []domain.SongVersion{
@@ -762,26 +607,17 @@ func TestSongVersionService_UploadScore_ScoreUpdateError(t *testing.T) {
 		},
 	}
 
-	fileRepository := &mockFileRepository{
-		files: []domain.File{
-			{
-				ID:   oldFileID,
-				Name: "old-score.pdf",
-			},
-		},
-	}
-
 	scoreRepository := &mockScoreRepository{
 		scores: []domain.Score{
 			{
-				ID:            scoreID,
+				ID:            ulid.Make(),
 				SongVersionID: versionID,
-				FileID:        oldFileID,
+				FileID:        ulid.Make(),
 			},
 		},
-		updateErr: errors.New("database error"),
 	}
 
+	fileRepository := &mockFileRepository{}
 	fileStorage := &mockFileStorage{}
 
 	service := NewSongVersionService(
@@ -795,41 +631,161 @@ func TestSongVersionService_UploadScore_ScoreUpdateError(t *testing.T) {
 	_, err := service.UploadScore(
 		songID,
 		versionID,
+		"test.pdf",
+		nil,
+	)
+
+	if !errors.Is(err, ErrConflictingOperation) {
+		t.Fatalf(
+			"expected error %q, got %q",
+			ErrConflictingOperation,
+			err,
+		)
+	}
+
+	if len(fileStorage.savedFileIDs) != 0 {
+		t.Error("expected no file to be saved")
+	}
+}
+
+func Test_WhenScoreExistsThenUpdateScoreReplacesScoreFile(t *testing.T) {
+	songID := ulid.Make()
+	versionID := ulid.Make()
+	scoreID := ulid.Make()
+	oldFileID := ulid.Make()
+
+	repository := &mockSongVersionRepository{
+		songVersions: []domain.SongVersion{
+			{
+				ID:          versionID,
+				SongID:      songID,
+				PublishedAt: nil,
+			},
+		},
+	}
+
+	scoreRepository := &mockScoreRepository{
+		scores: []domain.Score{
+			{
+				ID:            scoreID,
+				SongVersionID: versionID,
+				FileID:        oldFileID,
+			},
+		},
+	}
+
+	fileRepository := &mockFileRepository{}
+	fileStorage := &mockFileStorage{}
+
+	service := NewSongVersionService(
+		repository,
+		&mockSongRepository{},
+		fileRepository,
+		scoreRepository,
+		fileStorage,
+	)
+
+	score, err := service.UpdateScore(
+		songID,
+		versionID,
 		"new-score.pdf",
 		strings.NewReader("new pdf content"),
 	)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	if err == nil {
-		t.Fatal("expected error, got nil")
+	if score.ID != scoreID {
+		t.Errorf(
+			"expected score ID %q, got %q",
+			scoreID.String(),
+			score.ID.String(),
+		)
+	}
+
+	if score.FileID == oldFileID {
+		t.Error("expected score to reference a new file")
 	}
 
 	if len(fileStorage.savedFileIDs) != 1 {
-		t.Fatalf("expected 1 saved file, got %d", len(fileStorage.savedFileIDs))
+		t.Fatalf(
+			"expected 1 file to be saved, got %d",
+			len(fileStorage.savedFileIDs),
+		)
 	}
 
 	newFileID := fileStorage.savedFileIDs[0]
 
-	if len(fileRepository.deletedFileIDs) != 1 {
-		t.Fatalf("expected 1 deleted file metadata record, got %d", len(fileRepository.deletedFileIDs))
-	}
-
-	if fileRepository.deletedFileIDs[0] != newFileID {
-		t.Fatalf("expected deleted file %s, got %s", newFileID, fileRepository.deletedFileIDs[0])
-	}
-
-	if len(fileStorage.deletedFileIDs) != 1 {
-		t.Fatalf("expected 1 deleted file, got %d", len(fileStorage.deletedFileIDs))
-	}
-
-	if fileStorage.deletedFileIDs[0] != newFileID {
-		t.Fatalf("expected deleted file %s, got %s", newFileID, fileStorage.deletedFileIDs[0])
+	if score.FileID != newFileID {
+		t.Error("expected score to reference the new file")
 	}
 
 	if len(fileRepository.deletedFileIDs) != 1 {
-		t.Fatalf("expected only new file metadata to be deleted, got %d deletions", len(fileRepository.deletedFileIDs))
+		t.Fatalf(
+			"expected old file metadata to be deleted, got %d deletions",
+			len(fileRepository.deletedFileIDs),
+		)
+	}
+
+	if fileRepository.deletedFileIDs[0] != oldFileID {
+		t.Error("expected old file metadata to be deleted")
 	}
 
 	if len(fileStorage.deletedFileIDs) != 1 {
-		t.Fatalf("expected only new file to be deleted, got %d deletions", len(fileStorage.deletedFileIDs))
+		t.Fatalf(
+			"expected old file to be deleted, got %d deletions",
+			len(fileStorage.deletedFileIDs),
+		)
+	}
+
+	if fileStorage.deletedFileIDs[0] != oldFileID {
+		t.Error("expected old file to be deleted")
+	}
+}
+
+func Test_WhenScoreDoesNotExistThenUpdateScoreReturnsScoreNotFound(t *testing.T) {
+	songID := ulid.Make()
+	versionID := ulid.Make()
+
+	repository := &mockSongVersionRepository{
+		songVersions: []domain.SongVersion{
+			{
+				ID:          versionID,
+				SongID:      songID,
+				PublishedAt: nil,
+			},
+		},
+	}
+
+	scoreRepository := &mockScoreRepository{}
+
+	fileRepository := &mockFileRepository{}
+	fileStorage := &mockFileStorage{}
+
+	service := NewSongVersionService(
+		repository,
+		&mockSongRepository{},
+		fileRepository,
+		scoreRepository,
+		fileStorage,
+	)
+
+	_, err := service.UpdateScore(
+		songID,
+		versionID,
+		"score.pdf",
+		strings.NewReader("pdf content"),
+	)
+
+	if !errors.Is(err, ErrScoreNotFound) {
+		t.Fatalf(
+			"expected error %q, got %q",
+			ErrScoreNotFound,
+			err,
+		)
+	}
+
+	if len(fileStorage.savedFileIDs) != 0 {
+		t.Error("expected no file to be saved")
 	}
 }
