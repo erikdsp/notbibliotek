@@ -306,17 +306,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
       parameters:
-        - name: song_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-        - name: version_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
+        - $ref: "#/components/parameters/songId"
+        - $ref: "#/components/parameters/versionId"
       requestBody:
+        required: true
         content:
           multipart/form-data:
             schema:
@@ -354,24 +347,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
       parameters:
-        - name: song_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-        - name: version_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
+        - $ref: "#/components/parameters/songId"
+        - $ref: "#/components/parameters/versionId"
       requestBody:
+        required: true
         content:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/UploadScoreRequest'
       security:
         - adminAuth: []
-  /songs/{song_id}/versions/{version_id}/part:
+  /songs/{song_id}/versions/{version_id}/part/{key}:
     post:
       tags:
         - Song Versions
@@ -397,23 +383,65 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: Song not found.
+          description: Song, or song version not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Part already uploaded. Use put to replace.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
       parameters:
-        - name: song_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-        - name: version_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
+        - $ref: "#/components/parameters/songId"
+        - $ref: "#/components/parameters/versionId"
+        - $ref: "#/components/parameters/key"
       requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadPartRequest'
+      security:
+        - adminAuth: []
+    put:
+      tags:
+        - Song Versions
+      summary: Replace part
+      operationId: replace-part
+      responses:
+        '200':
+          description: Part replaced.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Part'
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Song, song version or part not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      parameters:
+        - $ref: "#/components/parameters/songId"
+        - $ref: "#/components/parameters/versionId"
+        - $ref: "#/components/parameters/key"
+      requestBody:
+        required: true
         content:
           multipart/form-data:
             schema:
@@ -1103,6 +1131,24 @@ components:
       required:
         - files
   parameters: 
+    songId:
+      name: song_id
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/ULID"
+    versionId:
+      name: version_id
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/ULID"
+    key:
+      name: key
+      in: path
+      required: true
+      schema:
+        type: string
     archivedQuery:
       name: archived
       in: query
