@@ -35,11 +35,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/SongResponse'
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
       parameters:
         - $ref: "#/components/parameters/archivedQuery"
         - $ref: "#/components/parameters/searchQuery"
@@ -63,17 +59,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Song'
         '400':
-          description: Invalid request.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/BadRequest"
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
       requestBody:
         content:
           application/json:
@@ -96,11 +84,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SongResponse'
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
       parameters:
         - name: song_id
           in: path
@@ -125,17 +109,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Song'
         '400':
-          description: Invalid request.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/BadRequest"
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
         '404':
           description: Song not found.
           content:
@@ -170,17 +146,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/PdfContent'
         '400':
-          description: Invalid request.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'        
+          $ref: "#/components/responses/BadRequest"  
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
         '404':
           description: File not found.
           content:
@@ -210,17 +178,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ZipContent'
         '400':
-          description: Invalid request.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'        
+          $ref: "#/components/responses/BadRequest"      
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
         '404':
           description: File not found.
           content:
@@ -249,17 +209,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/SongVersion'
         '400':
-          description: Invalid request.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/BadRequest"
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
       parameters:
         - name: song_id
           in: path
@@ -282,17 +234,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Score'
         '400':
-          description: Invalid request.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/BadRequest"
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
         '404':
           description: Song not found.
           content:
@@ -329,17 +273,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Score'
         '400':
-          description: Invalid request.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/BadRequest"
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
         '404':
           description: Song not found.
           content:
@@ -371,17 +307,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Part'
         '400':
-          description: Invalid request.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/BadRequest"
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
         '404':
           description: Song, or song version not found.
           content:
@@ -419,17 +347,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Part'
         '400':
-          description: Invalid request.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/BadRequest"
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
         '404':
           description: Song, song version or part not found.
           content:
@@ -462,11 +382,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Version'
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
         '404':
           description: Resource not found.
           content:
@@ -502,11 +418,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Instrument'
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
       security:
         - libraryAccess: []
     post:
@@ -522,17 +434,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Instrument'
         '400':
-          description: Invalid request.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/BadRequest"
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
       requestBody:
         content:
           application/json:
@@ -550,11 +454,7 @@ paths:
         '200':
           description: Instrument deleted.
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
         '404':
           description: Instrument not found.
           content:
@@ -579,17 +479,9 @@ paths:
         '201':
           description: Part Instrument created.
         '400':
-          description: Invalid request.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/BadRequest"
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
         '404':
           description: Part not found.
           content:
@@ -619,11 +511,7 @@ paths:
         '200':
           description: Part instrument deleted.
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
         '404':
           description: Resource not found.
           content:
@@ -659,11 +547,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/ConcertResponse'
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
       security:
         - libraryAccess: []
     post:
@@ -679,17 +563,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Concert'
         '400':
-          description: Invalid request.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/BadRequest"
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
       requestBody:
         content:
           application/json:
@@ -711,11 +587,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ConcertResponse'
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
         '404':
           description: Concert not found.
           content:
@@ -743,17 +615,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Concert'
         '400':
-          description: Invalid request.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/BadRequest"
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
         '404':
           description: Concert not found.
           content:
@@ -787,17 +651,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Song'
         '400':
-          description: Invalid request.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/BadRequest"
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
         '404':
           description: Resource not found.
           content:
@@ -827,11 +683,7 @@ paths:
         '200':
           description: Song removed from concert.
         '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: "#/components/responses/AuthenticationRequired"
         '404':
           description: Resource not found.
           content:
@@ -1193,6 +1045,19 @@ components:
       schema:
         type: boolean
         default: true
+  responses: 
+    BadRequest:
+      description: Invalid request.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    AuthenticationRequired:
+      description: Authentication required.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
   securitySchemes:
     adminAuth:
       type: http
