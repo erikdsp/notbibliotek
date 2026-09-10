@@ -84,6 +84,10 @@ func (h *SongVersionHandler) UploadScore(w http.ResponseWriter, r *http.Request)
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
+		if errors.Is(err, application.ErrConflictingOperation) {
+			http.Error(w, "a score is already uploaded", http.StatusConflict)
+			return
+		}
 
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return

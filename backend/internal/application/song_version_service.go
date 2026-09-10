@@ -1,7 +1,6 @@
 package application
 
 import (
-	"errors"
 	"io"
 	"log"
 
@@ -63,6 +62,11 @@ func (s *SongVersionService) UploadScore(songID ulid.ULID, versionID ulid.ULID,
 		return domain.Score{}, ErrInvalidOperation
 	}
 
+	_, err = s.scoreRepository.GetBySongVersionID(versionID)
+	if err == nil {
+		return domain.Score{}, ErrConflictingOperation
+	}
+
 	fileID := ulid.Make()
 
 	fileStorageRollback := func() {
@@ -90,25 +94,13 @@ func (s *SongVersionService) UploadScore(songID ulid.ULID, versionID ulid.ULID,
 		return domain.Score{}, err
 	}
 
-	prevScore, err := s.scoreRepository.GetBySongVersionID(versionID)
-
-	if errors.Is(err, ErrScoreNotFound) {
-		score := domain.Score{
-			ID:            ulid.Make(),
-			SongVersionID: versionID,
-			FileID:        fileID,
-		}
-
-		err = s.scoreRepository.Create(score)
-
-		if err != nil {
-			fileRepositoryRollback()
-			fileStorageRollback()
-			return domain.Score{}, err
-		}
-
-		return score, nil
+	score := domain.Score{
+		ID:            ulid.Make(),
+		SongVersionID: versionID,
+		FileID:        fileID,
 	}
+
+	err = s.scoreRepository.Create(score)
 
 	if err != nil {
 		fileRepositoryRollback()
@@ -116,24 +108,6 @@ func (s *SongVersionService) UploadScore(songID ulid.ULID, versionID ulid.ULID,
 		return domain.Score{}, err
 	}
 
-	oldFileID := prevScore.FileID
-	prevScore.FileID = fileID
-
-	err = s.scoreRepository.Update(prevScore)
-	if err != nil {
-		fileRepositoryRollback()
-		fileStorageRollback()
-		return domain.Score{}, err
-	}
-
-	if err := s.fileRepository.Delete(oldFileID); err != nil {
-		log.Printf("failed to delete old file metadata %s: %v", oldFileID, err)
-	}
-
-	if err := s.fileStorage.Delete(oldFileID); err != nil {
-		log.Printf("failed to delete old file %s: %v", oldFileID, err)
-	}
-
-	return prevScore, nil
+	return score, nil
 
 }
