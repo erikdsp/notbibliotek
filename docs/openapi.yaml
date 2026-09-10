@@ -299,6 +299,60 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: A score already exists. Use put for replacements.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      parameters:
+        - name: song_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"
+        - name: version_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadScoreRequest'
+      security:
+        - adminAuth: []
+    put:
+      tags:
+        - Song Versions
+      summary: Replace score
+      operationId: replace-score
+      responses:
+        '200':
+          description: New Score uploaded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Score'
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Song not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       parameters:
         - name: song_id
           in: path
