@@ -9,7 +9,7 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
-func TestLocalFileStorage_Save(t *testing.T) {
+func Test_WhenSaveIsCalledThenLocalFileStorageSavesACopyOfTheFile(t *testing.T) {
 	baseDir := t.TempDir()
 
 	storage := NewLocalFileStorage(baseDir)
@@ -34,7 +34,7 @@ func TestLocalFileStorage_Save(t *testing.T) {
 	}
 }
 
-func TestLocalFileStorage_Load(t *testing.T) {
+func TestWhenLoadIsCalledWithValidFileIDThenLocalFileStorageReturnsCorrectContent(t *testing.T) {
 	baseDir := t.TempDir()
 
 	storage := NewLocalFileStorage(baseDir)
@@ -63,7 +63,7 @@ func TestLocalFileStorage_Load(t *testing.T) {
 	}
 }
 
-func TestLocalFileStorage_Delete(t *testing.T) {
+func Test_WhenDeletIsCalledWithExistingFileIDThenLocalFileStorageDeletesTheFile(t *testing.T) {
 	baseDir := t.TempDir()
 	storage := NewLocalFileStorage(baseDir)
 
