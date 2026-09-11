@@ -3,6 +3,7 @@ package application
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/erikdsp/notbibliotek/backend/internal/domain"
 	"github.com/oklog/ulid/v2"
@@ -33,14 +34,22 @@ func (m *mockSongRepository) GetByID(id ulid.ULID) (domain.Song, error) {
 func (m *mockSongRepository) GetAll(archived bool) ([]domain.Song, error) {
 	m.archivedArg = archived
 	m.getAllCalled = true
-	return m.songs, m.err
+
+	songs := []domain.Song{}
+	for _, song := range m.songs {
+		if song.ArchivedAt == nil {
+			songs = append(songs, song)
+		}
+	}
+
+	return songs, m.err
 }
 
 func (m *mockSongRepository) Update(song domain.Song) error {
 	return m.err
 }
 
-func TestSongService_CreateSong(t *testing.T) {
+func Test_WhenCreateSongIsCalledThenSongServiceCreatesASong(t *testing.T) {
 	repository := &mockSongRepository{}
 	service := NewSongService(repository)
 
@@ -76,7 +85,7 @@ func TestSongService_CreateSong(t *testing.T) {
 	}
 }
 
-func TestSongService_CreateSong_RepositoryError(t *testing.T) {
+func Test_WhenSongRepositoryReturnsErrorThenCreateSongAlsoReturnsError(t *testing.T) {
 	expectedErr := errors.New("database error")
 
 	repository := &mockSongRepository{
@@ -91,7 +100,7 @@ func TestSongService_CreateSong_RepositoryError(t *testing.T) {
 	}
 }
 
-func TestSongService_GetSongByID(t *testing.T) {
+func Test_WhenGetSongByIDIsCalledWithValidIDThenSongServiceReturnsSongWithThatIDAndTitle(t *testing.T) {
 	song := domain.Song{
 		ID:    ulid.Make(),
 		Title: "Test Song",
@@ -128,7 +137,7 @@ func TestSongService_GetSongByID(t *testing.T) {
 	}
 }
 
-func TestSongService_GetAllSongs(t *testing.T) {
+func Test_WhenGetAllSongsIsCalledWithEmptyQueryThenAllNonArchivedSongsAreReturned(t *testing.T) {
 	song := domain.Song{
 		ID:    ulid.Make(),
 		Title: "Test Song",
@@ -139,8 +148,15 @@ func TestSongService_GetAllSongs(t *testing.T) {
 		Title: "Test Song 2",
 	}
 
+	now := time.Now()
+	archivedSong := domain.Song{
+		ID:         ulid.Make(),
+		Title:      "Archived Song",
+		ArchivedAt: &now,
+	}
+
 	repository := &mockSongRepository{
-		songs: []domain.Song{song, song2},
+		songs: []domain.Song{song, song2, archivedSong},
 	}
 
 	service := NewSongService(repository)
@@ -179,7 +195,7 @@ func TestSongService_GetAllSongs(t *testing.T) {
 	}
 }
 
-func TestSongService_GetAllSongs_Archived(t *testing.T) {
+func TestWhenGetAllSongsIsCalledWithArchivedFlagThenSongRepositoryGetAllIsCalledWithArchivedTrue(t *testing.T) {
 	repository := &mockSongRepository{}
 
 	service := NewSongService(repository)
@@ -202,7 +218,7 @@ func TestSongService_GetAllSongs_Archived(t *testing.T) {
 	}
 }
 
-func TestSongService_GetAllSongs_RepositoryError(t *testing.T) {
+func TestWhenSongRepositoryReturnsErrorThenGetAllSongsAlsoReturnsError(t *testing.T) {
 	expectedErr := errors.New("database error")
 
 	repository := &mockSongRepository{
@@ -217,7 +233,7 @@ func TestSongService_GetAllSongs_RepositoryError(t *testing.T) {
 	}
 }
 
-func TestSongService_UpdateSong(t *testing.T) {
+func Test_WhenUpdateSongIsCalledWithNewTitleThenTheSongTitleIsUpdated(t *testing.T) {
 	song := domain.Song{
 		ID:    ulid.Make(),
 		Title: "Test Song",
@@ -263,6 +279,20 @@ func TestSongService_UpdateSong(t *testing.T) {
 		)
 	}
 
+}
+
+func TestWhenUpdateSongIsCalledWithArchivedTrueThenTheSongIsArchived(t *testing.T) {
+	song := domain.Song{
+		ID:    ulid.Make(),
+		Title: "Test Song",
+	}
+
+	repository := &mockSongRepository{
+		songs: []domain.Song{song},
+	}
+
+	service := NewSongService(repository)
+
 	archived := true
 
 	archivedSongFromService, err := service.UpdateSong(
@@ -278,9 +308,23 @@ func TestSongService_UpdateSong(t *testing.T) {
 		t.Error("expected song to be archived")
 	}
 
-	archived = false
+}
 
-	archivedSongFromService, err = service.UpdateSong(
+func TestWhenUpdateSongIsCalledWithArchivedFalseThenTheSongIsUnArchived(t *testing.T) {
+	song := domain.Song{
+		ID:    ulid.Make(),
+		Title: "Test Song",
+	}
+
+	repository := &mockSongRepository{
+		songs: []domain.Song{song},
+	}
+
+	service := NewSongService(repository)
+
+	archived := false
+
+	archivedSongFromService, err := service.UpdateSong(
 		song.ID,
 		nil,
 		&archived,
