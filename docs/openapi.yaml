@@ -998,6 +998,7 @@ components:
     key:
       name: key
       in: path
+      description: "Key, must be unique for song version. Example: violin1"
       required: true
       schema:
         type: string
