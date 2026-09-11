@@ -14,17 +14,20 @@ type SongVersionService struct {
 	songRepository  SongRepository
 	fileRepository  FileRepository
 	scoreRepository ScoreRepository
+	partRepository  PartRepository
 	fileStorage     FileStorage
 }
 
 func NewSongVersionService(repository SongVersionRepository,
 	songRepository SongRepository, fileRepository FileRepository,
-	scoreRepository ScoreRepository, fileStorage FileStorage) *SongVersionService {
+	scoreRepository ScoreRepository, partRepository PartRepository,
+	fileStorage FileStorage) *SongVersionService {
 	return &SongVersionService{
 		repository:      repository,
 		songRepository:  songRepository,
 		fileRepository:  fileRepository,
 		scoreRepository: scoreRepository,
+		partRepository:  partRepository,
 		fileStorage:     fileStorage,
 	}
 }
@@ -176,5 +179,71 @@ func (s *SongVersionService) UpdateScore(songID ulid.ULID, versionID ulid.ULID,
 	}
 
 	return score, nil
+
+}
+
+func (s *SongVersionService) UploadPart(songID ulid.ULID, versionID ulid.ULID,
+	key string, partName string, fileName string, file io.Reader) (domain.Part, error) {
+
+	version, err := s.repository.GetByID(versionID)
+	if err != nil {
+		return domain.Part{}, err
+	}
+	if version.SongID != songID {
+		return domain.Part{}, ErrInvalidSongID
+	}
+	if version.PublishedAt != nil {
+		return domain.Part{}, ErrInvalidOperation
+	}
+
+	_, err = s.partRepository.GetBySongVersionIDAndKey(versionID, key)
+	if err == nil {
+		return domain.Part{}, ErrConflictingOperation
+	}
+
+	fileID := ulid.Make()
+
+	fileStorageRollback := func() {
+		if deleteErr := s.fileStorage.Delete(fileID); deleteErr != nil {
+			log.Printf("failed to delete file %s: %v during rollback", fileID, deleteErr)
+		}
+	}
+
+	fileRepositoryRollback := func() {
+		if deleteErr := s.fileRepository.Delete(fileID); deleteErr != nil {
+			log.Printf("failed to delete file metadata %s: %v during rollback", fileID, deleteErr)
+		}
+	}
+
+	err = s.fileStorage.Save(fileID, file)
+	if err != nil {
+		return domain.Part{}, err
+	}
+
+	err = s.fileRepository.Create(domain.File{ID: fileID, Name: fileName})
+
+	if err != nil {
+		fileStorageRollback()
+
+		return domain.Part{}, err
+	}
+
+	part := domain.Part{
+		ID:            ulid.Make(),
+		Key:           key,
+		Name:          partName,
+		SongVersionID: versionID,
+		FileID:        fileID,
+	}
+
+	err = s.partRepository.Create(part)
+
+	if err != nil {
+		fileRepositoryRollback()
+		fileStorageRollback()
+		return domain.Part{}, err
+	}
+
+	return part, nil
 
 }

@@ -33,11 +33,13 @@ func main() {
 
 	fileRepository := postgres.NewPostgresFileRepository(db)
 	scoreRepository := postgres.NewPostgresScoreRepository(db)
+	partRepository := postgres.NewPostgresPartRepository(db)
 
 	songVersionRepository := postgres.NewPostgresSongVersionRepository(db)
 	fileStorage := filestorage.NewLocalFileStorage("./backend/data/files")
 
-	songVersionService := application.NewSongVersionService(songVersionRepository, songRepository, fileRepository, scoreRepository, fileStorage)
+	songVersionService := application.NewSongVersionService(songVersionRepository,
+		songRepository, fileRepository, scoreRepository, partRepository, fileStorage)
 	songVersionHandler := httpHandler.NewSongVersionHandler(songVersionService)
 
 	router := httpHandler.NewRouter(songHandler, songVersionHandler)

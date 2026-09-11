@@ -127,6 +127,48 @@ func (m *mockScoreRepository) Update(score domain.Score) error {
 	return ErrScoreNotFound
 }
 
+type MockPartRepository struct {
+	parts                 []domain.Part
+	err                   error
+	getByVersionAndKeyErr error
+	updateErr             error
+}
+
+func (m *MockPartRepository) Create(part domain.Part) error {
+	if m.err != nil {
+		return m.err
+	}
+
+	m.parts = append(m.parts, part)
+	return nil
+}
+
+func (m *MockPartRepository) GetByID(id ulid.ULID) (domain.Part, error) {
+	for _, part := range m.parts {
+		if part.ID == id {
+			return part, nil
+		}
+	}
+	return domain.Part{}, ErrPartNotFound
+}
+
+func (m *MockPartRepository) GetBySongVersionIDAndKey(songVersionID ulid.ULID, key string) (domain.Part, error) {
+	if m.getByVersionAndKeyErr != nil {
+		return domain.Part{}, m.getByVersionAndKeyErr
+	}
+
+	for _, part := range m.parts {
+		if part.SongVersionID == songVersionID {
+			return part, nil
+		}
+	}
+	return domain.Part{}, ErrPartNotFound
+}
+
+func (m *MockPartRepository) Update(part domain.Part) error {
+	return nil
+}
+
 type mockFileStorage struct {
 	savedFileIDs   []ulid.ULID
 	deletedFileIDs []ulid.ULID
@@ -169,12 +211,14 @@ func Test_WhenSongExistsThenCreateSongVersionCreatesSongVersion(t *testing.T) {
 	scoreRepository := &mockScoreRepository{}
 	fileStorage := &mockFileStorage{}
 	repository := &mockSongVersionRepository{}
+	partRepository := &MockPartRepository{}
 
 	service := NewSongVersionService(
 		repository,
 		songRepository,
 		fileRepository,
 		scoreRepository,
+		partRepository,
 		fileStorage,
 	)
 
@@ -210,6 +254,7 @@ func Test_WhenSongDoesNotExistThenCreateSongVersionDoesNotCreateSongVersion(t *t
 	repository := &mockSongVersionRepository{}
 	fileRepository := &mockFileRepository{}
 	scoreRepository := &mockScoreRepository{}
+	partRepository := &MockPartRepository{}
 	fileStorage := &mockFileStorage{}
 
 	service := NewSongVersionService(
@@ -217,6 +262,7 @@ func Test_WhenSongDoesNotExistThenCreateSongVersionDoesNotCreateSongVersion(t *t
 		songRepository,
 		fileRepository,
 		scoreRepository,
+		partRepository,
 		fileStorage,
 	)
 
@@ -255,6 +301,7 @@ func Test_WhenSongVersionRepositoryReturnsErrorThenCreateSongVersionAlsoReturnsE
 
 	fileRepository := &mockFileRepository{}
 	scoreRepository := &mockScoreRepository{}
+	partRepository := &MockPartRepository{}
 	fileStorage := &mockFileStorage{}
 
 	service := NewSongVersionService(
@@ -262,6 +309,7 @@ func Test_WhenSongVersionRepositoryReturnsErrorThenCreateSongVersionAlsoReturnsE
 		songRepository,
 		fileRepository,
 		scoreRepository,
+		partRepository,
 		fileStorage,
 	)
 
@@ -290,6 +338,7 @@ func Test_WhenSongVersionServiceUploadsValidScoreThenUploadScoreCreatesTheExpect
 
 	fileRepository := &mockFileRepository{}
 	scoreRepository := &mockScoreRepository{}
+	partRepository := &MockPartRepository{}
 	fileStorage := &mockFileStorage{}
 
 	service := NewSongVersionService(
@@ -297,6 +346,7 @@ func Test_WhenSongVersionServiceUploadsValidScoreThenUploadScoreCreatesTheExpect
 		&mockSongRepository{},
 		fileRepository,
 		scoreRepository,
+		partRepository,
 		fileStorage,
 	)
 
@@ -366,6 +416,7 @@ func Test_WhenSongVersionDoesNotExistThenUploadScoreReturnsSongVersionNotFound(t
 
 	fileRepository := &mockFileRepository{}
 	scoreRepository := &mockScoreRepository{}
+	partRepository := &MockPartRepository{}
 	fileStorage := &mockFileStorage{}
 
 	service := NewSongVersionService(
@@ -373,6 +424,7 @@ func Test_WhenSongVersionDoesNotExistThenUploadScoreReturnsSongVersionNotFound(t
 		&mockSongRepository{},
 		fileRepository,
 		scoreRepository,
+		partRepository,
 		fileStorage,
 	)
 
@@ -412,6 +464,7 @@ func Test_WhenSongVersionBelongsToTheWrongSongThenUploadScoreReturnsErrInvalidSo
 
 	fileRepository := &mockFileRepository{}
 	scoreRepository := &mockScoreRepository{}
+	partRepository := &MockPartRepository{}
 	fileStorage := &mockFileStorage{}
 
 	service := NewSongVersionService(
@@ -419,6 +472,7 @@ func Test_WhenSongVersionBelongsToTheWrongSongThenUploadScoreReturnsErrInvalidSo
 		&mockSongRepository{},
 		fileRepository,
 		scoreRepository,
+		partRepository,
 		fileStorage,
 	)
 
@@ -459,6 +513,7 @@ func Test_WhenFileStorageReturnsErrorThenSongVersionServiceUploadScoreAlsoReturn
 
 	fileRepository := &mockFileRepository{}
 	scoreRepository := &mockScoreRepository{}
+	partRepository := &MockPartRepository{}
 	fileStorage := &mockFileStorage{
 		saveErr: storageError,
 	}
@@ -468,6 +523,7 @@ func Test_WhenFileStorageReturnsErrorThenSongVersionServiceUploadScoreAlsoReturn
 		&mockSongRepository{},
 		fileRepository,
 		scoreRepository,
+		partRepository,
 		fileStorage,
 	)
 
@@ -515,6 +571,7 @@ func Test_WhenFileRepositoryReturnsErrorThenSongVersionServiceUploadScoreAlsoRet
 	}
 
 	scoreRepository := &mockScoreRepository{}
+	partRepository := &MockPartRepository{}
 	fileStorage := &mockFileStorage{}
 
 	service := NewSongVersionService(
@@ -522,6 +579,7 @@ func Test_WhenFileRepositoryReturnsErrorThenSongVersionServiceUploadScoreAlsoRet
 		&mockSongRepository{},
 		fileRepository,
 		scoreRepository,
+		partRepository,
 		fileStorage,
 	)
 
@@ -572,6 +630,7 @@ func Test_WhenSongVersionIsAlreadyPublishedThenSongVersionServiceUploadScoreRetu
 
 	fileRepository := &mockFileRepository{}
 	scoreRepository := &mockScoreRepository{}
+	partRepository := &MockPartRepository{}
 	fileStorage := &mockFileStorage{}
 
 	service := NewSongVersionService(
@@ -579,6 +638,7 @@ func Test_WhenSongVersionIsAlreadyPublishedThenSongVersionServiceUploadScoreRetu
 		&mockSongRepository{},
 		fileRepository,
 		scoreRepository,
+		partRepository,
 		fileStorage,
 	)
 
@@ -617,6 +677,8 @@ func Test_WhenScoreAlreadyExistsThenUploadScoreReturnsErrConflictingOperation(t 
 		},
 	}
 
+	partRepository := &MockPartRepository{}
+
 	fileRepository := &mockFileRepository{}
 	fileStorage := &mockFileStorage{}
 
@@ -625,6 +687,7 @@ func Test_WhenScoreAlreadyExistsThenUploadScoreReturnsErrConflictingOperation(t 
 		&mockSongRepository{},
 		fileRepository,
 		scoreRepository,
+		partRepository,
 		fileStorage,
 	)
 
@@ -674,6 +737,7 @@ func Test_WhenScoreExistsThenUpdateScoreReplacesScoreFile(t *testing.T) {
 		},
 	}
 
+	partRepository := &MockPartRepository{}
 	fileRepository := &mockFileRepository{}
 	fileStorage := &mockFileStorage{}
 
@@ -682,6 +746,7 @@ func Test_WhenScoreExistsThenUpdateScoreReplacesScoreFile(t *testing.T) {
 		&mockSongRepository{},
 		fileRepository,
 		scoreRepository,
+		partRepository,
 		fileStorage,
 	)
 
@@ -758,7 +823,7 @@ func Test_WhenScoreDoesNotExistThenUpdateScoreReturnsScoreNotFound(t *testing.T)
 	}
 
 	scoreRepository := &mockScoreRepository{}
-
+	partRepository := &MockPartRepository{}
 	fileRepository := &mockFileRepository{}
 	fileStorage := &mockFileStorage{}
 
@@ -767,6 +832,7 @@ func Test_WhenScoreDoesNotExistThenUpdateScoreReturnsScoreNotFound(t *testing.T)
 		&mockSongRepository{},
 		fileRepository,
 		scoreRepository,
+		partRepository,
 		fileStorage,
 	)
 
@@ -787,5 +853,209 @@ func Test_WhenScoreDoesNotExistThenUpdateScoreReturnsScoreNotFound(t *testing.T)
 
 	if len(fileStorage.savedFileIDs) != 0 {
 		t.Error("expected no file to be saved")
+	}
+}
+
+func Test_WhenUploadingValidPartThenUploadPartCreatesTheExpectedPart(t *testing.T) {
+	songID := ulid.Make()
+	versionID := ulid.Make()
+	key := "partkey"
+	name := "Part Name"
+
+	repository := &mockSongVersionRepository{
+		songVersions: []domain.SongVersion{
+			{
+				ID:     versionID,
+				SongID: songID,
+			},
+		},
+	}
+
+	fileRepository := &mockFileRepository{}
+	scoreRepository := &mockScoreRepository{}
+	partRepository := &MockPartRepository{}
+	fileStorage := &mockFileStorage{}
+
+	service := NewSongVersionService(
+		repository,
+		&mockSongRepository{},
+		fileRepository,
+		scoreRepository,
+		partRepository,
+		fileStorage,
+	)
+
+	part, err := service.UploadPart(
+		songID,
+		versionID,
+		key,
+		name,
+		"test.pdf",
+		nil,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(fileStorage.savedFileIDs) != 1 {
+		t.Fatalf(
+			"expected storage to save 1 file, got %d",
+			len(fileStorage.savedFileIDs),
+		)
+	}
+
+	fileID := fileStorage.savedFileIDs[0]
+
+	if len(fileRepository.files) != 1 {
+		t.Fatalf(
+			"expected file repository to contain 1 file, got %d",
+			len(fileRepository.files),
+		)
+	}
+
+	if fileRepository.files[0].ID != fileID {
+		t.Error("expected file repository to contain the saved file ID")
+	}
+
+	if fileRepository.files[0].Name != "test.pdf" {
+		t.Error("expected file repository to contain the correct file name")
+	}
+
+	if len(partRepository.parts) != 1 {
+		t.Fatalf(
+			"expected part repository to contain 1 part, got %d",
+			len(partRepository.parts),
+		)
+	}
+
+	if part.FileID != fileID {
+		t.Error("expected part to contain the correct file ID")
+	}
+
+	if part.SongVersionID != versionID {
+		t.Error("expected part to contain the correct song version ID")
+	}
+
+	if len(fileRepository.deletedFileIDs) != 0 {
+		t.Error("expected no file repository rollback")
+	}
+
+	if len(fileStorage.deletedFileIDs) != 0 {
+		t.Error("expected no file storage rollback")
+	}
+}
+
+func Test_WhenUploadingPartWithAlreadyExistingKeyThenUploadPartReturnsError(t *testing.T) {
+	songID := ulid.Make()
+	versionID := ulid.Make()
+	key := "partkey"
+	name := "Part Name"
+
+	repository := &mockSongVersionRepository{
+		songVersions: []domain.SongVersion{
+			{
+				ID:     versionID,
+				SongID: songID,
+			},
+		},
+	}
+
+	fileRepository := &mockFileRepository{}
+	scoreRepository := &mockScoreRepository{}
+	partRepository := &MockPartRepository{
+		parts: []domain.Part{
+			{
+				ID:            ulid.Make(),
+				Key:           key,
+				Name:          name,
+				SongVersionID: versionID,
+				FileID:        ulid.Make(),
+			},
+		},
+	}
+	fileStorage := &mockFileStorage{}
+
+	service := NewSongVersionService(
+		repository,
+		&mockSongRepository{},
+		fileRepository,
+		scoreRepository,
+		partRepository,
+		fileStorage,
+	)
+
+	_, err := service.UploadPart(
+		songID,
+		versionID,
+		key,
+		name,
+		"test.pdf",
+		nil,
+	)
+	if err == nil {
+		t.Error("expected Upload Part to return error on already existing key")
+	}
+}
+
+func Test_WhenSongVersionDoesNotExistThenUploadPartReturnsSongVersionNotFound(t *testing.T) {
+	songID := ulid.Make()
+	versionID := ulid.Make()
+
+	service := NewSongVersionService(
+		&mockSongVersionRepository{},
+		&mockSongRepository{},
+		&mockFileRepository{},
+		&mockScoreRepository{},
+		&MockPartRepository{},
+		&mockFileStorage{},
+	)
+
+	_, err := service.UploadPart(
+		songID,
+		versionID,
+		"partkey",
+		"Part Name",
+		"test.pdf",
+		nil,
+	)
+
+	if !errors.Is(err, ErrSongVersionNotFound) {
+		t.Fatalf("expected SongVersionNotFound, got %v", err)
+	}
+}
+
+func Test_WhenSongIDDoesNotMatchSongVersionThenUploadPartReturnsInvalidSongID(t *testing.T) {
+	songID := ulid.Make()
+	versionID := ulid.Make()
+
+	repository := &mockSongVersionRepository{
+		songVersions: []domain.SongVersion{
+			{
+				ID:     versionID,
+				SongID: ulid.Make(),
+			},
+		},
+	}
+
+	service := NewSongVersionService(
+		repository,
+		&mockSongRepository{},
+		&mockFileRepository{},
+		&mockScoreRepository{},
+		&MockPartRepository{},
+		&mockFileStorage{},
+	)
+
+	_, err := service.UploadPart(
+		songID,
+		versionID,
+		"partkey",
+		"Part Name",
+		"test.pdf",
+		nil,
+	)
+
+	if !errors.Is(err, ErrInvalidSongID) {
+		t.Fatalf("expected InvalidSongID, got %v", err)
 	}
 }

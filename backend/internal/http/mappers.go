@@ -70,3 +70,13 @@ func toScoreResponse(score domain.Score) ScoreResponse {
 		FileID:        score.FileID,
 	}
 }
+
+func toPartResponse(part domain.Part) PartResponse {
+	return PartResponse{
+		ID:            part.ID,
+		Key:           part.Key,
+		Name:          part.Name,
+		SongVersionID: part.SongVersionID,
+		FileID:        part.FileID,
+	}
+}
