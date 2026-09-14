@@ -25,18 +25,18 @@ func NewSongVersionHandler(service *application.SongVersionService) *SongVersion
 func (h *SongVersionHandler) Create(w http.ResponseWriter, r *http.Request) {
 	songID, err := ulid.Parse(r.PathValue("song_id"))
 	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		writeError(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
 	songVersion, err := h.service.CreateSongVersion(songID)
 	if err != nil {
 		if errors.Is(err, application.ErrSongNotFound) {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			writeError(w, err.Error(), http.StatusNotFound)
 			return
 		}
 
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 
 	}
@@ -50,24 +50,24 @@ func (h *SongVersionHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *SongVersionHandler) UploadScore(w http.ResponseWriter, r *http.Request) {
 	songID, err := ulid.Parse(r.PathValue("song_id"))
 	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		writeError(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
 	versionID, err := ulid.Parse(r.PathValue("version_id"))
 	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		writeError(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
 	if err := parseMultipartForm(w, r); err != nil {
-		http.Error(w, "parse error", http.StatusBadRequest)
+		writeError(w, "parse error", http.StatusBadRequest)
 		return
 	}
 
 	file, fileHeader, err := r.FormFile("file")
 	if err != nil {
-		http.Error(w, "missing file", http.StatusBadRequest)
+		writeError(w, "missing file", http.StatusBadRequest)
 		return
 	}
 	defer file.Close()
@@ -76,15 +76,15 @@ func (h *SongVersionHandler) UploadScore(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		if errors.Is(err, application.ErrSongVersionNotFound) ||
 			errors.Is(err, application.ErrInvalidSongID) {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			writeError(w, err.Error(), http.StatusNotFound)
 			return
 		}
 		if errors.Is(err, application.ErrConflictingOperation) {
-			http.Error(w, "a score is already uploaded", http.StatusConflict)
+			writeError(w, "a score is already uploaded", http.StatusConflict)
 			return
 		}
 
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -99,24 +99,24 @@ func (h *SongVersionHandler) UploadScore(w http.ResponseWriter, r *http.Request)
 func (h *SongVersionHandler) UpdateScore(w http.ResponseWriter, r *http.Request) {
 	songID, err := ulid.Parse(r.PathValue("song_id"))
 	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		writeError(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
 	versionID, err := ulid.Parse(r.PathValue("version_id"))
 	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		writeError(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
 	if err := parseMultipartForm(w, r); err != nil {
-		http.Error(w, "parse error", http.StatusBadRequest)
+		writeError(w, "parse error", http.StatusBadRequest)
 		return
 	}
 
 	file, fileHeader, err := r.FormFile("file")
 	if err != nil {
-		http.Error(w, "missing file", http.StatusBadRequest)
+		writeError(w, "missing file", http.StatusBadRequest)
 		return
 	}
 	defer file.Close()
@@ -126,11 +126,11 @@ func (h *SongVersionHandler) UpdateScore(w http.ResponseWriter, r *http.Request)
 		if errors.Is(err, application.ErrSongVersionNotFound) ||
 			errors.Is(err, application.ErrInvalidSongID) ||
 			errors.Is(err, application.ErrScoreNotFound) {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			writeError(w, err.Error(), http.StatusNotFound)
 			return
 		}
 
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -145,18 +145,18 @@ func (h *SongVersionHandler) UpdateScore(w http.ResponseWriter, r *http.Request)
 func (h *SongVersionHandler) UploadPart(w http.ResponseWriter, r *http.Request) {
 	songID, err := ulid.Parse(r.PathValue("song_id"))
 	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		writeError(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
 	versionID, err := ulid.Parse(r.PathValue("version_id"))
 	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		writeError(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
 	if err := parseMultipartForm(w, r); err != nil {
-		http.Error(w, "parse error", http.StatusBadRequest)
+		writeError(w, "parse error", http.StatusBadRequest)
 		return
 	}
 
@@ -164,13 +164,13 @@ func (h *SongVersionHandler) UploadPart(w http.ResponseWriter, r *http.Request) 
 
 	name := r.FormValue("name")
 	if name == "" {
-		http.Error(w, "missing name", http.StatusBadRequest)
+		writeError(w, "missing name", http.StatusBadRequest)
 		return
 	}
 
 	file, fileHeader, err := r.FormFile("file")
 	if err != nil {
-		http.Error(w, "missing file", http.StatusBadRequest)
+		writeError(w, "missing file", http.StatusBadRequest)
 		return
 	}
 	defer file.Close()
@@ -179,15 +179,15 @@ func (h *SongVersionHandler) UploadPart(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		if errors.Is(err, application.ErrSongVersionNotFound) ||
 			errors.Is(err, application.ErrInvalidSongID) {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			writeError(w, err.Error(), http.StatusNotFound)
 			return
 		}
 		if errors.Is(err, application.ErrConflictingOperation) {
-			http.Error(w, "this part is already uploaded. use put for updates", http.StatusConflict)
+			writeError(w, "this part is already uploaded. use put for updates", http.StatusConflict)
 			return
 		}
 
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -202,18 +202,18 @@ func (h *SongVersionHandler) UploadPart(w http.ResponseWriter, r *http.Request) 
 func (h *SongVersionHandler) UpdatePart(w http.ResponseWriter, r *http.Request) {
 	songID, err := ulid.Parse(r.PathValue("song_id"))
 	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		writeError(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
 	versionID, err := ulid.Parse(r.PathValue("version_id"))
 	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		writeError(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
 	if err := parseMultipartForm(w, r); err != nil {
-		http.Error(w, "parse error", http.StatusBadRequest)
+		writeError(w, "parse error", http.StatusBadRequest)
 		return
 	}
 
@@ -221,13 +221,13 @@ func (h *SongVersionHandler) UpdatePart(w http.ResponseWriter, r *http.Request) 
 
 	name := r.FormValue("name")
 	if name == "" {
-		http.Error(w, "missing name", http.StatusBadRequest)
+		writeError(w, "missing name", http.StatusBadRequest)
 		return
 	}
 
 	file, fileHeader, err := r.FormFile("file")
 	if err != nil {
-		http.Error(w, "missing file", http.StatusBadRequest)
+		writeError(w, "missing file", http.StatusBadRequest)
 		return
 	}
 	defer file.Close()
@@ -237,11 +237,11 @@ func (h *SongVersionHandler) UpdatePart(w http.ResponseWriter, r *http.Request) 
 		if errors.Is(err, application.ErrSongVersionNotFound) ||
 			errors.Is(err, application.ErrInvalidSongID) ||
 			errors.Is(err, application.ErrPartNotFound) {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			writeError(w, err.Error(), http.StatusNotFound)
 			return
 		}
 
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 

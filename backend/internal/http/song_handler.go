@@ -62,13 +62,13 @@ func (h *SongHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	query, err := parseGetAllQuery(r.URL.RawQuery)
 	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		writeError(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
 	songs, err := h.service.GetAllSongs(query)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -106,24 +106,24 @@ func parseGetByIDQuery(rawQuery string) (application.SongByIDQuery, error) {
 func (h *SongHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	songID, err := ulid.Parse(r.PathValue("song_id"))
 	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		writeError(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
 	query, err := parseGetByIDQuery(r.URL.RawQuery)
 	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		writeError(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
 	song, err := h.service.GetSongByID(songID, query)
 	if err != nil {
 		if errors.Is(err, application.ErrSongNotFound) {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			writeError(w, err.Error(), http.StatusNotFound)
 			return
 		}
 
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -137,13 +137,13 @@ func (h *SongHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var request CreateSongRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		writeError(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
 	song, err := h.service.CreateSong(request.Title)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -158,13 +158,13 @@ func (h *SongHandler) Update(w http.ResponseWriter, r *http.Request) {
 	var request UpdateSongRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		writeError(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
 	songID, err := ulid.Parse(r.PathValue("song_id"))
 	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		writeError(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
@@ -175,11 +175,11 @@ func (h *SongHandler) Update(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		if errors.Is(err, application.ErrSongNotFound) {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			writeError(w, err.Error(), http.StatusNotFound)
 			return
 		}
 
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 

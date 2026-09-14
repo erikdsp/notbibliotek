@@ -76,3 +76,7 @@ type ConcertResponse struct {
 	Name string    `json:"name"`
 	Date time.Time `json:"date"`
 }
+
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
