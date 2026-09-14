@@ -197,7 +197,7 @@ func Test_WhenSongVersionBelongsToTheWrongSongThenUploadScoreReturnsErrInvalidSo
 	}
 }
 
-func Test_WhenFileStorageReturnsErrorThenSongVersionServiceUploadScoreAlsoReturnsError(t *testing.T) {
+func Test_WhenFileStorageReturnsErrorThenUploadScoreAlsoReturnsError(t *testing.T) {
 
 	songID := ulid.Make()
 	versionID := ulid.Make()
@@ -229,7 +229,7 @@ func Test_WhenFileStorageReturnsErrorThenSongVersionServiceUploadScoreAlsoReturn
 	}
 }
 
-func Test_WhenFileRepositoryReturnsErrorThenSongVersionServiceUploadScoreAlsoReturnsError(t *testing.T) {
+func Test_WhenFileRepositoryReturnsErrorThenUploadScoreAlsoReturnsError(t *testing.T) {
 
 	songID := ulid.Make()
 	versionID := ulid.Make()
@@ -561,6 +561,216 @@ func Test_WhenSongIDDoesNotMatchSongVersionThenUploadPartReturnsInvalidSongID(t 
 	}
 }
 
+func Test_WhenPartExistsThenUpdatePartReplacesPartFile(t *testing.T) {
+
+	songID := ulid.Make()
+	versionID := ulid.Make()
+	partID := ulid.Make()
+	key := "partkey"
+	name := "Part Name"
+	oldFileID := ulid.Make()
+	f := newSongVersionServiceFixture(&songID, "", &versionID)
+	f.partRepository.parts = append(f.partRepository.parts, domain.Part{
+		ID:            partID,
+		Key:           key,
+		Name:          name,
+		SongVersionID: versionID,
+		FileID:        oldFileID,
+	})
+
+	part, err := f.service.UpdatePart(
+		songID,
+		versionID,
+		key,
+		name,
+		"new-part.pdf",
+		strings.NewReader("new pdf content"),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if part.ID != partID {
+		t.Errorf(
+			"expected part ID %q, got %q",
+			partID.String(),
+			part.ID.String(),
+		)
+	}
+
+	if part.FileID == oldFileID {
+		t.Error("expected part to reference a new file")
+	}
+
+	if len(f.fileStorage.savedFileIDs) != 1 {
+		t.Fatalf(
+			"expected 1 file to be saved, got %d",
+			len(f.fileStorage.savedFileIDs),
+		)
+	}
+
+	newFileID := f.fileStorage.savedFileIDs[0]
+
+	if part.FileID != newFileID {
+		t.Error("expected part to reference the new file")
+	}
+
+	if len(f.fileRepository.deletedFileIDs) != 1 {
+		t.Fatalf(
+			"expected old file metadata to be deleted, got %d deletions",
+			len(f.fileRepository.deletedFileIDs),
+		)
+	}
+
+	if f.fileRepository.deletedFileIDs[0] != oldFileID {
+		t.Error("expected old file metadata to be deleted")
+	}
+
+	if len(f.fileStorage.deletedFileIDs) != 1 {
+		t.Fatalf(
+			"expected old file to be deleted, got %d deletions",
+			len(f.fileStorage.deletedFileIDs),
+		)
+	}
+
+	if f.fileStorage.deletedFileIDs[0] != oldFileID {
+		t.Error("expected old file to be deleted")
+	}
+}
+
+func Test_WhenSongVersionDoesNotExistThenUpdatePartReturnsSongVersionNotFound(t *testing.T) {
+
+	f := newSongVersionServiceFixture(nil, "", nil)
+	songID := ulid.Make()
+	versionID := ulid.Make()
+
+	_, err := f.service.UpdatePart(
+		songID,
+		versionID,
+		"partkey",
+		"Part Name",
+		"test.pdf",
+		nil,
+	)
+
+	if !errors.Is(err, ErrSongVersionNotFound) {
+		t.Fatalf("expected SongVersionNotFound, got %v", err)
+	}
+}
+
+func Test_WhenPartDoesNotExistThenUpdatePartReturnsPartNotFound(t *testing.T) {
+
+	songID := ulid.Make()
+	versionID := ulid.Make()
+	f := newSongVersionServiceFixture(&songID, "", &versionID)
+
+	_, err := f.service.UpdatePart(
+		songID,
+		versionID,
+		"partkey",
+		"Part Name",
+		"test.pdf",
+		nil,
+	)
+
+	if !errors.Is(err, ErrPartNotFound) {
+		t.Fatalf("expected PartNotFound, got %v", err)
+	}
+}
+
+func Test_WhenSongVersionIsAlreadyPublishedThenUpdatePartReturnsErrInvalidOperation(t *testing.T) {
+
+	songID := ulid.Make()
+	versionID := ulid.Make()
+	key := "partkey"
+	name := "Part Name"
+	now := time.Now()
+	f := newSongVersionServiceFixture(&songID, "", &versionID)
+	f.repository.songVersions[0].PublishedAt = &now
+
+	_, err := f.service.UpdatePart(
+		songID,
+		versionID,
+		key,
+		name,
+		"test.pdf",
+		nil,
+	)
+
+	if !errors.Is(err, ErrInvalidOperation) {
+		t.Fatalf(
+			"expected error %q, got %q",
+			ErrInvalidOperation,
+			err,
+		)
+	}
+
+}
+
+func Test_WhenPartRepositoryReturnsErrorThenUpdatePartReturnsErrorAndPerformsRollback(t *testing.T) {
+
+	songID := ulid.Make()
+	versionID := ulid.Make()
+	partID := ulid.Make()
+	fileID := ulid.Make()
+	key := "partkey"
+	name := "Part Name"
+	partError := errors.New("part repository error")
+	f := newSongVersionServiceFixture(&songID, "", &versionID)
+	f.partRepository.parts = append(f.partRepository.parts, domain.Part{
+		ID:            partID,
+		Key:           key,
+		Name:          name,
+		SongVersionID: versionID,
+		FileID:        fileID,
+	})
+	f.partRepository.updateErr = partError
+
+	_, err := f.service.UpdatePart(
+		songID,
+		versionID,
+		key,
+		name,
+		"test.pdf",
+		nil,
+	)
+
+	if !errors.Is(err, partError) {
+		t.Fatalf(
+			"expected error %q, got %q",
+			partError,
+			err,
+		)
+	}
+
+	if len(f.fileStorage.deletedFileIDs) != 1 {
+		t.Fatalf(
+			"expected storage rollback to delete 1 file, got %d",
+			len(f.fileStorage.deletedFileIDs),
+		)
+	}
+
+	if f.fileStorage.deletedFileIDs[0] != f.fileStorage.savedFileIDs[0] {
+		t.Error("expected rollback to delete the saved file")
+	}
+
+	if len(f.partRepository.parts) != 1 {
+		t.Error("expected one part in repository")
+	}
+
+	if len(f.fileRepository.deletedFileIDs) != 1 {
+		t.Fatalf(
+			"expected repository rollback to delete 1 file ID, got %d",
+			len(f.fileStorage.deletedFileIDs),
+		)
+	}
+
+	if f.fileRepository.deletedFileIDs[0] != f.partRepository.fileIDsPassedToUpdate[0] {
+		t.Error("expected rollback to delete the saved file")
+	}
+
+}
+
 // Test setup
 
 type mockSongVersionRepository struct {
@@ -683,6 +893,7 @@ type MockPartRepository struct {
 	err                   error
 	getByVersionAndKeyErr error
 	updateErr             error
+	fileIDsPassedToUpdate []ulid.ULID
 }
 
 func (m *MockPartRepository) Create(part domain.Part) error {
@@ -717,7 +928,24 @@ func (m *MockPartRepository) GetBySongVersionIDAndKey(songVersionID ulid.ULID, k
 }
 
 func (m *MockPartRepository) Update(part domain.Part) error {
-	return nil
+	m.fileIDsPassedToUpdate = append(m.fileIDsPassedToUpdate, part.FileID)
+
+	if m.updateErr != nil {
+		return m.updateErr
+	}
+	if m.err != nil {
+		return m.err
+	}
+
+	for i, existing := range m.parts {
+		if existing.ID == part.ID {
+			m.parts[i] = part
+			return nil
+		}
+	}
+
+	return ErrPartNotFound
+
 }
 
 type mockFileStorage struct {
