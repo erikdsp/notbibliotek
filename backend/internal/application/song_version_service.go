@@ -72,18 +72,6 @@ func (s *SongVersionService) UploadScore(songID ulid.ULID, versionID ulid.ULID,
 
 	fileID := ulid.Make()
 
-	fileStorageRollback := func() {
-		if deleteErr := s.fileStorage.Delete(fileID); deleteErr != nil {
-			log.Printf("failed to delete file %s: %v during rollback", fileID, deleteErr)
-		}
-	}
-
-	fileRepositoryRollback := func() {
-		if deleteErr := s.fileRepository.Delete(fileID); deleteErr != nil {
-			log.Printf("failed to delete file metadata %s: %v during rollback", fileID, deleteErr)
-		}
-	}
-
 	err = s.fileStorage.Save(fileID, file)
 	if err != nil {
 		return domain.Score{}, err
@@ -92,8 +80,7 @@ func (s *SongVersionService) UploadScore(songID ulid.ULID, versionID ulid.ULID,
 	err = s.fileRepository.Create(domain.File{ID: fileID, Name: fileName})
 
 	if err != nil {
-		fileStorageRollback()
-
+		s.fileStorageRollback(fileID)
 		return domain.Score{}, err
 	}
 
@@ -106,8 +93,8 @@ func (s *SongVersionService) UploadScore(songID ulid.ULID, versionID ulid.ULID,
 	err = s.scoreRepository.Create(score)
 
 	if err != nil {
-		fileRepositoryRollback()
-		fileStorageRollback()
+		s.fileRepositoryRollback(fileID)
+		s.fileStorageRollback(fileID)
 		return domain.Score{}, err
 	}
 
@@ -138,18 +125,6 @@ func (s *SongVersionService) UpdateScore(songID ulid.ULID, versionID ulid.ULID,
 	oldFileID := score.FileID
 	score.FileID = fileID
 
-	fileStorageRollback := func() {
-		if deleteErr := s.fileStorage.Delete(fileID); deleteErr != nil {
-			log.Printf("failed to delete file %s: %v during rollback", fileID, deleteErr)
-		}
-	}
-
-	fileRepositoryRollback := func() {
-		if deleteErr := s.fileRepository.Delete(fileID); deleteErr != nil {
-			log.Printf("failed to delete file metadata %s: %v during rollback", fileID, deleteErr)
-		}
-	}
-
 	err = s.fileStorage.Save(fileID, file)
 	if err != nil {
 		return domain.Score{}, err
@@ -158,25 +133,18 @@ func (s *SongVersionService) UpdateScore(songID ulid.ULID, versionID ulid.ULID,
 	err = s.fileRepository.Create(domain.File{ID: fileID, Name: fileName})
 
 	if err != nil {
-		fileStorageRollback()
-
+		s.fileStorageRollback(fileID)
 		return domain.Score{}, err
 	}
 
 	err = s.scoreRepository.Update(score)
 	if err != nil {
-		fileRepositoryRollback()
-		fileStorageRollback()
+		s.fileRepositoryRollback(fileID)
+		s.fileStorageRollback(fileID)
 		return domain.Score{}, err
 	}
 
-	if err := s.fileRepository.Delete(oldFileID); err != nil {
-		log.Printf("failed to delete old file metadata %s: %v", oldFileID, err)
-	}
-
-	if err := s.fileStorage.Delete(oldFileID); err != nil {
-		log.Printf("failed to delete old file %s: %v", oldFileID, err)
-	}
+	s.cleanupOldFile(oldFileID)
 
 	return score, nil
 
@@ -203,18 +171,6 @@ func (s *SongVersionService) UploadPart(songID ulid.ULID, versionID ulid.ULID,
 
 	fileID := ulid.Make()
 
-	fileStorageRollback := func() {
-		if deleteErr := s.fileStorage.Delete(fileID); deleteErr != nil {
-			log.Printf("failed to delete file %s: %v during rollback", fileID, deleteErr)
-		}
-	}
-
-	fileRepositoryRollback := func() {
-		if deleteErr := s.fileRepository.Delete(fileID); deleteErr != nil {
-			log.Printf("failed to delete file metadata %s: %v during rollback", fileID, deleteErr)
-		}
-	}
-
 	err = s.fileStorage.Save(fileID, file)
 	if err != nil {
 		return domain.Part{}, err
@@ -223,8 +179,7 @@ func (s *SongVersionService) UploadPart(songID ulid.ULID, versionID ulid.ULID,
 	err = s.fileRepository.Create(domain.File{ID: fileID, Name: fileName})
 
 	if err != nil {
-		fileStorageRollback()
-
+		s.fileStorageRollback(fileID)
 		return domain.Part{}, err
 	}
 
@@ -239,8 +194,8 @@ func (s *SongVersionService) UploadPart(songID ulid.ULID, versionID ulid.ULID,
 	err = s.partRepository.Create(part)
 
 	if err != nil {
-		fileRepositoryRollback()
-		fileStorageRollback()
+		s.fileRepositoryRollback(fileID)
+		s.fileStorageRollback(fileID)
 		return domain.Part{}, err
 	}
 
@@ -271,18 +226,6 @@ func (s *SongVersionService) UpdatePart(songID ulid.ULID, versionID ulid.ULID,
 	oldFileID := part.FileID
 	part.FileID = fileID
 
-	fileStorageRollback := func() {
-		if deleteErr := s.fileStorage.Delete(fileID); deleteErr != nil {
-			log.Printf("failed to delete file %s: %v during rollback", fileID, deleteErr)
-		}
-	}
-
-	fileRepositoryRollback := func() {
-		if deleteErr := s.fileRepository.Delete(fileID); deleteErr != nil {
-			log.Printf("failed to delete file metadata %s: %v during rollback", fileID, deleteErr)
-		}
-	}
-
 	err = s.fileStorage.Save(fileID, file)
 	if err != nil {
 		return domain.Part{}, err
@@ -291,26 +234,41 @@ func (s *SongVersionService) UpdatePart(songID ulid.ULID, versionID ulid.ULID,
 	err = s.fileRepository.Create(domain.File{ID: fileID, Name: fileName})
 
 	if err != nil {
-		fileStorageRollback()
-
+		s.fileStorageRollback(fileID)
 		return domain.Part{}, err
 	}
 
 	err = s.partRepository.Update(part)
 	if err != nil {
-		fileRepositoryRollback()
-		fileStorageRollback()
+		s.fileRepositoryRollback(fileID)
+		s.fileStorageRollback(fileID)
 		return domain.Part{}, err
 	}
 
-	if err := s.fileRepository.Delete(oldFileID); err != nil {
-		log.Printf("failed to delete old file metadata %s: %v", oldFileID, err)
-	}
-
-	if err := s.fileStorage.Delete(oldFileID); err != nil {
-		log.Printf("failed to delete old file %s: %v", oldFileID, err)
-	}
+	s.cleanupOldFile(oldFileID)
 
 	return part, nil
 
+}
+
+func (s *SongVersionService) fileStorageRollback(fileID ulid.ULID) {
+	if deleteErr := s.fileStorage.Delete(fileID); deleteErr != nil {
+		log.Printf("failed to delete file %s: %v during rollback", fileID, deleteErr)
+	}
+}
+
+func (s *SongVersionService) fileRepositoryRollback(fileID ulid.ULID) {
+	if deleteErr := s.fileRepository.Delete(fileID); deleteErr != nil {
+		log.Printf("failed to delete file metadata %s: %v during rollback", fileID, deleteErr)
+	}
+}
+
+func (s *SongVersionService) cleanupOldFile(fileID ulid.ULID) {
+	if err := s.fileRepository.Delete(fileID); err != nil {
+		log.Printf("failed to delete old file metadata %s: %v", fileID, err)
+	}
+
+	if err := s.fileStorage.Delete(fileID); err != nil {
+		log.Printf("failed to delete old file %s: %v", fileID, err)
+	}
 }
