@@ -247,3 +247,70 @@ func (s *SongVersionService) UploadPart(songID ulid.ULID, versionID ulid.ULID,
 	return part, nil
 
 }
+
+func (s *SongVersionService) UpdatePart(songID ulid.ULID, versionID ulid.ULID,
+	key string, partName string, fileName string, file io.Reader) (domain.Part, error) {
+
+	version, err := s.repository.GetByID(versionID)
+	if err != nil {
+		return domain.Part{}, err
+	}
+	if version.SongID != songID {
+		return domain.Part{}, ErrInvalidSongID
+	}
+	if version.PublishedAt != nil {
+		return domain.Part{}, ErrInvalidOperation
+	}
+
+	part, err := s.partRepository.GetBySongVersionIDAndKey(versionID, key)
+	if err != nil {
+		return domain.Part{}, err
+	}
+
+	fileID := ulid.Make()
+	oldFileID := part.FileID
+	part.FileID = fileID
+
+	fileStorageRollback := func() {
+		if deleteErr := s.fileStorage.Delete(fileID); deleteErr != nil {
+			log.Printf("failed to delete file %s: %v during rollback", fileID, deleteErr)
+		}
+	}
+
+	fileRepositoryRollback := func() {
+		if deleteErr := s.fileRepository.Delete(fileID); deleteErr != nil {
+			log.Printf("failed to delete file metadata %s: %v during rollback", fileID, deleteErr)
+		}
+	}
+
+	err = s.fileStorage.Save(fileID, file)
+	if err != nil {
+		return domain.Part{}, err
+	}
+
+	err = s.fileRepository.Create(domain.File{ID: fileID, Name: fileName})
+
+	if err != nil {
+		fileStorageRollback()
+
+		return domain.Part{}, err
+	}
+
+	err = s.partRepository.Update(part)
+	if err != nil {
+		fileRepositoryRollback()
+		fileStorageRollback()
+		return domain.Part{}, err
+	}
+
+	if err := s.fileRepository.Delete(oldFileID); err != nil {
+		log.Printf("failed to delete old file metadata %s: %v", oldFileID, err)
+	}
+
+	if err := s.fileStorage.Delete(oldFileID); err != nil {
+		log.Printf("failed to delete old file %s: %v", oldFileID, err)
+	}
+
+	return part, nil
+
+}
