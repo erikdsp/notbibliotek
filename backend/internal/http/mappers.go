@@ -20,19 +20,17 @@ func toVersionResponse(version application.VersionDetails) VersionResponse {
 		Parts:         []PartForVersion{},
 	}
 
-	if version.Score != nil {
-		response.Score = ScoreForVersion{
-			ID:     version.Score.Score.ID,
-			FileID: version.Score.File.ID,
-		}
+	response.Score = ScoreForVersion{
+		ID:     version.Score.ID,
+		FileID: version.Score.FileID,
 	}
 
 	for _, part := range version.Parts {
 		response.Parts = append(response.Parts, PartForVersion{
-			ID:     part.Part.ID,
-			Key:    part.Part.Key,
-			Name:   part.Part.Name,
-			FileID: part.File.ID,
+			ID:     part.ID,
+			Key:    part.Key,
+			Name:   part.Name,
+			FileID: part.FileID,
 		})
 	}
 
