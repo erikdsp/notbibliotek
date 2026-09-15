@@ -771,6 +771,171 @@ func Test_WhenPartRepositoryReturnsErrorThenUpdatePartReturnsErrorAndPerformsRol
 
 }
 
+func Test_WhenValidVersionHasScoreAndZeroPartsThenPublishSongVersionIsSuccessful(t *testing.T) {
+
+	songID := ulid.Make()
+	versionID := ulid.Make()
+	fileID := ulid.Make()
+	f := newSongVersionServiceFixture(&songID, "Valid Song", &versionID)
+	f.scoreRepository.Create(domain.Score{
+		ID:            ulid.Make(),
+		SongVersionID: versionID,
+		FileID:        fileID,
+	})
+
+	version, err := f.service.PublishSongVersion(
+		songID,
+		versionID,
+	)
+
+	if err != nil {
+		t.Fatalf("expected successful publish, got %v", err)
+	}
+
+	if version.Version.SongID != songID {
+		t.Error("expected published SongID to match songID")
+	}
+	if version.Version.ID != versionID {
+		t.Error("expected published SongVersionID to match versionID")
+	}
+
+	if f.repository.songVersions[0].PublishedAt == nil {
+		t.Error("expected song version to be published")
+	}
+}
+
+func Test_WhenSongVersionIsMissingThenPublishSongVersionReturnsCorrectError(t *testing.T) {
+
+	songID := ulid.Make()
+	versionID := ulid.Make()
+	f := newSongVersionServiceFixture(&songID, "", nil)
+
+	_, err := f.service.PublishSongVersion(
+		songID,
+		versionID,
+	)
+
+	if err != ErrSongVersionNotFound {
+		t.Fatalf("expected ErrSongVersionNotFound, got %v", err)
+	}
+
+}
+
+func Test_WhenSongIDIsInvalidThenPublishSongVersionReturnsCorrectError(t *testing.T) {
+
+	songID := ulid.Make()
+	versionID := ulid.Make()
+	f := newSongVersionServiceFixture(&songID, "", &versionID)
+
+	anotherSongID := ulid.Make()
+	_, err := f.service.PublishSongVersion(
+		anotherSongID,
+		versionID,
+	)
+
+	if err != ErrInvalidSongID {
+		t.Fatalf("expected ErrInvalidSongID, got %v", err)
+	}
+
+	if f.repository.songVersions[0].PublishedAt != nil {
+		t.Error("expected song version to not be published")
+	}
+
+}
+
+func Test_WhenVersionIsAlreadyPublishedThenPublishSongVersionReturnsCorrectError(t *testing.T) {
+
+	songID := ulid.Make()
+	versionID := ulid.Make()
+	f := newSongVersionServiceFixture(&songID, "", &versionID)
+	now := time.Now()
+	f.repository.songVersions[0].PublishedAt = &now
+
+	_, err := f.service.PublishSongVersion(
+		songID,
+		versionID,
+	)
+
+	if err != ErrSongVersionAlreadyPublished {
+		t.Fatalf("expected ErrSongVersionAlreadyPublished, got %v", err)
+	}
+
+}
+
+func Test_WhenScoreIsMissingThenPublishSongVersionReturnsCorrectError(t *testing.T) {
+
+	songID := ulid.Make()
+	versionID := ulid.Make()
+	f := newSongVersionServiceFixture(&songID, "", &versionID)
+
+	_, err := f.service.PublishSongVersion(
+		songID,
+		versionID,
+	)
+
+	if err != ErrMissingScore {
+		t.Fatalf("expected ErrMissingScore, got %v", err)
+	}
+
+	if f.repository.songVersions[0].PublishedAt != nil {
+		t.Error("expected song version to not be published")
+	}
+}
+
+func Test_WhenPartRepositoryReturnsErrorThenPublishSongVersionReturnsError(t *testing.T) {
+
+	songID := ulid.Make()
+	versionID := ulid.Make()
+	f := newSongVersionServiceFixture(&songID, "Song", &versionID)
+	f.scoreRepository.Create(domain.Score{
+		ID:            ulid.Make(),
+		SongVersionID: versionID,
+		FileID:        ulid.Make(),
+	})
+	partError := errors.New("part error")
+	f.partRepository.err = partError
+
+	_, err := f.service.PublishSongVersion(
+		songID,
+		versionID,
+	)
+
+	if err != partError {
+		t.Fatalf("expected partError, got %v", err)
+	}
+
+	if f.repository.songVersions[0].PublishedAt != nil {
+		t.Error("expected song version to not be published")
+	}
+}
+
+func Test_WhenSongVersionRepositoryReturnsErrorThenPublishSongVersionReturnsError(t *testing.T) {
+
+	songID := ulid.Make()
+	versionID := ulid.Make()
+	f := newSongVersionServiceFixture(&songID, "Song", &versionID)
+	f.scoreRepository.Create(domain.Score{
+		ID:            ulid.Make(),
+		SongVersionID: versionID,
+		FileID:        ulid.Make(),
+	})
+	songVersionError := errors.New("song version error")
+	f.repository.err = songVersionError
+
+	_, err := f.service.PublishSongVersion(
+		songID,
+		versionID,
+	)
+
+	if err != songVersionError {
+		t.Fatalf("expected songVersionError, got %v", err)
+	}
+
+	if f.repository.songVersions[0].PublishedAt != nil {
+		t.Error("expected song version to not be published")
+	}
+}
+
 // Test setup
 
 type mockSongVersionRepository struct {
@@ -795,6 +960,21 @@ func (m *mockSongVersionRepository) GetByID(id ulid.ULID) (domain.SongVersion, e
 	}
 
 	return domain.SongVersion{}, ErrSongVersionNotFound
+}
+
+func (m *mockSongVersionRepository) Update(songVersion domain.SongVersion) error {
+	if m.err != nil {
+		return m.err
+	}
+
+	for i, repoSongVersion := range m.songVersions {
+		if repoSongVersion.ID == songVersion.ID {
+			m.songVersions[i].PublishedAt = songVersion.PublishedAt
+			return nil
+		}
+	}
+
+	return ErrSongVersionNotFound
 }
 
 type mockFileRepository struct {
@@ -925,6 +1105,22 @@ func (m *MockPartRepository) GetBySongVersionIDAndKey(songVersionID ulid.ULID, k
 		}
 	}
 	return domain.Part{}, ErrPartNotFound
+}
+
+func (m *MockPartRepository) GetBySongVersionID(songVersionID ulid.ULID) ([]domain.Part, error) {
+	if m.err != nil {
+		return []domain.Part{}, m.err
+	}
+
+	parts := []domain.Part{}
+
+	for _, part := range m.parts {
+		if part.SongVersionID == songVersionID {
+			parts = append(parts, part)
+		}
+	}
+
+	return parts, nil
 }
 
 func (m *MockPartRepository) Update(part domain.Part) error {
