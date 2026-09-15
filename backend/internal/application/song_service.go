@@ -9,12 +9,14 @@ import (
 )
 
 type SongService struct {
-	repository SongRepository
+	repository       SongRepository
+	queryRespository SongQueryRepository
 }
 
-func NewSongService(repository SongRepository) *SongService {
+func NewSongService(repository SongRepository, queryRepository SongQueryRepository) *SongService {
 	return &SongService{
-		repository: repository,
+		repository:       repository,
+		queryRespository: queryRepository,
 	}
 }
 
