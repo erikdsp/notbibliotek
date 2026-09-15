@@ -29,6 +29,12 @@ const getPartBySongVersionIDAndKeyQuery = `
 	AND key = $2
 `
 
+const getPartsBySongVersionIDQuery = `
+	SELECT id, key, name, song_version_id, file_id
+	FROM parts
+	WHERE song_version_id = $1
+`
+
 const updatePartQuery = `
     UPDATE parts
 	SET file_id = $2,
@@ -125,6 +131,41 @@ func (r *PostgresPartRepository) GetBySongVersionIDAndKey(songVersionID ulid.ULI
 	}
 
 	return dbPart.toDomain(), nil
+}
+
+func (r *PostgresPartRepository) GetBySongVersionID(songVersionID ulid.ULID) ([]domain.Part, error) {
+	parts := []domain.Part{}
+
+	rows, err := r.db.Query(
+		getPartsBySongVersionIDQuery,
+		uuid.UUID(songVersionID),
+	)
+	if err != nil {
+		return []domain.Part{}, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var dbPart dbPart
+
+		if err := rows.Scan(
+			&dbPart.ID,
+			&dbPart.Key,
+			&dbPart.Name,
+			&dbPart.SongVersionID,
+			&dbPart.FileID,
+		); err != nil {
+			return []domain.Part{}, err
+		}
+
+		parts = append(parts, dbPart.toDomain())
+	}
+
+	if err := rows.Err(); err != nil {
+		return []domain.Part{}, err
+	}
+
+	return parts, nil
 }
 
 func (r *PostgresPartRepository) Update(part domain.Part) error {

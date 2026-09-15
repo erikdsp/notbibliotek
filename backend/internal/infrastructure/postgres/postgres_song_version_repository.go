@@ -23,6 +23,12 @@ const getSongVersionByIDQuery = `
 	WHERE id = $1
 `
 
+const updateSongVersionQuery = `
+    UPDATE song_versions
+	SET published_at = $2
+	WHERE id = $1
+`
+
 type PostgresSongVersionRepository struct {
 	db *sql.DB
 }
@@ -78,4 +84,14 @@ func (r *PostgresSongVersionRepository) GetByID(id ulid.ULID) (domain.SongVersio
 	}
 
 	return dbSongVersion.toDomain(), nil
+}
+
+func (r *PostgresSongVersionRepository) Update(songVersion domain.SongVersion) error {
+	_, err := r.db.Exec(
+		updateSongVersionQuery,
+		uuid.UUID(songVersion.ID),
+		songVersion.PublishedAt,
+	)
+	return err
+
 }

@@ -1,8 +1,10 @@
 package application
 
 import (
+	"errors"
 	"io"
 	"log"
+	"time"
 
 	"github.com/erikdsp/notbibliotek/backend/internal/domain"
 
@@ -249,6 +251,45 @@ func (s *SongVersionService) UpdatePart(songID ulid.ULID, versionID ulid.ULID,
 
 	return part, nil
 
+}
+
+func (s *SongVersionService) PublishSongVersion(songID ulid.ULID, versionID ulid.ULID) (VersionDetails, error) {
+	version, err := s.repository.GetByID(versionID)
+	if err != nil {
+		return VersionDetails{}, err
+	}
+	if version.SongID != songID {
+		return VersionDetails{}, ErrInvalidSongID
+	}
+	if version.PublishedAt != nil {
+		return VersionDetails{}, ErrSongVersionAlreadyPublished
+	}
+
+	score, err := s.scoreRepository.GetBySongVersionID(versionID)
+	if err != nil {
+		if errors.Is(err, ErrScoreNotFound) {
+			return VersionDetails{}, ErrMissingScore
+		}
+		return VersionDetails{}, err
+	}
+
+	parts, err := s.partRepository.GetBySongVersionID(versionID)
+	if err != nil {
+		return VersionDetails{}, err
+	}
+
+	now := time.Now()
+	version.PublishedAt = &now
+
+	if err = s.repository.Update(version); err != nil {
+		return VersionDetails{}, err
+	}
+
+	return VersionDetails{
+		Version: version,
+		Score:   score,
+		Parts:   parts,
+	}, nil
 }
 
 func (s *SongVersionService) fileStorageRollback(fileID ulid.ULID) {

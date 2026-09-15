@@ -8,4 +8,5 @@ import (
 type SongVersionRepository interface {
 	Create(songVersion domain.SongVersion) error
 	GetByID(id ulid.ULID) (domain.SongVersion, error)
+	Update(songVersion domain.SongVersion) error
 }

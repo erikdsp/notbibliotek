@@ -13,19 +13,8 @@ type SongDetails struct {
 
 type VersionDetails struct {
 	Version domain.SongVersion
-	Score   *ScoreDetails
-	Parts   []PartDetails
-}
-
-type ScoreDetails struct {
-	Score domain.Score
-	File  domain.File
-}
-
-type PartDetails struct {
-	Part        domain.Part
-	File        domain.File
-	Instruments []domain.Instrument
+	Score   domain.Score
+	Parts   []domain.Part
 }
 
 type SongQuery struct {

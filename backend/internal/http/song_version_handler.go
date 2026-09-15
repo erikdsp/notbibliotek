@@ -253,6 +253,44 @@ func (h *SongVersionHandler) UpdatePart(w http.ResponseWriter, r *http.Request) 
 
 }
 
+func (h *SongVersionHandler) Publish(w http.ResponseWriter, r *http.Request) {
+	songID, err := ulid.Parse(r.PathValue("song_id"))
+	if err != nil {
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	versionID, err := ulid.Parse(r.PathValue("version_id"))
+	if err != nil {
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	version, err := h.service.PublishSongVersion(songID, versionID)
+	if err != nil {
+		if errors.Is(err, application.ErrSongVersionNotFound) ||
+			errors.Is(err, application.ErrInvalidSongID) {
+			writeError(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		if errors.Is(err, application.ErrSongVersionAlreadyPublished) ||
+			errors.Is(err, application.ErrScoreNotFound) {
+			writeError(w, err.Error(), http.StatusConflict)
+			return
+		}
+
+		writeError(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	response := toVersionResponse(version)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
+
+}
+
 // Sets maximum upload size and parses multipart form
 func parseMultipartForm(w http.ResponseWriter, r *http.Request) error {
 	r.Body = http.MaxBytesReader(w, r.Body, maxUploadFileSize)
