@@ -28,18 +28,19 @@ func main() {
 
 	// Wiring
 	songRepository := postgres.NewPostgresSongRepository(db)
-	songService := application.NewSongService(songRepository)
-	songHandler := httpHandler.NewSongHandler(songService)
-
+	songQueryRepository := postgres.NewPostgresSongQueryRepository(db)
 	fileRepository := postgres.NewPostgresFileRepository(db)
 	scoreRepository := postgres.NewPostgresScoreRepository(db)
 	partRepository := postgres.NewPostgresPartRepository(db)
-
 	songVersionRepository := postgres.NewPostgresSongVersionRepository(db)
+
 	fileStorage := filestorage.NewLocalFileStorage("./backend/data/files")
 
+	songService := application.NewSongService(songRepository, songQueryRepository)
 	songVersionService := application.NewSongVersionService(songVersionRepository,
 		songRepository, fileRepository, scoreRepository, partRepository, fileStorage)
+
+	songHandler := httpHandler.NewSongHandler(songService)
 	songVersionHandler := httpHandler.NewSongVersionHandler(songVersionService)
 
 	router := httpHandler.NewRouter(songHandler, songVersionHandler)

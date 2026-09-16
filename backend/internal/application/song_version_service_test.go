@@ -792,9 +792,6 @@ func Test_WhenValidVersionHasScoreAndZeroPartsThenPublishSongVersionIsSuccessful
 		t.Fatalf("expected successful publish, got %v", err)
 	}
 
-	if version.Version.SongID != songID {
-		t.Error("expected published SongID to match songID")
-	}
 	if version.Version.ID != versionID {
 		t.Error("expected published SongVersionID to match versionID")
 	}

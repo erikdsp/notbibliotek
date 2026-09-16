@@ -49,7 +49,7 @@ func toSongDetailedResponse(song application.SongDetails) SongDetailedResponse {
 	versions := make([]VersionResponse, 0, len(song.Versions))
 
 	for _, version := range song.Versions {
-		versions = append(versions, toVersionResponse(version))
+		versions = append(versions, toVersionResponse(*version))
 	}
 
 	return SongDetailedResponse{

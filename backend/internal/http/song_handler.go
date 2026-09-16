@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -68,6 +69,7 @@ func (h *SongHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	songs, err := h.service.GetAllSongs(query)
 	if err != nil {
+		log.Printf("GetAllSongs: %v", err)
 		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -118,6 +120,7 @@ func (h *SongHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	song, err := h.service.GetSongByID(songID, query)
 	if err != nil {
+		log.Printf("GetSongByID: %v", err)
 		if errors.Is(err, application.ErrSongNotFound) {
 			writeError(w, err.Error(), http.StatusNotFound)
 			return
@@ -143,6 +146,7 @@ func (h *SongHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	song, err := h.service.CreateSong(request.Title)
 	if err != nil {
+		log.Printf("CreateSong: %v", err)
 		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -174,6 +178,7 @@ func (h *SongHandler) Update(w http.ResponseWriter, r *http.Request) {
 		request.Archived,
 	)
 	if err != nil {
+		log.Printf("UpdateSong: %v", err)
 		if errors.Is(err, application.ErrSongNotFound) {
 			writeError(w, err.Error(), http.StatusNotFound)
 			return
