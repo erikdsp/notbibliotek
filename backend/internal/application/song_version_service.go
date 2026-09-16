@@ -286,9 +286,9 @@ func (s *SongVersionService) PublishSongVersion(songID ulid.ULID, versionID ulid
 	}
 
 	return VersionDetails{
-		Version: version,
-		Score:   score,
-		Parts:   parts,
+		Version: toSongVersionDetails(version),
+		Score:   toScoreDetails(score),
+		Parts:   toPartsDetails(parts),
 	}, nil
 }
 
