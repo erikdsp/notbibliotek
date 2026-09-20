@@ -992,6 +992,10 @@ func (m *mockFileRepository) Create(file domain.File) error {
 }
 
 func (m *mockFileRepository) GetByID(id ulid.ULID) (domain.File, error) {
+	if m.err != nil {
+		return domain.File{}, m.err
+	}
+
 	for _, file := range m.files {
 		if file.ID == id {
 			return file, nil
@@ -1142,11 +1146,13 @@ func (m *MockPartRepository) Update(part domain.Part) error {
 }
 
 type mockFileStorage struct {
+	file           string
 	savedFileIDs   []ulid.ULID
 	deletedFileIDs []ulid.ULID
 
 	saveErr   error
 	deleteErr error
+	loadErr   error
 }
 
 func (m *mockFileStorage) Save(fileID ulid.ULID, file io.Reader) error {
@@ -1159,7 +1165,11 @@ func (m *mockFileStorage) Save(fileID ulid.ULID, file io.Reader) error {
 }
 
 func (m *mockFileStorage) Load(fileID ulid.ULID) (io.ReadCloser, error) {
-	return nil, nil
+	if m.loadErr != nil {
+		return nil, m.loadErr
+	}
+
+	return io.NopCloser(strings.NewReader(m.file)), nil
 }
 
 func (m *mockFileStorage) Delete(fileID ulid.ULID) error {
