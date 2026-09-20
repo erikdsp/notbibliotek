@@ -39,11 +39,13 @@ func main() {
 	songService := application.NewSongService(songRepository, songQueryRepository)
 	songVersionService := application.NewSongVersionService(songVersionRepository,
 		songRepository, fileRepository, scoreRepository, partRepository, fileStorage)
+	fileService := application.NewFileService(fileRepository, fileStorage)
 
 	songHandler := httpHandler.NewSongHandler(songService)
 	songVersionHandler := httpHandler.NewSongVersionHandler(songVersionService)
+	fileHandler := httpHandler.NewFileHandler(fileService)
 
-	router := httpHandler.NewRouter(songHandler, songVersionHandler)
+	router := httpHandler.NewRouter(songHandler, songVersionHandler, fileHandler)
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 
