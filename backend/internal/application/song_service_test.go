@@ -90,36 +90,43 @@ func Test_WhenGetSongByIDIsCalledWithValidIDThenSongServiceReturnsSongWithThatID
 }
 
 func Test_WhenGetAllSongsIsCalledWithEmptyQueryThenAllNonArchivedSongsAreReturned(t *testing.T) {
-	song := domain.Song{
-		ID:    ulid.Make(),
-		Title: "Test Song",
+
+	song := SongDetails{
+		Song: domain.Song{
+			ID:    ulid.Make(),
+			Title: "Test Song",
+		},
 	}
 
-	song2 := domain.Song{
-		ID:    ulid.Make(),
-		Title: "Test Song 2",
+	song2 := SongDetails{
+		Song: domain.Song{
+			ID:    ulid.Make(),
+			Title: "Test Song 2",
+		},
 	}
 
 	now := time.Now()
-	archivedSong := domain.Song{
-		ID:         ulid.Make(),
-		Title:      "Archived Song",
-		ArchivedAt: &now,
+	archivedSong := SongDetails{
+		Song: domain.Song{
+			ID:         ulid.Make(),
+			Title:      "Archived Song",
+			ArchivedAt: &now,
+		},
 	}
 
 	f := newSongServiceFixture()
-	f.repository.songs = append(f.repository.songs, song, song2, archivedSong)
+	f.queryRepository.songs = append(f.queryRepository.songs, song, song2, archivedSong)
 
 	songsFromService, err := f.service.GetAllSongs(SongQuery{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if !f.repository.getAllCalled {
+	if !f.queryRepository.getAllCalled {
 		t.Error("expected repository GetAll to be called")
 	}
 
-	if f.repository.archivedArg {
+	if f.queryRepository.archivedArg {
 		t.Error("expected archived argument to be false")
 	}
 
@@ -127,18 +134,18 @@ func Test_WhenGetAllSongsIsCalledWithEmptyQueryThenAllNonArchivedSongsAreReturne
 		t.Fatalf("expected service to return 2 songs, got %d", len(songsFromService))
 	}
 
-	if songsFromService[0].Song.ID != song.ID {
+	if songsFromService[0].Song.ID != song.Song.ID {
 		t.Errorf(
 			"expected first song ID %s, got %s",
-			song.ID,
+			song.Song.ID,
 			songsFromService[0].Song.ID,
 		)
 	}
 
-	if songsFromService[1].Song.ID != song2.ID {
+	if songsFromService[1].Song.ID != song2.Song.ID {
 		t.Errorf(
 			"expected second song ID %s, got %s",
-			song2.ID,
+			song2.Song.ID,
 			songsFromService[1].Song.ID,
 		)
 	}
@@ -157,11 +164,11 @@ func TestWhenGetAllSongsIsCalledWithArchivedFlagThenSongRepositoryGetAllIsCalled
 		t.Fatal(err)
 	}
 
-	if !f.repository.getAllCalled {
+	if !f.queryRepository.getAllCalled {
 		t.Error("expected repository GetAll to be called")
 	}
 
-	if !f.repository.archivedArg {
+	if !f.queryRepository.archivedArg {
 		t.Error("expected archived argument to be true")
 	}
 }
@@ -170,7 +177,7 @@ func TestWhenSongRepositoryReturnsErrorThenGetAllSongsAlsoReturnsError(t *testin
 
 	expectedErr := errors.New("database error")
 	f := newSongServiceFixture()
-	f.repository.err = expectedErr
+	f.queryRepository.err = expectedErr
 
 	_, err := f.service.GetAllSongs(SongQuery{})
 	if err != expectedErr {
@@ -315,12 +322,24 @@ func (m *mockSongRepository) Update(song domain.Song) error {
 }
 
 type mockSongQueryRepository struct {
+	songs        []SongDetails
 	err          error
 	getAllCalled bool
+	archivedArg  bool
 }
 
 func (m *mockSongQueryRepository) GetAll(query SongQuery) ([]SongDetails, error) {
-	return []SongDetails{}, nil
+	m.getAllCalled = true
+	m.archivedArg = query.Archived
+
+	songs := []SongDetails{}
+	for _, song := range m.songs {
+		if song.Song.ArchivedAt == nil {
+			songs = append(songs, song)
+		}
+	}
+
+	return songs, m.err
 }
 
 type songServiceFixture struct {

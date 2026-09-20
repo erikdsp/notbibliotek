@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-func NewRouter(songHandler *SongHandler, songVersionHandler *SongVersionHandler) *http.ServeMux {
+func NewRouter(songHandler *SongHandler, songVersionHandler *SongVersionHandler, fileHandler *FileHandler) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	// Songs
@@ -12,6 +12,9 @@ func NewRouter(songHandler *SongHandler, songVersionHandler *SongVersionHandler)
 	mux.HandleFunc("POST /api/v1/songs", songHandler.Create)
 	mux.HandleFunc("GET /api/v1/songs/{song_id}", songHandler.GetByID)
 	mux.HandleFunc("PATCH /api/v1/songs/{song_id}", songHandler.Update)
+
+	// Downloads
+	mux.HandleFunc("GET /api/v1/files/{file_id}/download", fileHandler.GetByID)
 
 	// Song Versions
 	mux.HandleFunc("POST /api/v1/songs/{song_id}/versions", songVersionHandler.Create)
