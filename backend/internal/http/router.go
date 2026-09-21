@@ -7,6 +7,14 @@ import (
 func NewRouter(songHandler *SongHandler, songVersionHandler *SongVersionHandler, fileHandler *FileHandler) *http.ServeMux {
 	mux := http.NewServeMux()
 
+	// openAPI specification
+	mux.HandleFunc("/openapi.yaml", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./docs/openapi.yaml")
+	})
+
+	// Swagger UI
+	mux.Handle("/docs/", http.StripPrefix("/docs/", http.FileServer(http.Dir("./docs/swagger-ui"))))
+
 	// Songs
 	mux.HandleFunc("GET /api/v1/songs", songHandler.GetAll)
 	mux.HandleFunc("POST /api/v1/songs", songHandler.Create)
