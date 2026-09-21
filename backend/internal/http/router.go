@@ -1,7 +1,10 @@
 package http
 
 import (
+	"io/fs"
 	"net/http"
+
+	"github.com/erikdsp/notbibliotek/docs"
 )
 
 func NewRouter(songHandler *SongHandler, songVersionHandler *SongVersionHandler, fileHandler *FileHandler) *http.ServeMux {
@@ -9,11 +12,17 @@ func NewRouter(songHandler *SongHandler, songVersionHandler *SongVersionHandler,
 
 	// openAPI specification
 	mux.HandleFunc("/openapi.yaml", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "./docs/openapi.yaml")
+		http.ServeFileFS(w, r, docs.Files, "openapi.yaml")
 	})
 
 	// Swagger UI
-	mux.Handle("/docs/", http.StripPrefix("/docs/", http.FileServer(http.Dir("./docs/swagger-ui"))))
+	swaggerFS, err := fs.Sub(docs.Files, "swagger-ui")
+	if err != nil {
+		panic(err)
+	}
+	mux.Handle(
+		"/docs/",
+		http.StripPrefix("/docs/", http.FileServer(http.FS(swaggerFS))))
 
 	// Songs
 	mux.HandleFunc("GET /api/v1/songs", songHandler.GetAll)
