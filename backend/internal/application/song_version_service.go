@@ -281,7 +281,10 @@ func (s *SongVersionService) PublishSongVersion(songID ulid.ULID, versionID ulid
 	now := time.Now()
 	version.PublishedAt = &now
 
-	if err = s.repository.Update(version); err != nil {
+	if err = s.repository.Publish(version); err != nil {
+		if errors.Is(err, ErrNoRowsAffected) {
+			return VersionDetails{}, ErrSongVersionAlreadyPublished
+		}
 		return VersionDetails{}, err
 	}
 

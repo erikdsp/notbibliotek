@@ -959,7 +959,7 @@ func (m *mockSongVersionRepository) GetByID(id ulid.ULID) (domain.SongVersion, e
 	return domain.SongVersion{}, ErrSongVersionNotFound
 }
 
-func (m *mockSongVersionRepository) Update(songVersion domain.SongVersion) error {
+func (m *mockSongVersionRepository) Publish(songVersion domain.SongVersion) error {
 	if m.err != nil {
 		return m.err
 	}
@@ -971,7 +971,7 @@ func (m *mockSongVersionRepository) Update(songVersion domain.SongVersion) error
 		}
 	}
 
-	return ErrSongVersionNotFound
+	return ErrNoRowsAffected
 }
 
 type mockFileRepository struct {

@@ -65,4 +65,5 @@ erDiagram
 - `File` contains metadata about a stored file, while the actual file contents are managed by the file storage implementation.
 - A `Part` can be associated with multiple `Instrument` records.
 - A `Concert` consists of a set of `Song` records.
+- A `SongVersion` is current if it is the latest published version of the `Song`. If no `SongVersion` is published the `Song` has no current version.
 ```
