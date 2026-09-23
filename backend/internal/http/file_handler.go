@@ -31,12 +31,12 @@ func (h *FileHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	response, err := h.service.GetFileByID(fileID)
 	if err != nil {
-		log.Printf("GetFileByID: %v", err)
 		if errors.Is(err, application.ErrFileNotFound) {
 			writeError(w, err.Error(), http.StatusNotFound)
 			return
 		}
 
+		log.Printf("FileHandler.GetByID failed: %v", err)
 		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
