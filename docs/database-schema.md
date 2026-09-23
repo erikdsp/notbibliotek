@@ -53,3 +53,8 @@
 
 - `part_id` → `parts.id`
 - `instrument_id` → `instruments.id`
+
+## `file_storage_ids`
+
+- `file_id`
+- `storage_id`

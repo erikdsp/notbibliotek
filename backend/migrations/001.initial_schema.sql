@@ -103,3 +103,8 @@ CREATE TABLE part_instruments (
 
     PRIMARY KEY (part_id, instrument_id)
 );
+
+CREATE TABLE file_storage_ids (
+    file_id UUID PRIMARY KEY,
+    storage_id TEXT NOT NULL
+);
