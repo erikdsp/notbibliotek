@@ -7,7 +7,8 @@ import (
 
 	"github.com/erikdsp/notbibliotek/backend/internal/application"
 	httpHandler "github.com/erikdsp/notbibliotek/backend/internal/http"
-	"github.com/erikdsp/notbibliotek/backend/internal/infrastructure/filestorage"
+
+	"github.com/erikdsp/notbibliotek/backend/internal/infrastructure/drivefilestorage"
 	"github.com/erikdsp/notbibliotek/backend/internal/infrastructure/postgres"
 	"github.com/joho/godotenv"
 )
@@ -34,7 +35,14 @@ func main() {
 	partRepository := postgres.NewPostgresPartRepository(db)
 	songVersionRepository := postgres.NewPostgresSongVersionRepository(db)
 
-	fileStorage := filestorage.NewLocalFileStorage("./backend/data/files")
+	credentialsPath := os.Getenv("GOOGLE_DRIVE_CREDENTIALS_PATH")
+	tokenPath := os.Getenv("GOOGLE_DRIVE_TOKEN_PATH")
+	folderID := os.Getenv("GOOGLE_DRIVE_FOLDER_ID")
+	driveRepository := drivefilestorage.NewPostgresDriveRepository(db)
+	fileStorage, err := drivefilestorage.NewDriveFileStorage(credentialsPath, tokenPath, folderID, driveRepository)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	songService := application.NewSongService(songRepository, songQueryRepository)
 	songVersionService := application.NewSongVersionService(songVersionRepository,

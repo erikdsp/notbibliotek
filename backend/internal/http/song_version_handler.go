@@ -3,6 +3,7 @@ package http
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/erikdsp/notbibliotek/backend/internal/application"
@@ -36,6 +37,7 @@ func (h *SongVersionHandler) Create(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		log.Printf("GetSongByID failed: %v", err)
 		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 
@@ -83,7 +85,7 @@ func (h *SongVersionHandler) UploadScore(w http.ResponseWriter, r *http.Request)
 			writeError(w, "a score is already uploaded", http.StatusConflict)
 			return
 		}
-
+		log.Printf("UploadScore failed: %v", err)
 		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -130,6 +132,7 @@ func (h *SongVersionHandler) UpdateScore(w http.ResponseWriter, r *http.Request)
 			return
 		}
 
+		log.Printf("UpdateScore failed: %v", err)
 		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -187,6 +190,7 @@ func (h *SongVersionHandler) UploadPart(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 
+		log.Printf("UploadPart failed: %v", err)
 		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -241,6 +245,7 @@ func (h *SongVersionHandler) UpdatePart(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 
+		log.Printf("UpdatePart failed: %v", err)
 		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -279,6 +284,7 @@ func (h *SongVersionHandler) Publish(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		log.Printf("Publish failed: %v", err)
 		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 	}

@@ -69,7 +69,7 @@ func (h *SongHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	songs, err := h.service.GetAllSongs(query)
 	if err != nil {
-		log.Printf("GetAllSongs: %v", err)
+		log.Printf("GetAllSongs failed: %v", err)
 		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -126,6 +126,7 @@ func (h *SongHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		log.Printf("GetByID failed: %v", err)
 		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -146,7 +147,7 @@ func (h *SongHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	song, err := h.service.CreateSong(request.Title)
 	if err != nil {
-		log.Printf("CreateSong: %v", err)
+		log.Printf("CreateSong failed: %v", err)
 		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -183,7 +184,7 @@ func (h *SongHandler) Update(w http.ResponseWriter, r *http.Request) {
 			writeError(w, err.Error(), http.StatusNotFound)
 			return
 		}
-
+		log.Printf("Update failed: %v", err)
 		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
