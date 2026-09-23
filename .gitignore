@@ -13,6 +13,7 @@ coverage.*
 
 # Local configuration files
 .env
+backend/.credentials/
 
 # OS X specific files
 .DS_Store
