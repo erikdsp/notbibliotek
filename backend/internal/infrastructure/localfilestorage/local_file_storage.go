@@ -1,4 +1,4 @@
-package filestorage
+package localfilestorage
 
 import (
 	"io"
