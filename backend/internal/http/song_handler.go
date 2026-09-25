@@ -63,6 +63,7 @@ func (h *SongHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	query, err := parseGetAllQuery(r.URL.RawQuery)
 	if err != nil {
+		log.Printf("parseGetAllQuery failed: %v", err)
 		writeError(w, "bad request", http.StatusBadRequest)
 		return
 	}
@@ -114,6 +115,7 @@ func (h *SongHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	query, err := parseGetByIDQuery(r.URL.RawQuery)
 	if err != nil {
+		log.Printf("parseGetByIDQuery failed: %v", err)
 		writeError(w, "bad request", http.StatusBadRequest)
 		return
 	}
