@@ -194,6 +194,10 @@ func (r *PostgresSongQueryRepository) GetAll(query application.SongQuery) ([]app
 	return result, nil
 }
 
+// Base builder for SQL queries
+var psql = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+
+// SQL string that left joins the current version through a select subquery
 const joinCurrentVersion = `
 LEFT JOIN song_versions sv ON sv.id = (
 	SELECT sv2.id
@@ -207,7 +211,7 @@ LEFT JOIN song_versions sv ON sv.id = (
 
 func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
 
-	sql := sq.StatementBuilder.
+	sql := psql.
 		Select(
 			"s.id",
 			"s.title",
@@ -241,8 +245,20 @@ func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
 			"part.key",
 			"part.name",
 			"part.file_id",
-		).
-		LeftJoin("parts part ON part.song_version_id = sv.id")
+		)
+
+	if len(query.Parts) > 0 {
+		sql = sql.JoinClause(
+			sq.Expr(
+				"LEFT JOIN parts part ON part.song_version_id = sv.id AND ?",
+				sq.Eq{"part.key": query.Parts},
+			),
+		)
+	} else {
+		sql = sql.LeftJoin(
+			"parts part ON part.song_version_id = sv.id",
+		)
+	}
 
 	if query.Archived {
 		sql = sql.Where("s.archived_at IS NOT NULL")
