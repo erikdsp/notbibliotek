@@ -69,16 +69,22 @@ func (s dbSongDetailRow) toApplication() (application.SongDetails, application.P
 		}, application.PartDetails{}, nil
 	}
 
-	if !s.Score.ID.Valid {
-		return application.SongDetails{}, application.PartDetails{}, application.ErrScoreNotFound
-	}
-	if !s.Score.FileID.Valid {
-		return application.SongDetails{}, application.PartDetails{}, application.ErrIncompleteScore
+	songVersionID := ulid.ULID(s.SongVersion.ID.UUID)
+
+	var score *application.ScoreDetails
+
+	if s.Score.ID.Valid != s.Score.FileID.Valid {
+		return application.SongDetails{},
+			application.PartDetails{},
+			application.ErrIncompleteScore
 	}
 
-	songVersionID := ulid.ULID(s.SongVersion.ID.UUID)
-	scoreID := ulid.ULID(s.Score.ID.UUID)
-	fileID := ulid.ULID(s.Score.ID.UUID)
+	if s.Score.ID.Valid {
+		score = &application.ScoreDetails{
+			ID:     ulid.ULID(s.Score.ID.UUID),
+			FileID: ulid.ULID(s.Score.FileID.UUID),
+		}
+	}
 
 	songDetails := application.SongDetails{
 		Song: domain.Song{
@@ -93,10 +99,7 @@ func (s dbSongDetailRow) toApplication() (application.SongDetails, application.P
 					ID:          songVersionID,
 					PublishedAt: s.SongVersion.PublishedAt,
 				},
-				Score: application.ScoreDetails{
-					ID:     scoreID,
-					FileID: fileID,
-				},
+				Score: score,
 			},
 		},
 	}
@@ -213,17 +216,31 @@ func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
 			"sv.published_at",
 		).
 		From("songs s").
-		JoinClause(joinCurrentVersion).
+		JoinClause(joinCurrentVersion)
+
+	if query.IncludeScore {
+		sql = sql.
+			Columns(
+				"score.id",
+				"score.file_id",
+			).
+			LeftJoin(
+				"scores score ON score.song_version_id = sv.id",
+			)
+	} else {
+		sql = sql.
+			Columns(
+				"NULL AS score_id",
+				"NULL AS score_file_id",
+			)
+	}
+
+	sql = sql.
 		Columns(
-			"score.id",
-			"score.file_id",
 			"part.id",
 			"part.key",
 			"part.name",
 			"part.file_id",
-		).
-		LeftJoin(
-			"scores score ON score.song_version_id = sv.id",
 		).
 		LeftJoin("parts part ON part.song_version_id = sv.id")
 

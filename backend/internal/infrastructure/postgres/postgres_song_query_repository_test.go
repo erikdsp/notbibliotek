@@ -161,8 +161,7 @@ func Test_WhenRowContainsPartThenToApplicationReturnsCorrectPart(t *testing.T) {
 
 }
 
-func Test_WhenRowIsMissingScoreThenToApplicationReturnsCorrectError(t *testing.T) {
-
+func Test_WhenRowIsMissingScoreThenToApplicationReturnsVersionWithoutScore(t *testing.T) {
 	row := dbSongDetailRow{
 		Song: dbSongDetail{
 			ID:    uuid.UUID(ulid.Make()),
@@ -174,19 +173,30 @@ func Test_WhenRowIsMissingScoreThenToApplicationReturnsCorrectError(t *testing.T
 				Valid: true,
 			},
 		},
+		Score: dbScoreDetail{
+			ID: uuid.NullUUID{
+				UUID:  uuid.UUID{},
+				Valid: false,
+			},
+			FileID: uuid.NullUUID{
+				UUID:  uuid.UUID{},
+				Valid: false,
+			},
+		},
 	}
 
-	_, _, err := row.toApplication()
+	songDetails, _, err := row.toApplication()
 
-	if !errors.Is(err, application.ErrScoreNotFound) {
-		t.Fatalf(
-			"expected error %q, got %q",
-			application.ErrScoreNotFound,
-			err,
-		)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	currentVersionID := *songDetails.CurrentVersionID
+
+	if songDetails.Versions[currentVersionID].Score != nil {
+		t.Error("expected score to be nil")
 	}
 }
-
 func Test_WhenRowHasIncompleteScoreThenToApplicationReturnsCorrectError(t *testing.T) {
 
 	row := dbSongDetailRow{
@@ -292,5 +302,51 @@ func Test_WhenArchivedIsFalseThenSongDetailsQueryFiltersForNonArchivedSongs(t *t
 
 	if !strings.Contains(sql, "s.archived_at IS NULL") {
 		t.Errorf("expected non-archived filter, got query: %s", sql)
+	}
+}
+
+func Test_WhenIncludeScoreIsTrueThenSongDetailsQueryIncludesScore(t *testing.T) {
+	query := application.SongQuery{
+		IncludeScore: true,
+	}
+
+	sql, _, err := buildSongDetailsQuery(query).ToSql()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(sql, "score.id") {
+		t.Errorf("expected query to include score.id, got: %s", sql)
+	}
+
+	if !strings.Contains(sql, "score.file_id") {
+		t.Errorf("expected query to include score.file_id, got: %s", sql)
+	}
+
+	if !strings.Contains(sql, "JOIN scores") {
+		t.Errorf("expected query to join scores, got: %s", sql)
+	}
+}
+
+func Test_WhenIncludeScoreIsFalseThenSongDetailsQueryExcludesScore(t *testing.T) {
+	query := application.SongQuery{
+		IncludeScore: false,
+	}
+
+	sql, _, err := buildSongDetailsQuery(query).ToSql()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(sql, "NULL AS score_id") {
+		t.Errorf("expected NULL score id, got: %s", sql)
+	}
+
+	if !strings.Contains(sql, "NULL AS score_file_id") {
+		t.Errorf("expected NULL score file_id, got: %s", sql)
+	}
+
+	if strings.Contains(sql, "JOIN scores") {
+		t.Errorf("expected query not to join scores, got: %s", sql)
 	}
 }
