@@ -1164,23 +1164,31 @@ components:
       name: part
       in: query
       required: false
-      description: When present, only parts matching the query are returned; otherwise all parts are returned.
+      description: When present, only parts with a key matching one of the provided values are returned; otherwise all parts are returned.
+      style: form
+      explode: true
       schema:
-        type: string
+        type: array
+        items: 
+          type: string
     instrumentQuery:
       name: instrument
       in: query
       required: false
-      description: When present, only parts connected to an instrument matching the query are returned; otherwise all parts are returned.
+      description: When present, only parts connected to an instrument with a key matching one of the provided values are returned; otherwise all parts are returned.
       schema:
-        type: string
+        type: array
+        items: 
+          type: string
     concertQuery:
       name: concert
       in: query
       required: false
-      description: When present, only songs included in the concert(s) are included; otherwise all songs are returned.
+      description: When present, only songs included in the provided concert(s) are returned; otherwise all songs are returned.
       schema:
-        type: string
+        type: array
+        items: 
+          type: string
     includeScoreQuery:
       name: include_score
       in: query

@@ -31,10 +31,10 @@ func parseGetAllQuery(rawQuery string) (application.SongQuery, error) {
 	}
 
 	query := application.SongQuery{
-		Search:     queryValues.Get("search"),
-		Concert:    queryValues.Get("concert"),
-		Part:       queryValues.Get("part"),
-		Instrument: queryValues.Get("instrument"),
+		Search:      queryValues.Get("search"),
+		Concerts:    queryValues["concert"],
+		Parts:       queryValues["part"],
+		Instruments: queryValues["instrument"],
 	}
 
 	if archived := queryValues.Get("archived"); archived != "" {
@@ -63,6 +63,7 @@ func (h *SongHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	query, err := parseGetAllQuery(r.URL.RawQuery)
 	if err != nil {
+		log.Printf("parseGetAllQuery failed: %v", err)
 		writeError(w, "bad request", http.StatusBadRequest)
 		return
 	}
@@ -87,8 +88,8 @@ func parseGetByIDQuery(rawQuery string) (application.SongByIDQuery, error) {
 	}
 
 	query := application.SongByIDQuery{
-		Part:       queryValues.Get("part"),
-		Instrument: queryValues.Get("instrument"),
+		Parts:       queryValues["part"],
+		Instruments: queryValues["instrument"],
 	}
 
 	if includeScore := queryValues.Get("include_score"); includeScore != "" {
@@ -114,6 +115,7 @@ func (h *SongHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	query, err := parseGetByIDQuery(r.URL.RawQuery)
 	if err != nil {
+		log.Printf("parseGetByIDQuery failed: %v", err)
 		writeError(w, "bad request", http.StatusBadRequest)
 		return
 	}

@@ -350,3 +350,49 @@ func Test_WhenIncludeScoreIsFalseThenSongDetailsQueryExcludesScore(t *testing.T)
 		t.Errorf("expected query not to join scores, got: %s", sql)
 	}
 }
+
+func Test_WhenPartsAreProvidedThenSongDetailsQueryFiltersJoinedParts(t *testing.T) {
+	query := application.SongQuery{
+		Parts: []string{"violin1", "violin2"},
+	}
+
+	sql, args, err := buildSongDetailsQuery(query).ToSql()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(sql, "LEFT JOIN parts part ON part.song_version_id = sv.id AND part.key IN ($1,$2)") {
+		t.Errorf("expected query to filter joined parts, got: %s", sql)
+	}
+
+	if len(args) != 2 {
+		t.Fatalf("expected 2 args, got %d", len(args))
+	}
+
+	if args[0] != "violin1" || args[1] != "violin2" {
+		t.Errorf("unexpected args: %v", args)
+	}
+
+}
+
+func Test_WhenPartsAreNotProvidedThenSongDetailsQueryIncludesAllParts(t *testing.T) {
+	query := application.SongQuery{}
+
+	sql, args, err := buildSongDetailsQuery(query).ToSql()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(args) != 0 {
+		t.Fatalf("expected 0 args, got %d", len(args))
+	}
+
+	if !strings.Contains(sql, "LEFT JOIN parts part ON part.song_version_id = sv.id") {
+		t.Errorf("expected query to join parts, got: %s", sql)
+	}
+
+	if strings.Contains(sql, "AND part.key IN") {
+		t.Errorf("expected query without part filtering, got: %s", sql)
+	}
+
+}
