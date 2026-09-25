@@ -3,6 +3,7 @@ package postgres
 import (
 	"database/sql"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/erikdsp/notbibliotek/backend/internal/application"
@@ -257,5 +258,39 @@ func Test_WhenRowHasIncompletePartThenToApplicationReturnsCorrectError(t *testin
 			application.ErrIncompletePart,
 			err,
 		)
+	}
+}
+
+func Test_WhenArchivedIsTrueThenSongDetailsQueryFiltersForArchivedSongs(t *testing.T) {
+	query := application.SongQuery{
+		Archived: true,
+	}
+
+	builder := buildSongDetailsQuery(query)
+
+	sql, _, err := builder.ToSql()
+	if err != nil {
+		t.Fatalf("failed to build SQL: %v", err)
+	}
+
+	if !strings.Contains(sql, "s.archived_at IS NOT NULL") {
+		t.Errorf("expected archived filter, got query: %s", sql)
+	}
+}
+
+func Test_WhenArchivedIsFalseThenSongDetailsQueryFiltersForNonArchivedSongs(t *testing.T) {
+	query := application.SongQuery{
+		Archived: false,
+	}
+
+	builder := buildSongDetailsQuery(query)
+
+	sql, _, err := builder.ToSql()
+	if err != nil {
+		t.Fatalf("failed to build SQL: %v", err)
+	}
+
+	if !strings.Contains(sql, "s.archived_at IS NULL") {
+		t.Errorf("expected non-archived filter, got query: %s", sql)
 	}
 }

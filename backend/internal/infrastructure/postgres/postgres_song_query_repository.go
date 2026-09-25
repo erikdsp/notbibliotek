@@ -7,40 +7,10 @@ import (
 	"github.com/erikdsp/notbibliotek/backend/internal/application"
 	"github.com/erikdsp/notbibliotek/backend/internal/domain"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/oklog/ulid/v2"
 )
-
-const getSongDetailRowsQuery = `
-    SELECT
-    s.id,
-    s.title,
-    s.archived_at,
-    sv.id,
-    sv.published_at,
-    score.id,
-    score.file_id,
-    part.id,
-    part.key,
-    part.name,
-    part.file_id
-	FROM songs s
-	LEFT JOIN song_versions sv
-	  ON sv.id = (
-	    SELECT sv2.id
-		FROM song_versions sv2
-		WHERE sv2.song_id = s.id
-		AND sv2.published_at IS NOT NULL
-		ORDER BY sv2.published_at DESC
-		LIMIT 1
-	  ) 
-	LEFT JOIN scores score
-	  ON score.song_version_id = sv.id
-    LEFT JOIN parts part
-      ON part.song_version_id = sv.id
-	WHERE s.archived_at IS NULL
-	ORDER BY s.id	
-`
 
 type PostgresSongQueryRepository struct {
 	db *sql.DB
@@ -151,8 +121,15 @@ func (s dbSongDetailRow) toApplication() (application.SongDetails, application.P
 
 func (r *PostgresSongQueryRepository) GetAll(query application.SongQuery) ([]application.SongDetails, error) {
 
+	sql := buildSongDetailsQuery(query)
+
+	queryString, args, err := sql.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
 	rows, err := r.db.Query(
-		getSongDetailRowsQuery,
+		queryString, args...,
 	)
 	if err != nil {
 		return nil, err
@@ -212,4 +189,52 @@ func (r *PostgresSongQueryRepository) GetAll(query application.SongQuery) ([]app
 	}
 
 	return result, nil
+}
+
+const joinCurrentVersion = `
+LEFT JOIN song_versions sv ON sv.id = (
+	SELECT sv2.id
+	FROM song_versions sv2
+	WHERE sv2.song_id = s.id
+	  AND sv2.published_at IS NOT NULL
+	ORDER BY sv2.published_at DESC
+	LIMIT 1
+)
+`
+
+func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
+
+	sql := sq.StatementBuilder.
+		Select(
+			"s.id",
+			"s.title",
+			"s.archived_at",
+			"sv.id",
+			"sv.published_at",
+		).
+		From("songs s").
+		JoinClause(joinCurrentVersion).
+		Columns(
+			"score.id",
+			"score.file_id",
+			"part.id",
+			"part.key",
+			"part.name",
+			"part.file_id",
+		).
+		LeftJoin(
+			"scores score ON score.song_version_id = sv.id",
+		).
+		LeftJoin("parts part ON part.song_version_id = sv.id")
+
+	if query.Archived {
+		sql = sql.Where("s.archived_at IS NOT NULL")
+	} else {
+		sql = sql.Where("s.archived_at IS NULL")
+	}
+
+	sql = sql.
+		OrderBy("s.id")
+
+	return sql
 }
