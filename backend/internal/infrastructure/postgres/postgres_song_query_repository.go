@@ -225,8 +225,15 @@ func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
 		LeftJoin(
 			"scores score ON score.song_version_id = sv.id",
 		).
-		LeftJoin("parts part ON part.song_version_id = sv.id").
-		Where("s.archived_at IS NULL").
+		LeftJoin("parts part ON part.song_version_id = sv.id")
+
+	if query.Archived {
+		sql = sql.Where("s.archived_at IS NOT NULL")
+	} else {
+		sql = sql.Where("s.archived_at IS NULL")
+	}
+
+	sql = sql.
 		OrderBy("s.id")
 
 	return sql
