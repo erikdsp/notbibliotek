@@ -17,7 +17,7 @@ type SongDetails struct {
 // VersionDetails contains rich details about a song version
 type VersionDetails struct {
 	Version SongVersionDetails
-	Score   ScoreDetails
+	Score   *ScoreDetails
 	Parts   []PartDetails
 }
 

@@ -11,11 +11,13 @@ func toSongVersionDetails(version domain.SongVersion) SongVersionDetails {
 	}
 }
 
-func toScoreDetails(score domain.Score) ScoreDetails {
-	return ScoreDetails{
+func toScoreDetails(score domain.Score) *ScoreDetails {
+	scoreDetails := ScoreDetails{
 		ID:     score.ID,
 		FileID: score.FileID,
 	}
+
+	return &scoreDetails
 }
 
 func toPartDetails(part domain.Part) PartDetails {
