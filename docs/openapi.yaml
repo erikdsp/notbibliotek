@@ -1164,14 +1164,16 @@ components:
       name: part
       in: query
       required: false
-      description: When present, only parts matching the query are returned; otherwise all parts are returned.
+      description: When present, only parts with a matching part key are returned; otherwise all parts are returned.
+      style: form
+      explode: true
       schema:
         type: string
     instrumentQuery:
       name: instrument
       in: query
       required: false
-      description: When present, only parts connected to an instrument matching the query are returned; otherwise all parts are returned.
+      description: When present, only parts connected to an instrument with a matching key are returned; otherwise all parts are returned.
       schema:
         type: string
     concertQuery:
