@@ -968,6 +968,7 @@ components:
           nullable: true
         score:
           type: object
+          nullable: true
           properties:
             id:
               $ref: "#/components/schemas/ULID"
@@ -1184,7 +1185,7 @@ components:
       name: include_score
       in: query
       required: false
-      description: When true, the score is included in the response; otherwise, it is not included.
+      description: When true, the score is included in the response; otherwise, score is null.
       schema:
         type: boolean
         default: true
