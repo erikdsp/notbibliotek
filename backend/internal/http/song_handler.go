@@ -31,10 +31,10 @@ func parseGetAllQuery(rawQuery string) (application.SongQuery, error) {
 	}
 
 	query := application.SongQuery{
-		Search:     queryValues.Get("search"),
-		Concert:    queryValues.Get("concert"),
-		Part:       queryValues.Get("part"),
-		Instrument: queryValues.Get("instrument"),
+		Search:      queryValues.Get("search"),
+		Concerts:    queryValues["concert"],
+		Parts:       queryValues["part"],
+		Instruments: queryValues["instrument"],
 	}
 
 	if archived := queryValues.Get("archived"); archived != "" {
@@ -88,8 +88,8 @@ func parseGetByIDQuery(rawQuery string) (application.SongByIDQuery, error) {
 	}
 
 	query := application.SongByIDQuery{
-		Part:       queryValues.Get("part"),
-		Instrument: queryValues.Get("instrument"),
+		Parts:       queryValues["part"],
+		Instruments: queryValues["instrument"],
 	}
 
 	if includeScore := queryValues.Get("include_score"); includeScore != "" {
