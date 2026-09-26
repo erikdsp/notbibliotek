@@ -355,12 +355,16 @@ func Test_WhenIncludeScoreIsFalseThenAddScoreColumnsExcludesScore(t *testing.T) 
 	}
 }
 
-func Test_WhenPartsAreProvidedThenSongDetailsQueryFiltersJoinedParts(t *testing.T) {
+func Test_WhenPartsAreProvidedThenAddJoinPartsFiltersJoinedParts(t *testing.T) {
+
 	query := application.SongQuery{
 		Parts: []string{"violin1", "violin2"},
 	}
 
-	sql, args, err := buildSongDetailsQuery(query).ToSql()
+	sqlBuilder := psql.Select("Test")
+	sqlBuilder = addJoinParts(sqlBuilder, query.Parts)
+	sql, args, err := sqlBuilder.ToSql()
+
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -379,10 +383,13 @@ func Test_WhenPartsAreProvidedThenSongDetailsQueryFiltersJoinedParts(t *testing.
 
 }
 
-func Test_WhenPartsAreNotProvidedThenSongDetailsQueryIncludesAllParts(t *testing.T) {
+func Test_WhenPartsAreNotProvidedThenAddJoinPartsIncludesAllParts(t *testing.T) {
 	query := application.SongQuery{}
 
-	sql, args, err := buildSongDetailsQuery(query).ToSql()
+	sqlBuilder := psql.Select("Test")
+	sqlBuilder = addJoinParts(sqlBuilder, query.Parts)
+	sql, args, err := sqlBuilder.ToSql()
+
 	if err != nil {
 		t.Fatal(err)
 	}

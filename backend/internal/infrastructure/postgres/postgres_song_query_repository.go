@@ -275,6 +275,7 @@ LEFT JOIN song_versions sv ON sv.id = (
 )
 `
 
+// Builds SQL with args for GetAll query
 func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
 
 	sql := psql.
@@ -298,18 +299,7 @@ func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
 			"part.file_id",
 		)
 
-	if len(query.Parts) > 0 {
-		sql = sql.JoinClause(
-			sq.Expr(
-				"LEFT JOIN parts part ON part.song_version_id = sv.id AND ?",
-				sq.Eq{"part.key": query.Parts},
-			),
-		)
-	} else {
-		sql = sql.LeftJoin(
-			"parts part ON part.song_version_id = sv.id",
-		)
-	}
+	sql = addJoinParts(sql, query.Parts)
 
 	if query.Archived {
 		sql = sql.Where("s.archived_at IS NOT NULL")
@@ -323,6 +313,7 @@ func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
 	return sql
 }
 
+// Builds SQL with args for GetByID query
 func buildSongByIDQuery(id ulid.ULID, query application.SongByIDQuery) sq.SelectBuilder {
 
 	sql := psql.
@@ -346,9 +337,7 @@ func buildSongByIDQuery(id ulid.ULID, query application.SongByIDQuery) sq.Select
 			"part.file_id",
 		)
 
-	sql = sql.LeftJoin(
-		"parts part ON part.song_version_id = sv.id",
-	)
+	sql = addJoinParts(sql, query.Parts)
 
 	sql = sql.Where(sq.Eq{"s.id": id})
 
@@ -358,6 +347,7 @@ func buildSongByIDQuery(id ulid.ULID, query application.SongByIDQuery) sq.Select
 	return sql
 }
 
+// adds score columns and conditional left join
 func addScoreColumns(sql sq.SelectBuilder, includeScore bool) sq.SelectBuilder {
 	if includeScore {
 		return sql.
@@ -374,5 +364,21 @@ func addScoreColumns(sql sq.SelectBuilder, includeScore bool) sq.SelectBuilder {
 				"NULL AS score_id",
 				"NULL AS score_file_id",
 			)
+	}
+}
+
+// adds left join for parts and conditional filtering on part key(s)
+func addJoinParts(sql sq.SelectBuilder, parts []string) sq.SelectBuilder {
+	if len(parts) > 0 {
+		return sql.JoinClause(
+			sq.Expr(
+				"LEFT JOIN parts part ON part.song_version_id = sv.id AND ?",
+				sq.Eq{"part.key": parts},
+			),
+		)
+	} else {
+		return sql.LeftJoin(
+			"parts part ON part.song_version_id = sv.id",
+		)
 	}
 }
