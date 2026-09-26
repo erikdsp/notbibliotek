@@ -62,7 +62,7 @@ func Test_WhenGetSongByIDIsCalledWithValidIDThenSongServiceReturnsSongWithThatID
 		Title: "Test Song",
 	}
 	f := newSongServiceFixture()
-	f.repository.songs = append(f.repository.songs, song)
+	f.queryRepository.songs = append(f.queryRepository.songs, SongDetails{Song: song})
 
 	songDetails, err := f.service.GetSongByID(
 		song.ID,
