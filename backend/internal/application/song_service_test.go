@@ -322,10 +322,11 @@ func (m *mockSongRepository) Update(song domain.Song) error {
 }
 
 type mockSongQueryRepository struct {
-	songs        []SongDetails
-	err          error
-	getAllCalled bool
-	archivedArg  bool
+	songs         []SongDetails
+	err           error
+	getAllCalled  bool
+	getByIDcalled bool
+	archivedArg   bool
 }
 
 func (m *mockSongQueryRepository) GetAll(query SongQuery) ([]SongDetails, error) {
@@ -340,6 +341,22 @@ func (m *mockSongQueryRepository) GetAll(query SongQuery) ([]SongDetails, error)
 	}
 
 	return songs, m.err
+}
+
+func (m *mockSongQueryRepository) GetByID(id ulid.ULID, query SongByIDQuery) (SongDetails, error) {
+	m.getByIDcalled = true
+
+	if m.err != nil {
+		return SongDetails{}, m.err
+	}
+
+	for i, song := range m.songs {
+		if song.Song.ID == id {
+			return m.songs[i], nil
+		}
+	}
+
+	return SongDetails{}, ErrSongNotFound
 }
 
 type songServiceFixture struct {

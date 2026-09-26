@@ -9,14 +9,14 @@ import (
 )
 
 type SongService struct {
-	repository       SongRepository
-	queryRespository SongQueryRepository
+	repository      SongRepository
+	queryRepository SongQueryRepository
 }
 
 func NewSongService(repository SongRepository, queryRepository SongQueryRepository) *SongService {
 	return &SongService{
-		repository:       repository,
-		queryRespository: queryRepository,
+		repository:      repository,
+		queryRepository: queryRepository,
 	}
 }
 
@@ -34,16 +34,15 @@ func (s *SongService) CreateSong(title string) (domain.Song, error) {
 }
 
 func (s *SongService) GetSongByID(id ulid.ULID, query SongByIDQuery) (SongDetails, error) {
-	song, err := s.repository.GetByID(id)
+	song, err := s.queryRepository.GetByID(id, query)
 	if err != nil {
 		return SongDetails{}, err
 	}
-	return SongDetails{Song: song}, nil
-
+	return song, nil
 }
 
 func (s *SongService) GetAllSongs(query SongQuery) ([]SongDetails, error) {
-	return s.queryRespository.GetAll(query)
+	return s.queryRepository.GetAll(query)
 }
 
 func (s *SongService) UpdateSong(id ulid.ULID, title *string, archived *bool) (domain.Song, error) {
