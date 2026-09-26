@@ -305,12 +305,14 @@ func Test_WhenArchivedIsFalseThenSongDetailsQueryFiltersForNonArchivedSongs(t *t
 	}
 }
 
-func Test_WhenIncludeScoreIsTrueThenSongDetailsQueryIncludesScore(t *testing.T) {
-	query := application.SongQuery{
-		IncludeScore: true,
-	}
+func Test_WhenIncludeScoreIsTrueThenAddScoreColumnsIncludesScore(t *testing.T) {
 
-	sql, _, err := buildSongDetailsQuery(query).ToSql()
+	includeScore := true
+
+	sqlBuilder := psql.Select("Test")
+	sqlBuilder = addScoreColumns(sqlBuilder, includeScore)
+	sql, _, err := sqlBuilder.ToSql()
+
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -328,12 +330,14 @@ func Test_WhenIncludeScoreIsTrueThenSongDetailsQueryIncludesScore(t *testing.T) 
 	}
 }
 
-func Test_WhenIncludeScoreIsFalseThenSongDetailsQueryExcludesScore(t *testing.T) {
-	query := application.SongQuery{
-		IncludeScore: false,
-	}
+func Test_WhenIncludeScoreIsFalseThenAddScoreColumnsExcludesScore(t *testing.T) {
 
-	sql, _, err := buildSongDetailsQuery(query).ToSql()
+	includeScore := false
+
+	sqlBuilder := psql.Select("Test")
+	sqlBuilder = addScoreColumns(sqlBuilder, includeScore)
+	sql, _, err := sqlBuilder.ToSql()
+
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -351,12 +355,16 @@ func Test_WhenIncludeScoreIsFalseThenSongDetailsQueryExcludesScore(t *testing.T)
 	}
 }
 
-func Test_WhenPartsAreProvidedThenSongDetailsQueryFiltersJoinedParts(t *testing.T) {
+func Test_WhenPartsAreProvidedThenAddJoinPartsFiltersJoinedParts(t *testing.T) {
+
 	query := application.SongQuery{
 		Parts: []string{"violin1", "violin2"},
 	}
 
-	sql, args, err := buildSongDetailsQuery(query).ToSql()
+	sqlBuilder := psql.Select("Test")
+	sqlBuilder = addJoinParts(sqlBuilder, query.Parts)
+	sql, args, err := sqlBuilder.ToSql()
+
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -375,10 +383,13 @@ func Test_WhenPartsAreProvidedThenSongDetailsQueryFiltersJoinedParts(t *testing.
 
 }
 
-func Test_WhenPartsAreNotProvidedThenSongDetailsQueryIncludesAllParts(t *testing.T) {
+func Test_WhenPartsAreNotProvidedThenAddJoinPartsIncludesAllParts(t *testing.T) {
 	query := application.SongQuery{}
 
-	sql, args, err := buildSongDetailsQuery(query).ToSql()
+	sqlBuilder := psql.Select("Test")
+	sqlBuilder = addJoinParts(sqlBuilder, query.Parts)
+	sql, args, err := sqlBuilder.ToSql()
+
 	if err != nil {
 		t.Fatal(err)
 	}

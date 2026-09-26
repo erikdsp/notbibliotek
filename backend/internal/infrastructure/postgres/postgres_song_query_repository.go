@@ -194,6 +194,72 @@ func (r *PostgresSongQueryRepository) GetAll(query application.SongQuery) ([]app
 	return result, nil
 }
 
+func (r *PostgresSongQueryRepository) GetByID(id ulid.ULID, query application.SongByIDQuery) (application.SongDetails, error) {
+
+	sql := buildSongByIDQuery(id, query)
+	queryString, args, err := sql.ToSql()
+	if err != nil {
+		return application.SongDetails{}, err
+	}
+
+	rows, err := r.db.Query(
+		queryString, args...,
+	)
+	if err != nil {
+		return application.SongDetails{}, err
+	}
+	defer rows.Close()
+
+	result := application.SongDetails{}
+	first := true
+
+	for rows.Next() {
+		var dbRow dbSongDetailRow
+
+		err := rows.Scan(
+			&dbRow.Song.ID,
+			&dbRow.Song.Title,
+			&dbRow.Song.ArchivedAt,
+			&dbRow.SongVersion.ID,
+			&dbRow.SongVersion.PublishedAt,
+			&dbRow.Score.ID,
+			&dbRow.Score.FileID,
+			&dbRow.Part.ID,
+			&dbRow.Part.Key,
+			&dbRow.Part.Name,
+			&dbRow.Part.FileID,
+		)
+		if err != nil {
+			return application.SongDetails{}, err
+		}
+
+		song, part, err := dbRow.toApplication()
+		if err != nil {
+			return application.SongDetails{}, err
+		}
+
+		if first {
+			result = song
+			first = false
+		}
+		if song.CurrentVersionID != nil && part.ID != (ulid.ULID{}) {
+			version := result.Versions[*song.CurrentVersionID]
+			version.Parts = append(version.Parts, part)
+		}
+
+	}
+
+	if err := rows.Err(); err != nil {
+		return application.SongDetails{}, err
+	}
+
+	if first {
+		return application.SongDetails{}, application.ErrSongNotFound
+	}
+
+	return result, nil
+}
+
 // Base builder for SQL queries
 var psql = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
@@ -209,6 +275,7 @@ LEFT JOIN song_versions sv ON sv.id = (
 )
 `
 
+// Builds SQL with args for GetAll query
 func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
 
 	sql := psql.
@@ -222,22 +289,7 @@ func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
 		From("songs s").
 		JoinClause(joinCurrentVersion)
 
-	if query.IncludeScore {
-		sql = sql.
-			Columns(
-				"score.id",
-				"score.file_id",
-			).
-			LeftJoin(
-				"scores score ON score.song_version_id = sv.id",
-			)
-	} else {
-		sql = sql.
-			Columns(
-				"NULL AS score_id",
-				"NULL AS score_file_id",
-			)
-	}
+	sql = addScoreColumns(sql, query.IncludeScore)
 
 	sql = sql.
 		Columns(
@@ -247,18 +299,7 @@ func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
 			"part.file_id",
 		)
 
-	if len(query.Parts) > 0 {
-		sql = sql.JoinClause(
-			sq.Expr(
-				"LEFT JOIN parts part ON part.song_version_id = sv.id AND ?",
-				sq.Eq{"part.key": query.Parts},
-			),
-		)
-	} else {
-		sql = sql.LeftJoin(
-			"parts part ON part.song_version_id = sv.id",
-		)
-	}
+	sql = addJoinParts(sql, query.Parts)
 
 	if query.Archived {
 		sql = sql.Where("s.archived_at IS NOT NULL")
@@ -270,4 +311,74 @@ func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
 		OrderBy("s.id")
 
 	return sql
+}
+
+// Builds SQL with args for GetByID query
+func buildSongByIDQuery(id ulid.ULID, query application.SongByIDQuery) sq.SelectBuilder {
+
+	sql := psql.
+		Select(
+			"s.id",
+			"s.title",
+			"s.archived_at",
+			"sv.id",
+			"sv.published_at",
+		).
+		From("songs s").
+		JoinClause(joinCurrentVersion)
+
+	sql = addScoreColumns(sql, query.IncludeScore)
+
+	sql = sql.
+		Columns(
+			"part.id",
+			"part.key",
+			"part.name",
+			"part.file_id",
+		)
+
+	sql = addJoinParts(sql, query.Parts)
+
+	sql = sql.Where(sq.Eq{"s.id": id})
+
+	sql = sql.
+		OrderBy("s.id")
+
+	return sql
+}
+
+// adds score columns and conditional left join
+func addScoreColumns(sql sq.SelectBuilder, includeScore bool) sq.SelectBuilder {
+	if includeScore {
+		return sql.
+			Columns(
+				"score.id",
+				"score.file_id",
+			).
+			LeftJoin(
+				"scores score ON score.song_version_id = sv.id",
+			)
+	} else {
+		return sql.
+			Columns(
+				"NULL AS score_id",
+				"NULL AS score_file_id",
+			)
+	}
+}
+
+// adds left join for parts and conditional filtering on part key(s)
+func addJoinParts(sql sq.SelectBuilder, parts []string) sq.SelectBuilder {
+	if len(parts) > 0 {
+		return sql.JoinClause(
+			sq.Expr(
+				"LEFT JOIN parts part ON part.song_version_id = sv.id AND ?",
+				sq.Eq{"part.key": parts},
+			),
+		)
+	} else {
+		return sql.LeftJoin(
+			"parts part ON part.song_version_id = sv.id",
+		)
+	}
 }
