@@ -572,7 +572,7 @@ paths:
       summary: Delete instrument
       operationId: delete-instrument
       responses:
-        "200":
+        "204":
           description: Instrument deleted.
         "400":
           $ref: "#/components/responses/BadRequest"
@@ -632,7 +632,7 @@ paths:
       summary: Delete part instrument connection
       operationId: delete-part-instrument
       responses:
-        "200":
+        "204":
           description: Part instrument deleted.
         "400":
           $ref: "#/components/responses/BadRequest"
@@ -811,7 +811,7 @@ paths:
       summary: Remove song from concert
       operationId: remove-song-from-concert
       responses:
-        "200":
+        "204":
           description: Song removed from concert.
         "400":
           $ref: "#/components/responses/BadRequest"
