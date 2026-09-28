@@ -592,21 +592,23 @@ paths:
             $ref: "#/components/schemas/ULID"
       security:
         - adminAuth: []
-  /parts/{part_id}/instruments:
-    post:
+  /parts/{part_id}/instruments/{instrument_id}:
+    put: 
       tags:
         - Instruments
-      summary: Post part instrument connection
-      operationId: post-part-instrument
+      summary: Create part instrument connection
+      operationId: put-part-instrument
       responses:
         "201":
           description: Part Instrument created.
+        "204":
+          description: Part Instrument already existing.
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/AuthenticationRequired"
         "404":
-          description: Part not found.
+          description: Resource not found.
           content:
             application/json:
               schema:
@@ -617,15 +619,13 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/ULID"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreatePartInstrumentRequest"
+        - name: instrument_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"
       security:
         - adminAuth: []
-  /parts/{part_id}/instruments/{instrument_id}:
     delete:
       tags:
         - Instruments
@@ -1031,13 +1031,6 @@ components:
           type: string
       required:
         - title
-    CreatePartInstrumentRequest:
-      type: object
-      properties:
-        instrument_id:
-          $ref: "#/components/schemas/ULID"
-      required:
-        - instrument_id
     CreateInstrumentRequest:
       type: object
       properties:
