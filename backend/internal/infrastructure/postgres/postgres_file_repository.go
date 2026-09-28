@@ -41,10 +41,10 @@ type dbFile struct {
 	Name string
 }
 
-func (s dbFile) toDomain() domain.File {
+func (f dbFile) toDomain() domain.File {
 	return domain.File{
-		ID:   ulid.ULID(s.ID),
-		Name: s.Name,
+		ID:   ulid.ULID(f.ID),
+		Name: f.Name,
 	}
 }
 

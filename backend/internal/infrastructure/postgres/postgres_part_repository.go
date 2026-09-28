@@ -54,13 +54,13 @@ type dbPart struct {
 	FileID        uuid.UUID
 }
 
-func (s dbPart) toDomain() domain.Part {
+func (p dbPart) toDomain() domain.Part {
 	return domain.Part{
-		ID:            ulid.ULID(s.ID),
-		Key:           s.Key,
-		Name:          s.Name,
-		SongVersionID: ulid.ULID(s.SongVersionID),
-		FileID:        ulid.ULID(s.FileID),
+		ID:            ulid.ULID(p.ID),
+		Key:           p.Key,
+		Name:          p.Name,
+		SongVersionID: ulid.ULID(p.SongVersionID),
+		FileID:        ulid.ULID(p.FileID),
 	}
 }
 
