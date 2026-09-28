@@ -12,25 +12,32 @@ import (
 )
 
 type SongVersionService struct {
-	repository      SongVersionRepository
-	songRepository  SongRepository
-	fileRepository  FileRepository
-	scoreRepository ScoreRepository
-	partRepository  PartRepository
-	fileStorage     FileStorage
+	repository               SongVersionRepository
+	songRepository           SongRepository
+	fileRepository           FileRepository
+	scoreRepository          ScoreRepository
+	partRepository           PartRepository
+	partInstrumentRepository PartInstrumentRepository
+	fileStorage              FileStorage
 }
 
-func NewSongVersionService(repository SongVersionRepository,
-	songRepository SongRepository, fileRepository FileRepository,
-	scoreRepository ScoreRepository, partRepository PartRepository,
-	fileStorage FileStorage) *SongVersionService {
+func NewSongVersionService(
+	repository SongVersionRepository,
+	songRepository SongRepository,
+	fileRepository FileRepository,
+	scoreRepository ScoreRepository,
+	partRepository PartRepository,
+	partInstrumentRepository PartInstrumentRepository,
+	fileStorage FileStorage,
+) *SongVersionService {
 	return &SongVersionService{
-		repository:      repository,
-		songRepository:  songRepository,
-		fileRepository:  fileRepository,
-		scoreRepository: scoreRepository,
-		partRepository:  partRepository,
-		fileStorage:     fileStorage,
+		repository:               repository,
+		songRepository:           songRepository,
+		fileRepository:           fileRepository,
+		scoreRepository:          scoreRepository,
+		partRepository:           partRepository,
+		partInstrumentRepository: partInstrumentRepository,
+		fileStorage:              fileStorage,
 	}
 }
 
@@ -315,4 +322,12 @@ func (s *SongVersionService) cleanupOldFile(fileID ulid.ULID) {
 	if err := s.fileStorage.Delete(fileID); err != nil {
 		log.Printf("failed to delete old file %s: %v", fileID, err)
 	}
+}
+
+func (s *SongVersionService) CreateConnection(partID ulid.ULID, instrumentID ulid.ULID) (created bool, err error) {
+	return s.partInstrumentRepository.Create(partID, instrumentID)
+}
+
+func (s *SongVersionService) DeleteConnection(partID ulid.ULID, instrumentID ulid.ULID) error {
+	return s.partInstrumentRepository.Delete(partID, instrumentID)
 }

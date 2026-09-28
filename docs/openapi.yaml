@@ -13,8 +13,10 @@ tags:
     description: Download files from the library
   - name: Song Versions
     description: Song versions and handling file uploads
+  - name: Part Instrument Connections
+    description: Connections between parts and instruments
   - name: Instruments
-    description: Instruments in the library and their connections
+    description: Instruments in the library
   - name: Concerts
     description: Concerts and their songs
 paths:
@@ -484,6 +486,71 @@ paths:
             $ref: "#/components/schemas/ULID"
       security:
         - adminAuth: []
+  /parts/{part_id}/instruments/{instrument_id}:
+    put: 
+      tags:
+        - Part Instrument Connections
+      summary: Create part instrument connection
+      operationId: put-part-instrument
+      responses:
+        "201":
+          description: Part Instrument created.
+        "204":
+          description: Part Instrument already existing.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "404":
+          description: Resource not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      parameters:
+        - name: part_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"
+        - name: instrument_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"
+      security:
+        - adminAuth: []
+    delete:
+      tags:
+        - Part Instrument Connections
+      summary: Delete part instrument connection
+      operationId: delete-part-instrument
+      responses:
+        "204":
+          description: Part instrument deleted.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "404":
+          description: Resource not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      parameters:
+        - name: part_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"
+        - name: instrument_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"
+      security:
+        - adminAuth: []
   /instruments:
     get:
       tags:
@@ -585,71 +652,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
       parameters:
-        - name: instrument_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-      security:
-        - adminAuth: []
-  /parts/{part_id}/instruments:
-    post:
-      tags:
-        - Instruments
-      summary: Post part instrument connection
-      operationId: post-part-instrument
-      responses:
-        "201":
-          description: Part Instrument created.
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/AuthenticationRequired"
-        "404":
-          description: Part not found.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      parameters:
-        - name: part_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreatePartInstrumentRequest"
-      security:
-        - adminAuth: []
-  /parts/{part_id}/instruments/{instrument_id}:
-    delete:
-      tags:
-        - Instruments
-      summary: Delete part instrument connection
-      operationId: delete-part-instrument
-      responses:
-        "204":
-          description: Part instrument deleted.
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/AuthenticationRequired"
-        "404":
-          description: Resource not found.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      parameters:
-        - name: part_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
         - name: instrument_id
           in: path
           required: true
@@ -1031,13 +1033,6 @@ components:
           type: string
       required:
         - title
-    CreatePartInstrumentRequest:
-      type: object
-      properties:
-        instrument_id:
-          $ref: "#/components/schemas/ULID"
-      required:
-        - instrument_id
     CreateInstrumentRequest:
       type: object
       properties:
