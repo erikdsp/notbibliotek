@@ -11,20 +11,20 @@ import (
 func Test_WhenCreateSucceedsThenCreateInstrumentReturnsCreatedInstrument(t *testing.T) {
 
 	f := newInstrumentServiceFixture()
-	name := "Oud"
 	key := "oud"
+	name := "Oud"
 
-	instrument, err := f.service.CreateInstrument(name, key)
+	instrument, err := f.service.CreateInstrument(key, name)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if instrument.Name != name {
-		t.Errorf("expected name %q, got %q", name, instrument.Name)
-	}
-
 	if instrument.Key != key {
 		t.Errorf("expected key %q, got %q", key, instrument.Key)
+	}
+
+	if instrument.Name != name {
+		t.Errorf("expected name %q, got %q", name, instrument.Name)
 	}
 
 	if instrument.ID == (ulid.ULID{}) {
@@ -37,19 +37,19 @@ func Test_WhenCreateSucceedsThenCreateInstrumentReturnsCreatedInstrument(t *test
 
 	repositoryInstrument := f.repository.instruments[0]
 
-	if repositoryInstrument.Name != name {
-		t.Errorf(
-			"expected repository to receive title %q, got %q",
-			name,
-			repositoryInstrument.Name,
-		)
-	}
-
 	if repositoryInstrument.Key != key {
 		t.Errorf(
 			"expected repository to receive title %q, got %q",
 			key,
 			repositoryInstrument.Key,
+		)
+	}
+
+	if repositoryInstrument.Name != name {
+		t.Errorf(
+			"expected repository to receive title %q, got %q",
+			name,
+			repositoryInstrument.Name,
 		)
 	}
 
@@ -64,7 +64,7 @@ func Test_WhenCreateFailsThenCreateInstrumentReturnsError(t *testing.T) {
 	expectedErr := errors.New("repository error")
 	f.repository.createErr = expectedErr
 
-	_, err := f.service.CreateInstrument("Name", "key")
+	_, err := f.service.CreateInstrument("key", "Name")
 
 	if err != expectedErr {
 		t.Errorf("expected error %v, got %v", expectedErr, err)
@@ -79,21 +79,21 @@ func Test_WhenNameIsProvidedThenUpdateInstrumentUpdatesName(t *testing.T) {
 
 	f.repository.instruments = append(f.repository.instruments, domain.Instrument{
 		ID:   id,
-		Name: oldName,
 		Key:  "key",
+		Name: oldName,
 	})
 
-	instrument, err := f.service.UpdateInstrument(id, &newName, nil)
+	instrument, err := f.service.UpdateInstrument(id, nil, &newName)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if instrument.Name != newName {
-		t.Errorf("expected name %q, got %q", newName, instrument.Name)
-	}
-
 	if instrument.Key != "key" {
 		t.Errorf("expected key to be unchanged %q, got %q", "key", instrument.Key)
+	}
+
+	if instrument.Name != newName {
+		t.Errorf("expected name %q, got %q", newName, instrument.Name)
 	}
 
 }
@@ -108,23 +108,22 @@ func Test_WhenKeyIsProvidedThenUpdateInstrumentUpdatesKey(t *testing.T) {
 
 	f.repository.instruments = append(f.repository.instruments, domain.Instrument{
 		ID:   id,
-		Name: name,
 		Key:  oldKey,
+		Name: name,
 	})
 
-	instrument, err := f.service.UpdateInstrument(id, nil, &newKey)
+	instrument, err := f.service.UpdateInstrument(id, &newKey, nil)
 	if err != nil {
 		t.Fatal(err)
-	}
-
-	if instrument.Name != name {
-		t.Errorf("expected name to be unchanged %q, got %q", name, instrument.Name)
 	}
 
 	if instrument.Key != newKey {
 		t.Errorf("expected key to be %q, got %q", newKey, instrument.Key)
 	}
 
+	if instrument.Name != name {
+		t.Errorf("expected name to be unchanged %q, got %q", name, instrument.Name)
+	}
 }
 
 func Test_WhenNameAndKeyAreProvidedThenUpdateInstrumentUpdatesBoth(t *testing.T) {
@@ -138,21 +137,21 @@ func Test_WhenNameAndKeyAreProvidedThenUpdateInstrumentUpdatesBoth(t *testing.T)
 
 	f.repository.instruments = append(f.repository.instruments, domain.Instrument{
 		ID:   id,
-		Name: oldName,
 		Key:  oldKey,
+		Name: oldName,
 	})
 
-	instrument, err := f.service.UpdateInstrument(id, &newName, &newKey)
+	instrument, err := f.service.UpdateInstrument(id, &newKey, &newName)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if instrument.Name != newName {
-		t.Errorf("expected name to be %q, got %q", newName, instrument.Name)
-	}
-
 	if instrument.Key != newKey {
 		t.Errorf("expected key to be %q, got %q", newKey, instrument.Key)
+	}
+
+	if instrument.Name != newName {
+		t.Errorf("expected name to be %q, got %q", newName, instrument.Name)
 	}
 
 }
@@ -164,8 +163,8 @@ func Test_WhenNameAndKeyAreNilThenUpdateInstrumentReturnsError(t *testing.T) {
 
 	f.repository.instruments = append(f.repository.instruments, domain.Instrument{
 		ID:   id,
-		Name: "Name",
 		Key:  "key",
+		Name: "Name",
 	})
 
 	_, err := f.service.UpdateInstrument(id, nil, nil)
@@ -183,11 +182,11 @@ func Test_WhenGetByIDFailsThenUpdateInstrumentReturnsError(t *testing.T) {
 
 	f.repository.instruments = append(f.repository.instruments, domain.Instrument{
 		ID:   id,
-		Name: "Name",
 		Key:  "key",
+		Name: "Name",
 	})
 
-	_, err := f.service.UpdateInstrument(ulid.Make(), nil, &newKey)
+	_, err := f.service.UpdateInstrument(ulid.Make(), &newKey, nil)
 	if err != ErrInstrumentNotFound {
 		t.Fatalf("expected ErrInstrumentNotFound, got %v", err)
 	}
@@ -208,11 +207,11 @@ func Test_WhenUpdateFailsThenUpdateInstrumentReturnsError(t *testing.T) {
 
 	f.repository.instruments = append(f.repository.instruments, domain.Instrument{
 		ID:   id,
-		Name: "Name",
 		Key:  "key",
+		Name: "Name",
 	})
 
-	_, err := f.service.UpdateInstrument(id, nil, &newKey)
+	_, err := f.service.UpdateInstrument(id, &newKey, nil)
 	if err != expectedErr {
 		t.Errorf("expected error %v, got %v", expectedErr, err)
 	}
@@ -255,16 +254,16 @@ func (m *mockInstrumentRepository) GetAll() ([]domain.Instrument, error) {
 	return []domain.Instrument{}, nil
 }
 
-func (m *mockInstrumentRepository) Update(file domain.Instrument) error {
+func (m *mockInstrumentRepository) Update(instrument domain.Instrument) error {
 	m.updateCalled = true
 
 	if m.updateErr != nil {
 		return m.updateErr
 	}
 
-	for index, instrument := range m.instruments {
-		if instrument.ID == file.ID {
-			m.instruments[index] = file
+	for index, repoInstrument := range m.instruments {
+		if repoInstrument.ID == instrument.ID {
+			m.instruments[index] = instrument
 		}
 	}
 	return nil

@@ -16,11 +16,11 @@ func NewInstrumentService(repository InstrumentRepository) *InstrumentService {
 	}
 }
 
-func (s *InstrumentService) CreateInstrument(name string, key string) (domain.Instrument, error) {
+func (s *InstrumentService) CreateInstrument(key string, name string) (domain.Instrument, error) {
 	instrument := domain.Instrument{
 		ID:   ulid.Make(),
-		Name: name,
 		Key:  key,
+		Name: name,
 	}
 
 	if err := s.repository.Create(instrument); err != nil {
@@ -34,8 +34,8 @@ func (s *InstrumentService) GetAllInstruments() ([]domain.Instrument, error) {
 	return s.repository.GetAll()
 }
 
-func (s *InstrumentService) UpdateInstrument(id ulid.ULID, name *string, key *string) (domain.Instrument, error) {
-	if name == nil && key == nil {
+func (s *InstrumentService) UpdateInstrument(id ulid.ULID, key *string, name *string) (domain.Instrument, error) {
+	if key == nil && name == nil {
 		return domain.Instrument{}, ErrNoFieldsToUpdate
 	}
 
@@ -44,12 +44,12 @@ func (s *InstrumentService) UpdateInstrument(id ulid.ULID, name *string, key *st
 		return domain.Instrument{}, err
 	}
 
-	if name != nil {
-		instrument.Name = *name
-	}
-
 	if key != nil {
 		instrument.Key = *key
+	}
+
+	if name != nil {
+		instrument.Name = *name
 	}
 
 	if err := s.repository.Update(instrument); err != nil {
