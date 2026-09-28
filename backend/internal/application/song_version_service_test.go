@@ -1145,6 +1145,17 @@ func (m *MockPartRepository) Update(part domain.Part) error {
 
 }
 
+type mockPartInstrumentRepository struct {
+}
+
+func (m *mockPartInstrumentRepository) Create(partID ulid.ULID, instrumentID ulid.ULID) (created bool, err error) {
+	return true, nil
+}
+
+func (m *mockPartInstrumentRepository) Delete(partID ulid.ULID, instrumentID ulid.ULID) error {
+	return nil
+}
+
 type mockFileStorage struct {
 	file           string
 	savedFileIDs   []ulid.ULID
@@ -1178,13 +1189,14 @@ func (m *mockFileStorage) Delete(fileID ulid.ULID) error {
 }
 
 type songVersionServiceFixture struct {
-	service         *SongVersionService
-	repository      *mockSongVersionRepository
-	songRepository  *mockSongRepository
-	fileRepository  *mockFileRepository
-	scoreRepository *mockScoreRepository
-	partRepository  *MockPartRepository
-	fileStorage     *mockFileStorage
+	service                  *SongVersionService
+	repository               *mockSongVersionRepository
+	songRepository           *mockSongRepository
+	fileRepository           *mockFileRepository
+	scoreRepository          *mockScoreRepository
+	partRepository           *MockPartRepository
+	partInstrumentRepository *mockPartInstrumentRepository
+	fileStorage              *mockFileStorage
 }
 
 // Helper factory for test setup
@@ -1195,6 +1207,7 @@ func newSongVersionServiceFixture(songID *ulid.ULID, title string, versionID *ul
 	fileRepository := &mockFileRepository{}
 	scoreRepository := &mockScoreRepository{}
 	partRepository := &MockPartRepository{}
+	partInstrumentRepository := &mockPartInstrumentRepository{}
 	fileStorage := &mockFileStorage{}
 
 	if versionID != nil && songID != nil {
@@ -1219,12 +1232,14 @@ func newSongVersionServiceFixture(songID *ulid.ULID, title string, versionID *ul
 			fileRepository,
 			scoreRepository,
 			partRepository,
+			partInstrumentRepository,
 			fileStorage,
 		),
-		repository:      repository,
-		fileRepository:  fileRepository,
-		scoreRepository: scoreRepository,
-		partRepository:  partRepository,
-		fileStorage:     fileStorage,
+		repository:               repository,
+		fileRepository:           fileRepository,
+		scoreRepository:          scoreRepository,
+		partRepository:           partRepository,
+		partInstrumentRepository: partInstrumentRepository,
+		fileStorage:              fileStorage,
 	}
 }

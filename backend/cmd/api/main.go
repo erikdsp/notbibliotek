@@ -48,9 +48,9 @@ func main() {
 
 	songService := application.NewSongService(songRepository, songQueryRepository)
 	songVersionService := application.NewSongVersionService(songVersionRepository,
-		songRepository, fileRepository, scoreRepository, partRepository, fileStorage)
+		songRepository, fileRepository, scoreRepository, partRepository, partInstrumentRepository, fileStorage)
 	fileService := application.NewFileService(fileRepository, fileStorage)
-	instrumentService := application.NewInstrumentService(instrumentRepository, partInstrumentRepository)
+	instrumentService := application.NewInstrumentService(instrumentRepository)
 
 	songHandler := httpHandler.NewSongHandler(songService)
 	songVersionHandler := httpHandler.NewSongVersionHandler(songVersionService)
