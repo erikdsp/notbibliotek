@@ -521,7 +521,7 @@ paths:
           $ref: "#/components/responses/AuthenticationRequired"
       requestBody:
         required: true
-        description: "name: instrument name, key: unique instrument key for queries"
+        description: "key: unique instrument key for queries, name: instrument name"
         content:
           application/json:
             schema:
@@ -559,17 +559,11 @@ paths:
             $ref: "#/components/schemas/ULID"
       requestBody:
         required: true
-        description: "at least one required - name: instrument name, key: unique instrument key for queries"
+        description: "at least one required - key: unique instrument key for queries, name: instrument name"
         content:
           application/json:
             schema:
-              type: object
-              minProperties: 1
-              properties:
-                name:
-                  type: string
-                key:
-                  type: string
+              $ref: "#/components/schemas/UpdateInstrumentRequest"
       security:
         - adminAuth: []
     delete:
@@ -578,7 +572,7 @@ paths:
       summary: Delete instrument
       operationId: delete-instrument
       responses:
-        "200":
+        "204":
           description: Instrument deleted.
         "400":
           $ref: "#/components/responses/BadRequest"
@@ -638,7 +632,7 @@ paths:
       summary: Delete part instrument connection
       operationId: delete-part-instrument
       responses:
-        "200":
+        "204":
           description: Part instrument deleted.
         "400":
           $ref: "#/components/responses/BadRequest"
@@ -817,7 +811,7 @@ paths:
       summary: Remove song from concert
       operationId: remove-song-from-concert
       responses:
-        "200":
+        "204":
           description: Song removed from concert.
         "400":
           $ref: "#/components/responses/BadRequest"
@@ -1047,13 +1041,21 @@ components:
     CreateInstrumentRequest:
       type: object
       properties:
-        name:
-          type: string
         key:
           type: string
+        name:
+          type: string
       required:
-        - name
         - key
+        - name
+    UpdateInstrumentRequest:
+      type: object
+      minProperties: 1
+      properties:
+        key:
+          type: string
+        name:
+          type: string
     CreateConcertRequest:
       type: object
       properties:

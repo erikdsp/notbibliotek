@@ -7,7 +7,13 @@ import (
 	"github.com/erikdsp/notbibliotek/docs"
 )
 
-func NewRouter(songHandler *SongHandler, songVersionHandler *SongVersionHandler, fileHandler *FileHandler) *http.ServeMux {
+func NewRouter(
+	songHandler *SongHandler,
+	songVersionHandler *SongVersionHandler,
+	fileHandler *FileHandler,
+	instrumentHandler *InstrumentHandler,
+) *http.ServeMux {
+
 	mux := http.NewServeMux()
 
 	// openAPI specification
@@ -40,5 +46,11 @@ func NewRouter(songHandler *SongHandler, songVersionHandler *SongVersionHandler,
 	mux.HandleFunc("POST /api/v1/songs/{song_id}/versions/{version_id}/part/{key}", songVersionHandler.UploadPart)
 	mux.HandleFunc("PUT /api/v1/songs/{song_id}/versions/{version_id}/part/{key}", songVersionHandler.UpdatePart)
 	mux.HandleFunc("POST /api/v1/songs/{song_id}/versions/{version_id}/publish", songVersionHandler.Publish)
+
+	// Instruments
+	mux.HandleFunc("GET /api/v1/instruments", instrumentHandler.GetAll)
+	mux.HandleFunc("POST /api/v1/instruments", instrumentHandler.Create)
+	mux.HandleFunc("PATCH /api/v1/instruments/{instrument_id}", instrumentHandler.Update)
+	mux.HandleFunc("DELETE /api/v1/instruments/{instrument_id}", instrumentHandler.Delete)
 	return mux
 }
