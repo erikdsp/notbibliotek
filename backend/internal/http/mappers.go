@@ -85,3 +85,21 @@ func toPartResponse(part domain.Part) PartResponse {
 		FileID:        part.FileID,
 	}
 }
+
+func toInstrumentResponse(instrument domain.Instrument) InstrumentResponse {
+	return InstrumentResponse{
+		ID:   instrument.ID,
+		Key:  instrument.Key,
+		Name: instrument.Name,
+	}
+}
+
+func toInstrumentResponses(instruments []domain.Instrument) []InstrumentResponse {
+	responses := make([]InstrumentResponse, 0, len(instruments))
+
+	for _, instrument := range instruments {
+		responses = append(responses, toInstrumentResponse(instrument))
+	}
+
+	return responses
+}

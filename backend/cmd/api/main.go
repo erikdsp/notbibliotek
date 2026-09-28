@@ -34,6 +34,7 @@ func main() {
 	scoreRepository := postgres.NewPostgresScoreRepository(db)
 	partRepository := postgres.NewPostgresPartRepository(db)
 	songVersionRepository := postgres.NewPostgresSongVersionRepository(db)
+	instrumentRepository := postgres.NewPostgresInstrumentRepository(db)
 
 	credentialsPath := os.Getenv("GOOGLE_DRIVE_CREDENTIALS_PATH")
 	tokenPath := os.Getenv("GOOGLE_DRIVE_TOKEN_PATH")
@@ -48,12 +49,19 @@ func main() {
 	songVersionService := application.NewSongVersionService(songVersionRepository,
 		songRepository, fileRepository, scoreRepository, partRepository, fileStorage)
 	fileService := application.NewFileService(fileRepository, fileStorage)
+	instrumentService := application.NewInstrumentService(instrumentRepository)
 
 	songHandler := httpHandler.NewSongHandler(songService)
 	songVersionHandler := httpHandler.NewSongVersionHandler(songVersionService)
 	fileHandler := httpHandler.NewFileHandler(fileService)
+	instrumentHandler := httpHandler.NewInstrumentHandler(instrumentService)
 
-	router := httpHandler.NewRouter(songHandler, songVersionHandler, fileHandler)
+	router := httpHandler.NewRouter(
+		songHandler,
+		songVersionHandler,
+		fileHandler,
+		instrumentHandler,
+	)
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 
