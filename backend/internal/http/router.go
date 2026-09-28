@@ -52,5 +52,8 @@ func NewRouter(
 	mux.HandleFunc("POST /api/v1/instruments", instrumentHandler.Create)
 	mux.HandleFunc("PATCH /api/v1/instruments/{instrument_id}", instrumentHandler.Update)
 	mux.HandleFunc("DELETE /api/v1/instruments/{instrument_id}", instrumentHandler.Delete)
+	mux.HandleFunc("PUT /api/v1/parts/{part_id}/instruments/{instrument_id}", instrumentHandler.CreatePartInstrumentConnection)
+	mux.HandleFunc("DELETE /api/v1/parts/{part_id}/instruments/{instrument_id}", instrumentHandler.DeletePartInstrumentConnection)
+
 	return mux
 }

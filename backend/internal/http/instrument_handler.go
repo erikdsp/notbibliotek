@@ -118,3 +118,66 @@ func (h *InstrumentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 
 }
+
+func (h *InstrumentHandler) CreatePartInstrumentConnection(w http.ResponseWriter, r *http.Request) {
+
+	partID, err := ulid.Parse(r.PathValue("part_id"))
+	if err != nil {
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	instrumentID, err := ulid.Parse(r.PathValue("instrument_id"))
+	if err != nil {
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	created, err := h.service.CreateConnection(partID, instrumentID)
+	if err != nil {
+		log.Printf("CreateConnection failed: %v", err)
+		if errors.Is(err, application.ErrResourceNotFound) {
+			writeError(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		writeError(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	if created {
+		w.WriteHeader(http.StatusCreated)
+	} else {
+		w.WriteHeader(http.StatusNoContent)
+	}
+
+}
+
+func (h *InstrumentHandler) DeletePartInstrumentConnection(w http.ResponseWriter, r *http.Request) {
+
+	partID, err := ulid.Parse(r.PathValue("part_id"))
+	if err != nil {
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	instrumentID, err := ulid.Parse(r.PathValue("instrument_id"))
+	if err != nil {
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	err = h.service.DeleteConnection(partID, instrumentID)
+	if err != nil {
+		log.Printf("DeleteConnection failed for part %s and instrument %s: %v", partID, instrumentID, err)
+
+		if errors.Is(err, application.ErrResourceNotFound) {
+			writeError(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		writeError(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+
+}
