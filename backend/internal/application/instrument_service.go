@@ -7,12 +7,14 @@ import (
 )
 
 type InstrumentService struct {
-	repository InstrumentRepository
+	repository               InstrumentRepository
+	partInstrumentRepository PartInstrumentRepository
 }
 
-func NewInstrumentService(repository InstrumentRepository) *InstrumentService {
+func NewInstrumentService(repository InstrumentRepository, partInstrumentRepository PartInstrumentRepository) *InstrumentService {
 	return &InstrumentService{
-		repository: repository,
+		repository:               repository,
+		partInstrumentRepository: partInstrumentRepository,
 	}
 }
 
@@ -61,4 +63,12 @@ func (s *InstrumentService) UpdateInstrument(id ulid.ULID, key *string, name *st
 
 func (s *InstrumentService) DeleteInstrument(id ulid.ULID) error {
 	return s.repository.Delete(id)
+}
+
+func (s *InstrumentService) CreateConnection(partID ulid.ULID, instrumentID ulid.ULID) (created bool, err error) {
+	return s.partInstrumentRepository.Create(partID, instrumentID)
+}
+
+func (s *InstrumentService) DeleteConnection(partID ulid.ULID, instrumentID ulid.ULID) error {
+	return s.partInstrumentRepository.Delete(partID, instrumentID)
 }

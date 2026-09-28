@@ -273,19 +273,34 @@ func (m *mockInstrumentRepository) Delete(id ulid.ULID) error {
 	return nil
 }
 
+type mockPartInstrumentRepository struct {
+}
+
+func (m *mockPartInstrumentRepository) Create(partID ulid.ULID, instrumentID ulid.ULID) (created bool, err error) {
+	return true, nil
+}
+
+func (m *mockPartInstrumentRepository) Delete(partID ulid.ULID, instrumentID ulid.ULID) error {
+	return nil
+}
+
 type instrumentServiceFixture struct {
-	service    *InstrumentService
-	repository *mockInstrumentRepository
+	service                  *InstrumentService
+	repository               *mockInstrumentRepository
+	partInstrumentrepository *mockPartInstrumentRepository
 }
 
 func newInstrumentServiceFixture() instrumentServiceFixture {
 
 	repository := &mockInstrumentRepository{}
+	partInstrumentRepository := &mockPartInstrumentRepository{}
 
 	return instrumentServiceFixture{
 		service: NewInstrumentService(
 			repository,
+			partInstrumentRepository,
 		),
-		repository: repository,
+		repository:               repository,
+		partInstrumentrepository: partInstrumentRepository,
 	}
 }
