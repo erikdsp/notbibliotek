@@ -157,9 +157,9 @@ func (r *PostgresConcertRepository) GetByID(id ulid.ULID) (domain.Concert, error
 
 func (r *PostgresConcertRepository) GetAllWithDetails() ([]application.ConcertDetails, error) {
 
-	sql := buildConcertDetailsQuery()
+	query := buildConcertDetailsQuery()
 
-	queryString, args, err := sql.ToSql()
+	queryString, args, err := query.ToSql()
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +219,63 @@ func (r *PostgresConcertRepository) GetAllWithDetails() ([]application.ConcertDe
 }
 
 func (r *PostgresConcertRepository) GetByIDWithDetails(id ulid.ULID) (application.ConcertDetails, error) {
-	return application.ConcertDetails{}, nil
+
+	query := buildConcertDetailsQuery()
+	query = query.Where(sq.Eq{"c.id": id})
+
+	queryString, args, err := query.ToSql()
+	if err != nil {
+		return application.ConcertDetails{}, err
+	}
+
+	rows, err := r.db.Query(queryString, args...)
+
+	if err != nil {
+		return application.ConcertDetails{}, err
+	}
+	defer rows.Close()
+
+	result := application.ConcertDetails{}
+	first := true
+
+	for rows.Next() {
+		var dbConcertRow dbConcertDetailedRow
+
+		err := rows.Scan(
+			&dbConcertRow.ID,
+			&dbConcertRow.Key,
+			&dbConcertRow.Name,
+			&dbConcertRow.Date,
+			&dbConcertRow.Song.ID,
+			&dbConcertRow.Song.Title,
+			&dbConcertRow.Song.ArchivedAt,
+		)
+		if err != nil {
+			return application.ConcertDetails{}, err
+		}
+
+		concert, song := dbConcertRow.toDomain()
+
+		if first {
+			result.Concert = concert
+			first = false
+		}
+
+		if song.ID != (ulid.ULID{}) {
+			result.Songs = append(result.Songs, song)
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return application.ConcertDetails{}, err
+	}
+
+	if first {
+		return application.ConcertDetails{}, application.ErrConcertNotFound
+	}
+
+	return result, nil
+
 }
 
 func (r *PostgresConcertRepository) Update(concert domain.Concert) error {

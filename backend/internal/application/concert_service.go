@@ -42,8 +42,8 @@ func (s *ConcertService) GetAllConcerts() ([]ConcertDetails, error) {
 	return s.repository.GetAllWithDetails()
 }
 
-func (s *ConcertService) GetConcertByID(id ulid.ULID) (domain.Concert, error) {
-	return s.repository.GetByID(id)
+func (s *ConcertService) GetConcertByID(id ulid.ULID) (ConcertDetails, error) {
+	return s.repository.GetByIDWithDetails(id)
 }
 
 func (s *ConcertService) UpdateConcert(id ulid.ULID, key *string, name *string, date *time.Time) (domain.Concert, error) {
