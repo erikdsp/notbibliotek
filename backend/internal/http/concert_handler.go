@@ -148,8 +148,71 @@ func (h *ConcertHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		concertID,
 	)
 	if err != nil {
-		log.Printf("DeleteConcert failed: %v", err)
+		log.Printf("DeleteConcert failed for concert %s : %v", concertID, err)
 		if errors.Is(err, application.ErrConcertNotFound) {
+			writeError(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		writeError(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+
+}
+
+func (h *ConcertHandler) CreateConcertSongConnection(w http.ResponseWriter, r *http.Request) {
+
+	concertID, err := ulid.Parse(r.PathValue("concert_id"))
+	if err != nil {
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	songID, err := ulid.Parse(r.PathValue("song_id"))
+	if err != nil {
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	err = h.service.CreateConnection(concertID, songID)
+	if err != nil {
+		log.Printf("CreateConnection failed for concert %s and song %s: %v", concertID, songID, err)
+		if errors.Is(err, application.ErrResourceNotFound) {
+			writeError(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		if errors.Is(err, application.ErrConflictingOperation) {
+			writeError(w, err.Error(), http.StatusConflict)
+			return
+		}
+		writeError(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+
+}
+
+func (h *ConcertHandler) DeleteConcertSongConnection(w http.ResponseWriter, r *http.Request) {
+
+	concertID, err := ulid.Parse(r.PathValue("concert_id"))
+	if err != nil {
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	songID, err := ulid.Parse(r.PathValue("song_id"))
+	if err != nil {
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	err = h.service.DeleteConnection(concertID, songID)
+	if err != nil {
+		log.Printf("DeleteConnection failed for concert %s and song %s: %v", concertID, songID, err)
+
+		if errors.Is(err, application.ErrResourceNotFound) {
 			writeError(w, err.Error(), http.StatusNotFound)
 			return
 		}

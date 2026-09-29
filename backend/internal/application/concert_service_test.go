@@ -324,19 +324,34 @@ func (m *mockConcertRepository) Delete(id ulid.ULID) error {
 	return nil
 }
 
+type mockConcertSongRepository struct {
+}
+
+func (m *mockConcertSongRepository) Create(concertID ulid.ULID, songID ulid.ULID) error {
+	return nil
+}
+
+func (m *mockConcertSongRepository) Delete(concertID ulid.ULID, songID ulid.ULID) error {
+	return nil
+}
+
 type concertServiceFixture struct {
-	service    *ConcertService
-	repository *mockConcertRepository
+	service               *ConcertService
+	repository            *mockConcertRepository
+	concertSongRepository *mockConcertSongRepository
 }
 
 func newConcertServiceFixture() concertServiceFixture {
 
 	repository := &mockConcertRepository{}
+	concertSongRepository := &mockConcertSongRepository{}
 
 	return concertServiceFixture{
 		service: NewConcertService(
 			repository,
+			concertSongRepository,
 		),
-		repository: repository,
+		repository:            repository,
+		concertSongRepository: concertSongRepository,
 	}
 }

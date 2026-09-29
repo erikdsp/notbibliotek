@@ -9,12 +9,17 @@ import (
 )
 
 type ConcertService struct {
-	repository ConcertRepository
+	repository            ConcertRepository
+	concertSongRepository ConcertSongRepository
 }
 
-func NewConcertService(repository ConcertRepository) *ConcertService {
+func NewConcertService(
+	repository ConcertRepository,
+	concertSongRepository ConcertSongRepository,
+) *ConcertService {
 	return &ConcertService{
-		repository: repository,
+		repository:            repository,
+		concertSongRepository: concertSongRepository,
 	}
 }
 
@@ -72,4 +77,12 @@ func (s *ConcertService) UpdateConcert(id ulid.ULID, key *string, name *string, 
 
 func (s *ConcertService) DeleteConcert(id ulid.ULID) error {
 	return s.repository.Delete(id)
+}
+
+func (s *ConcertService) CreateConnection(concertID ulid.ULID, songID ulid.ULID) error {
+	return s.concertSongRepository.Create(concertID, songID)
+}
+
+func (s *ConcertService) DeleteConnection(concertID ulid.ULID, songID ulid.ULID) error {
+	return s.concertSongRepository.Delete(concertID, songID)
 }
