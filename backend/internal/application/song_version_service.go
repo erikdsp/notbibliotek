@@ -324,7 +324,7 @@ func (s *SongVersionService) cleanupOldFile(fileID ulid.ULID) {
 	}
 }
 
-func (s *SongVersionService) CreateConnection(partID ulid.ULID, instrumentID ulid.ULID) (created bool, err error) {
+func (s *SongVersionService) CreateConnection(partID ulid.ULID, instrumentID ulid.ULID) error {
 	return s.partInstrumentRepository.Create(partID, instrumentID)
 }
 

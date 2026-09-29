@@ -33,7 +33,7 @@ func NewPostgresPartInstrumentRepository(db *sql.DB) *PostgresPartInstrumentRepo
 	}
 }
 
-func (r *PostgresPartInstrumentRepository) Create(partID ulid.ULID, instrumentID ulid.ULID) (created bool, err error) {
+func (r *PostgresPartInstrumentRepository) Create(partID ulid.ULID, instrumentID ulid.ULID) error {
 
 	result, err := r.db.Exec(
 		insertPartInstrumentQuery,
@@ -45,17 +45,21 @@ func (r *PostgresPartInstrumentRepository) Create(partID ulid.ULID, instrumentID
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr) && pgErr.Code == ErrForeignKeyViolation {
-			return false, application.ErrResourceNotFound
+			return application.ErrResourceNotFound
 		}
-		return false, err
+		return err
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	return rowsAffected == 1, nil
+	if rowsAffected == 0 {
+		return application.ErrConflictingOperation
+	}
+
+	return nil
 }
 
 func (r *PostgresPartInstrumentRepository) Delete(partID ulid.ULID, instrumentID ulid.ULID) error {

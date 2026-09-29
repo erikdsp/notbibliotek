@@ -487,22 +487,26 @@ paths:
       security:
         - adminAuth: []
   /parts/{part_id}/instruments/{instrument_id}:
-    put: 
+    post: 
       tags:
         - Part Instrument Connections
       summary: Create part instrument connection
-      operationId: put-part-instrument
+      operationId: post-part-instrument
       responses:
         "201":
-          description: Part Instrument created.
-        "204":
-          description: Part Instrument already existing.
+          description: Part-Instrument connection created.
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/AuthenticationRequired"
         "404":
           description: Resource not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Part Instrument already connected.
           content:
             application/json:
               schema:
