@@ -1,6 +1,8 @@
 package http
 
 import (
+	"time"
+
 	"github.com/erikdsp/notbibliotek/backend/internal/application"
 	"github.com/erikdsp/notbibliotek/backend/internal/domain"
 )
@@ -99,6 +101,25 @@ func toInstrumentResponses(instruments []domain.Instrument) []InstrumentResponse
 
 	for _, instrument := range instruments {
 		responses = append(responses, toInstrumentResponse(instrument))
+	}
+
+	return responses
+}
+
+func toConcertResponse(concert domain.Concert) ConcertResponse {
+	return ConcertResponse{
+		ID:   concert.ID,
+		Key:  concert.Key,
+		Name: concert.Name,
+		Date: concert.Date.Format(time.DateOnly),
+	}
+}
+
+func toConcertResponses(concerts []domain.Concert) []ConcertResponse {
+	responses := make([]ConcertResponse, 0, len(concerts))
+
+	for _, concert := range concerts {
+		responses = append(responses, toConcertResponse(concert))
 	}
 
 	return responses

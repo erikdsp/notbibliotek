@@ -18,3 +18,15 @@ type UpdateInstrumentRequest struct {
 	Key  *string `json:"key"`
 	Name *string `json:"name"`
 }
+
+type CreateConcertRequest struct {
+	Key  string `json:"key"`
+	Name string `json:"name"`
+	Date string `json:"date"`
+}
+
+type UpdateConcertRequest struct {
+	Key  *string `json:"key"`
+	Name *string `json:"name"`
+	Date *string `json:"date"`
+}

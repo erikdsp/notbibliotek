@@ -69,7 +69,7 @@ CREATE TABLE concerts (
     id UUID PRIMARY KEY,
     key TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL,
-    date DATE
+    date DATE NOT NULL
 );
 
 CREATE TABLE concert_songs (
