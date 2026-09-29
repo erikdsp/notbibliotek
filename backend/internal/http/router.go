@@ -64,6 +64,8 @@ func NewRouter(
 	mux.HandleFunc("GET /api/v1/concerts/{concert_id}", concertHandler.GetByID)
 	mux.HandleFunc("PATCH /api/v1/concerts/{concert_id}", concertHandler.Update)
 	mux.HandleFunc("DELETE /api/v1/concerts/{concert_id}", concertHandler.Delete)
+	mux.HandleFunc("POST /api/v1/concerts/{concert_id}/songs/{song_id}", concertHandler.CreateConcertSongConnection)
+	mux.HandleFunc("DELETE /api/v1/concerts/{concert_id}/songs/{song_id}", concertHandler.DeleteConcertSongConnection)
 
 	return mux
 }
