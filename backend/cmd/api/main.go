@@ -37,6 +37,7 @@ func main() {
 	instrumentRepository := postgres.NewPostgresInstrumentRepository(db)
 	partInstrumentRepository := postgres.NewPostgresPartInstrumentRepository(db)
 	concertRepository := postgres.NewPostgresConcertRepository(db)
+	concertSongRepository := postgres.NewPostgresConcertSongRepository(db)
 
 	credentialsPath := os.Getenv("GOOGLE_DRIVE_CREDENTIALS_PATH")
 	tokenPath := os.Getenv("GOOGLE_DRIVE_TOKEN_PATH")
@@ -52,7 +53,7 @@ func main() {
 		songRepository, fileRepository, scoreRepository, partRepository, partInstrumentRepository, fileStorage)
 	fileService := application.NewFileService(fileRepository, fileStorage)
 	instrumentService := application.NewInstrumentService(instrumentRepository)
-	concertService := application.NewConcertService(concertRepository)
+	concertService := application.NewConcertService(concertRepository, concertSongRepository)
 
 	songHandler := httpHandler.NewSongHandler(songService)
 	songVersionHandler := httpHandler.NewSongVersionHandler(songVersionService)
