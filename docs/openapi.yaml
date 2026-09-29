@@ -795,7 +795,7 @@ paths:
             $ref: "#/components/schemas/ULID"
       security:
         - adminAuth: []
-  /concerts/{concert_id}/songs:
+  /concerts/{concert_id}/songs/{song_id}:
     post:
       tags:
         - Concerts
@@ -804,10 +804,6 @@ paths:
       responses:
         "201":
           description: Song connected to concert.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Song"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -818,21 +814,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Song already connected to concert.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
       parameters:
         - name: concert_id
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/ULID"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AddSongToConcertRequest"
+        - name: song_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"        
       security:
         - adminAuth: []
-  /concerts/{concert_id}/songs/{song_id}:
     delete:
       tags:
         - Concerts
@@ -1102,13 +1102,6 @@ components:
         date:
           type: string
           format: date
-    AddSongToConcertRequest:
-      type: object
-      properties:
-        song_id:
-          $ref: "#/components/schemas/ULID"
-      required:
-        - song_id
     UpdateSongRequest:
       type: object
       properties:
