@@ -38,8 +38,8 @@ func (s *ConcertService) CreateConcert(key string, name string, date time.Time) 
 	return concert, nil
 }
 
-func (s *ConcertService) GetAllConcerts() ([]domain.Concert, error) {
-	return s.repository.GetAll()
+func (s *ConcertService) GetAllConcerts() ([]ConcertDetails, error) {
+	return s.repository.GetAllWithDetails()
 }
 
 func (s *ConcertService) GetConcertByID(id ulid.ULID) (domain.Concert, error) {

@@ -31,7 +31,7 @@ func (h *ConcertHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responses := toConcertResponses(concerts)
+	responses := toConcertDetailedResponses(concerts)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(responses)

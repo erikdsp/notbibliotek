@@ -301,8 +301,12 @@ func (m *mockConcertRepository) GetByID(id ulid.ULID) (domain.Concert, error) {
 	return domain.Concert{}, ErrConcertNotFound
 }
 
-func (m *mockConcertRepository) GetAll() ([]domain.Concert, error) {
-	return []domain.Concert{}, nil
+func (m *mockConcertRepository) GetAllWithDetails() ([]ConcertDetails, error) {
+	return []ConcertDetails{}, nil
+}
+
+func (m *mockConcertRepository) GetByIDWithDetails(id ulid.ULID) (ConcertDetails, error) {
+	return ConcertDetails{}, nil
 }
 
 func (m *mockConcertRepository) Update(concert domain.Concert) error {

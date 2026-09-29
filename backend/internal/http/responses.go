@@ -77,6 +77,14 @@ type ConcertResponse struct {
 	Date string    `json:"date"`
 }
 
+type ConcertDetailedResponse struct {
+	ID    ulid.ULID      `json:"id"`
+	Key   string         `json:"key"`
+	Name  string         `json:"name"`
+	Date  string         `json:"date"`
+	Songs []SongResponse `json:"songs"`
+}
+
 type ErrorResponse struct {
 	Error string `json:"error"`
 }
