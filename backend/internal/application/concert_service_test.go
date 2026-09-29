@@ -14,7 +14,7 @@ func Test_WhenCreateSucceedsThenCreateConcertReturnsCreatedConcert(t *testing.T)
 	f := newConcertServiceFixture()
 	key := "fyrens"
 	name := "Fyrens"
-	date := time.Now()
+	date, _ := time.Parse(time.DateOnly, "2026-09-29")
 
 	concert, err := f.service.CreateConcert(key, name, date)
 	if err != nil {
@@ -29,7 +29,7 @@ func Test_WhenCreateSucceedsThenCreateConcertReturnsCreatedConcert(t *testing.T)
 		t.Errorf("expected name %q, got %q", name, concert.Name)
 	}
 
-	if concert.Date != date {
+	if !concert.Date.Equal(date) {
 		t.Errorf("expected date %q, got %q", date, concert.Date)
 	}
 
@@ -59,7 +59,7 @@ func Test_WhenCreateSucceedsThenCreateConcertReturnsCreatedConcert(t *testing.T)
 		)
 	}
 
-	if repositoryConcert.Date != date {
+	if !repositoryConcert.Date.Equal(date) {
 		t.Errorf(
 			"expected repository to receive date %q, got %q",
 			date,
@@ -176,8 +176,8 @@ func Test_WhenDateIsProvidedThenUpdateConcertUpdatesDate(t *testing.T) {
 	id := ulid.Make()
 	name := "Oceanen"
 	key := "oceanen"
-	oldDate := time.Date(2026, 10, 24, 14, 30, 45, 100, time.Local)
-	newDate := time.Date(2026, 10, 25, 14, 30, 45, 100, time.Local)
+	oldDate, _ := time.Parse(time.DateOnly, "2026-10-24")
+	newDate, _ := time.Parse(time.DateOnly, "2026-10-25")
 
 	f.repository.concerts = append(f.repository.concerts, domain.Concert{
 		ID:   id,
@@ -199,7 +199,7 @@ func Test_WhenDateIsProvidedThenUpdateConcertUpdatesDate(t *testing.T) {
 		t.Errorf("expected name to be unchanged %q, got %q", "name", concert.Name)
 	}
 
-	if concert.Date != newDate {
+	if !concert.Date.Equal(newDate) {
 		t.Errorf("expected date to be %q, got %q", newDate, concert.Date)
 	}
 
@@ -250,6 +250,7 @@ func Test_WhenUpdateFailsThenUpdateConcertReturnsError(t *testing.T) {
 
 	f := newConcertServiceFixture()
 	id := ulid.Make()
+	date, _ := time.Parse(time.DateOnly, "2026-09-29")
 	newKey := "somekey"
 	expectedErr := errors.New("update error")
 	f.repository.updateErr = expectedErr
@@ -258,6 +259,7 @@ func Test_WhenUpdateFailsThenUpdateConcertReturnsError(t *testing.T) {
 		ID:   id,
 		Key:  "key",
 		Name: "Name",
+		Date: date,
 	})
 
 	_, err := f.service.UpdateConcert(id, &newKey, nil, nil)
