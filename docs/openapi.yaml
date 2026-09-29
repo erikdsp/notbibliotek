@@ -1080,17 +1080,23 @@ components:
     CreateConcertRequest:
       type: object
       properties:
+        key:
+          type: string
         name:
           type: string
         date:
           type: string
           format: date
       required:
+        - key
         - name
         - date
     UpdateConcertRequest:
       type: object
+      minProperties: 1
       properties:
+        key:
+          type: string
         name:
           type: string
         date:
