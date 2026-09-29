@@ -769,6 +769,32 @@ paths:
               $ref: "#/components/schemas/UpdateConcertRequest"
       security:
         - adminAuth: []
+    delete:
+      tags:
+        - Concerts
+      summary: Delete concert
+      operationId: delete-concert
+      responses:
+        "204":
+          description: Concert deleted.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "404":
+          description: Concert not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      parameters:
+        - name: concert_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"
+      security:
+        - adminAuth: []
   /concerts/{concert_id}/songs:
     post:
       tags:
