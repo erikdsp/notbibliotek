@@ -7,6 +7,8 @@ import (
 
 	"github.com/erikdsp/notbibliotek/backend/internal/application"
 	"github.com/erikdsp/notbibliotek/backend/internal/domain"
+
+	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/oklog/ulid/v2"
 )
@@ -22,12 +24,6 @@ const getConcertByIDQuery = `
 	WHERE id = $1
 `
 
-const getAllConcertsQuery = `
-	SELECT id, key, name, date
-	FROM concerts
-	ORDER BY date, key
-`
-
 const updateConcertQuery = `
     UPDATE concerts
 	SET key = $2,
@@ -41,6 +37,23 @@ const deleteConcertQuery = `
     WHERE id = $1
 `
 
+func buildConcertDetailsQuery() sq.SelectBuilder {
+	return psql.
+		Select(
+			"c.id",
+			"c.key",
+			"c.name",
+			"c.date",
+			"s.id",
+			"s.title",
+			"s.archived_at",
+		).
+		From("concerts c").
+		LeftJoin("concert_songs cs ON cs.concert_id = c.id").
+		LeftJoin("songs s ON s.id = cs.song_id").
+		OrderBy("c.date", "c.key")
+}
+
 type PostgresConcertRepository struct {
 	db *sql.DB
 }
@@ -52,6 +65,20 @@ type dbConcert struct {
 	Date time.Time
 }
 
+type dbNullableSong struct {
+	ID         uuid.NullUUID
+	Title      sql.NullString
+	ArchivedAt sql.NullTime
+}
+
+type dbConcertDetailedRow struct {
+	ID   uuid.UUID
+	Key  string
+	Name string
+	Date time.Time
+	Song dbNullableSong
+}
+
 func (c dbConcert) toDomain() domain.Concert {
 	return domain.Concert{
 		ID:   ulid.ULID(c.ID),
@@ -59,6 +86,31 @@ func (c dbConcert) toDomain() domain.Concert {
 		Name: c.Name,
 		Date: c.Date,
 	}
+}
+
+func (c dbConcertDetailedRow) toDomain() (domain.Concert, domain.Song) {
+
+	concert := domain.Concert{
+		ID:   ulid.ULID(c.ID),
+		Key:  c.Key,
+		Name: c.Name,
+		Date: c.Date,
+	}
+
+	if !c.Song.ID.Valid || !c.Song.Title.Valid {
+		return concert, domain.Song{}
+	}
+
+	song := domain.Song{
+		ID:    ulid.ULID(c.Song.ID.UUID),
+		Title: c.Song.Title.String,
+	}
+
+	if c.Song.ArchivedAt.Valid {
+		song.ArchivedAt = &c.Song.ArchivedAt.Time
+	}
+
+	return concert, song
 }
 
 func NewPostgresConcertRepository(db *sql.DB) *PostgresConcertRepository {
@@ -103,39 +155,127 @@ func (r *PostgresConcertRepository) GetByID(id ulid.ULID) (domain.Concert, error
 	return dbConcert.toDomain(), nil
 }
 
-func (r *PostgresConcertRepository) GetAll() ([]domain.Concert, error) {
+func (r *PostgresConcertRepository) GetAllWithDetails() ([]application.ConcertDetails, error) {
 
-	rows, err := r.db.Query(
-		getAllConcertsQuery,
-	)
+	query := buildConcertDetailsQuery()
+
+	queryString, args, err := query.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := r.db.Query(queryString, args...)
+
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	concerts := []domain.Concert{}
+	concerts := make(map[ulid.ULID]*application.ConcertDetails)
+	var concertOrder []ulid.ULID
+	var prevConcertID *ulid.ULID
 
 	for rows.Next() {
-		var dbConcert dbConcert
+		var dbConcertRow dbConcertDetailedRow
 
 		err := rows.Scan(
-			&dbConcert.ID,
-			&dbConcert.Key,
-			&dbConcert.Name,
-			&dbConcert.Date,
+			&dbConcertRow.ID,
+			&dbConcertRow.Key,
+			&dbConcertRow.Name,
+			&dbConcertRow.Date,
+			&dbConcertRow.Song.ID,
+			&dbConcertRow.Song.Title,
+			&dbConcertRow.Song.ArchivedAt,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		concerts = append(concerts, dbConcert.toDomain())
+		concert, song := dbConcertRow.toDomain()
+		currentConcertID := concert.ID
+
+		if prevConcertID == nil || currentConcertID != *prevConcertID {
+			concerts[currentConcertID] = &application.ConcertDetails{
+				Concert: concert,
+			}
+			concertOrder = append(concertOrder, currentConcertID)
+			prevConcertID = &currentConcertID
+		}
+		if song.ID != (ulid.ULID{}) {
+			concerts[currentConcertID].Songs = append(concerts[currentConcertID].Songs, song)
+		}
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return concerts, nil
+	result := make([]application.ConcertDetails, 0, len(concertOrder))
+	for _, id := range concertOrder {
+		result = append(result, *concerts[id])
+	}
+
+	return result, nil
+}
+
+func (r *PostgresConcertRepository) GetByIDWithDetails(id ulid.ULID) (application.ConcertDetails, error) {
+
+	query := buildConcertDetailsQuery()
+	query = query.Where(sq.Eq{"c.id": id})
+
+	queryString, args, err := query.ToSql()
+	if err != nil {
+		return application.ConcertDetails{}, err
+	}
+
+	rows, err := r.db.Query(queryString, args...)
+
+	if err != nil {
+		return application.ConcertDetails{}, err
+	}
+	defer rows.Close()
+
+	result := application.ConcertDetails{}
+	first := true
+
+	for rows.Next() {
+		var dbConcertRow dbConcertDetailedRow
+
+		err := rows.Scan(
+			&dbConcertRow.ID,
+			&dbConcertRow.Key,
+			&dbConcertRow.Name,
+			&dbConcertRow.Date,
+			&dbConcertRow.Song.ID,
+			&dbConcertRow.Song.Title,
+			&dbConcertRow.Song.ArchivedAt,
+		)
+		if err != nil {
+			return application.ConcertDetails{}, err
+		}
+
+		concert, song := dbConcertRow.toDomain()
+
+		if first {
+			result.Concert = concert
+			first = false
+		}
+
+		if song.ID != (ulid.ULID{}) {
+			result.Songs = append(result.Songs, song)
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return application.ConcertDetails{}, err
+	}
+
+	if first {
+		return application.ConcertDetails{}, application.ErrConcertNotFound
+	}
+
+	return result, nil
+
 }
 
 func (r *PostgresConcertRepository) Update(concert domain.Concert) error {

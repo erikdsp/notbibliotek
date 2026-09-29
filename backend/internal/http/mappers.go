@@ -15,6 +15,15 @@ func toSongResponse(song domain.Song) SongResponse {
 	}
 }
 
+func toSongResponses(songs []domain.Song) []SongResponse {
+	responses := make([]SongResponse, 0, len(songs))
+
+	for _, song := range songs {
+		responses = append(responses, toSongResponse(song))
+	}
+	return responses
+}
+
 func toVersionResponse(version application.VersionDetails) VersionResponse {
 	response := VersionResponse{
 		SongVersionID: version.Version.ID,
@@ -115,11 +124,21 @@ func toConcertResponse(concert domain.Concert) ConcertResponse {
 	}
 }
 
-func toConcertResponses(concerts []domain.Concert) []ConcertResponse {
-	responses := make([]ConcertResponse, 0, len(concerts))
+func toConcertDetailedResponse(concert application.ConcertDetails) ConcertDetailedResponse {
+	return ConcertDetailedResponse{
+		ID:    concert.Concert.ID,
+		Key:   concert.Concert.Key,
+		Name:  concert.Concert.Name,
+		Date:  concert.Concert.Date.Format(time.DateOnly),
+		Songs: toSongResponses(concert.Songs),
+	}
+}
+
+func toConcertDetailedResponses(concerts []application.ConcertDetails) []ConcertDetailedResponse {
+	responses := make([]ConcertDetailedResponse, 0, len(concerts))
 
 	for _, concert := range concerts {
-		responses = append(responses, toConcertResponse(concert))
+		responses = append(responses, toConcertDetailedResponse(concert))
 	}
 
 	return responses

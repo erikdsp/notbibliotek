@@ -31,10 +31,35 @@ func (h *ConcertHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responses := toConcertResponses(concerts)
+	responses := toConcertDetailedResponses(concerts)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(responses)
+}
+
+func (h *ConcertHandler) GetByID(w http.ResponseWriter, r *http.Request) {
+
+	concertID, err := ulid.Parse(r.PathValue("concert_id"))
+	if err != nil {
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	concert, err := h.service.GetConcertByID(concertID)
+	if err != nil {
+		log.Printf("GetConcertByID failed: %v", err)
+		if errors.Is(err, application.ErrConcertNotFound) {
+			writeError(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		writeError(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	response := toConcertDetailedResponse(concert)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
 
 func (h *ConcertHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -63,27 +88,6 @@ func (h *ConcertHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
-}
-
-func (h *ConcertHandler) GetByID(w http.ResponseWriter, r *http.Request) {
-
-	concertID, err := ulid.Parse(r.PathValue("concert_id"))
-	if err != nil {
-		writeError(w, "bad request", http.StatusBadRequest)
-		return
-	}
-
-	concert, err := h.service.GetConcertByID(concertID)
-	if err != nil {
-		log.Printf("GetConcertByID failed: %v", err)
-		writeError(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	response := toConcertResponse(concert)
-
-	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
 
