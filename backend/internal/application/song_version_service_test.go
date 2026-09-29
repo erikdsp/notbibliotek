@@ -1148,8 +1148,8 @@ func (m *MockPartRepository) Update(part domain.Part) error {
 type mockPartInstrumentRepository struct {
 }
 
-func (m *mockPartInstrumentRepository) Create(partID ulid.ULID, instrumentID ulid.ULID) (created bool, err error) {
-	return true, nil
+func (m *mockPartInstrumentRepository) Create(partID ulid.ULID, instrumentID ulid.ULID) error {
+	return nil
 }
 
 func (m *mockPartInstrumentRepository) Delete(partID ulid.ULID, instrumentID ulid.ULID) error {

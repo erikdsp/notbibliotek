@@ -311,22 +311,22 @@ func (h *SongVersionHandler) CreatePartInstrumentConnection(w http.ResponseWrite
 		return
 	}
 
-	created, err := h.service.CreateConnection(partID, instrumentID)
+	err = h.service.CreateConnection(partID, instrumentID)
 	if err != nil {
 		log.Printf("CreateConnection failed: %v", err)
 		if errors.Is(err, application.ErrResourceNotFound) {
 			writeError(w, err.Error(), http.StatusNotFound)
 			return
 		}
+		if errors.Is(err, application.ErrConflictingOperation) {
+			writeError(w, err.Error(), http.StatusConflict)
+			return
+		}
 		writeError(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	if created {
-		w.WriteHeader(http.StatusCreated)
-	} else {
-		w.WriteHeader(http.StatusNoContent)
-	}
+	w.WriteHeader(http.StatusCreated)
 
 }
 

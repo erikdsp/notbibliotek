@@ -5,6 +5,6 @@ import (
 )
 
 type PartInstrumentRepository interface {
-	Create(partID ulid.ULID, instrumentID ulid.ULID) (created bool, err error)
+	Create(partID ulid.ULID, instrumentID ulid.ULID) error
 	Delete(partID ulid.ULID, instrumentID ulid.ULID) error
 }
