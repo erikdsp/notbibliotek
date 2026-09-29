@@ -74,7 +74,7 @@ type ConcertResponse struct {
 	ID   ulid.ULID `json:"id"`
 	Key  string    `json:"key"`
 	Name string    `json:"name"`
-	Date time.Time `json:"date"`
+	Date string    `json:"date"`
 }
 
 type ErrorResponse struct {

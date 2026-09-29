@@ -12,6 +12,7 @@ func NewRouter(
 	songVersionHandler *SongVersionHandler,
 	fileHandler *FileHandler,
 	instrumentHandler *InstrumentHandler,
+	concertHandler *ConcertHandler,
 ) *http.ServeMux {
 
 	mux := http.NewServeMux()
@@ -56,6 +57,13 @@ func NewRouter(
 	mux.HandleFunc("POST /api/v1/instruments", instrumentHandler.Create)
 	mux.HandleFunc("PATCH /api/v1/instruments/{instrument_id}", instrumentHandler.Update)
 	mux.HandleFunc("DELETE /api/v1/instruments/{instrument_id}", instrumentHandler.Delete)
+
+	// Concerts
+	mux.HandleFunc("GET /api/v1/concerts", concertHandler.GetAll)
+	mux.HandleFunc("POST /api/v1/concerts", concertHandler.Create)
+	mux.HandleFunc("GET /api/v1/concerts/{concert_id}", concertHandler.GetByID)
+	mux.HandleFunc("PATCH /api/v1/concerts/{concert_id}", concertHandler.Update)
+	mux.HandleFunc("DELETE /api/v1/concerts/{concert_id}", concertHandler.Delete)
 
 	return mux
 }
