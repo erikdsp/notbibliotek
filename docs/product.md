@@ -1,112 +1,87 @@
-# Notbibliotek för orkester
+# Orchestra Sheet Music Library
 
-## Produktbeskrivning & kravspecifikation — v0.1
+## Product Description & Requirements Specification — v0.1
 
-## 1. Bakgrund
+## 1. Background
 
-Notmaterialet för orkesterns spelningar hanteras idag huvudsakligen genom delade mappar, exempelvis Google Drive.
+The orchestra’s sheet music is currently managed primarily through shared folders, such as Google Drive.
 
-Det fungerar för grundläggande fildelning men skapar problem när:
+This works for basic file sharing but creates problems when:
 
-- flera versioner av samma not förekommer
-- det är oklart vilken version som är aktuell
-- materialet ska organiseras för en specifik spelning
-- nya låtar tillkommer men noter ännu saknas
+- multiple versions of the same sheet music exist
+- it is unclear which version is current
+- the material needs to be organized for a specific concert
+- new songs are added but sheet music is not yet available
 
-Systemets syfte är att göra det enkelt för administratörer att hålla ordning på notmaterial och enkelt för musiker att hitta rätt noter för en spelning.
+The purpose of the system is to make it easy for administrators to manage sheet music and easy for musicians to find the correct sheet music for a concert.
 
-## 2. Produktprinciper
+## 2. Product Principles
 
-### Enkelhet framför funktionalitet
+### Simplicity Over Functionality
 
-Systemet ska vara minst lika enkelt för musiker att använda som dagens Drive-lösning.
+The system must be easy for the musicians to use, at least as easy as the current Drive-based solution. A musician should not need to create an account, remember a password or install any software. The system must also be easy to use for the administrators.
 
-En musiker ska inte behöva:
+### The System Should Solve a Real Problem
 
-- skapa konto
-- komma ihåg lösenord
-- förstå versionshantering
-- navigera genom administrativ struktur
-- installera någon programvara
-
-Det primära användningsfallet är:
-
-**Öppna länken → välj spelning → öppna/ladda ner noter.**
+The system should not attempt to replace all existing file management. Its primary purpose is to answer: **Which sheet music is current, and which sheet music should be used for this concert?**
 
 ---
 
-### Administrativ kontroll utan administrativ komplexitet
+## 3. Users
 
-Administratörer ska kunna:
+### Musicians
 
-- skapa spelningar
-- skapa och redigera låtar
-- ladda upp noter
-- ersätta aktuell version
-- markera att noter saknas
+Musicians need to be able to:
 
-utan att behöva hantera tekniska detaljer.
+- access the system through a shared access link
+- view upcoming concerts
+- open a concert
+- view the songs in the concert
+- open/download the current sheet music
+- see if sheet music is missing
+- see if the material has been updated
 
-### Systemet ska lösa ett verkligt problem
+Musicians do not have individual user profiles in the MVP.
 
-Systemet ska inte försöka ersätta all befintlig filhantering.
+The primary use case is:
 
-Det ska framför allt lösa:
+1. Open the link
+2. Select an instrument
+3. Select a concert
+4. Download sheet music
 
-**Vilka noter är aktuella och vilka noter ska användas till den här spelningen?**
+### Administrators
 
-## 3. Användare
+The administrators needs to be able to:
 
-### Musiker
-
-Musiker behöver kunna:
-
-- öppna systemet via en delad åtkomstlänk
-- se kommande spelningar
-- öppna en spelning
-- se låtarna i spelningen
-- öppna/ladda ner aktuell not
-- se om noter saknas
-- se om materialet har uppdaterats
-
-Musiker har ingen individuell användarprofil i MVP.
-
-### Administratör
-
-Administratören behöver kunna:
-
-- logga in till administrationsgränssnittet
-- skapa/redigera spelningar
-- skapa/redigera låtar
-- lägga till noter
-- ersätta aktuell notversion
-- markera noter som saknade
-- lägga till låtar som ännu saknar noter
-- välja vilka låtar som ingår i en spelning
+- log in to the administration interface
+- create/edit concerts
+- create/edit songs
+- add sheet music
+- replace the current sheet music version
+- add songs for which sheet music is not yet available
+- select which songs are included in a concert
+- add/remove instruments and connect them to parts
 
 ## 4. MVP
 
-MVP:n ska ge administratörer möjlighet att hantera låtar, noter och
-spelningar, och ge musiker enkel åtkomst till rätt notmaterial för
-en spelning.
+The MVP includes:
 
-MVP:n omfattar:
+- song library
+- current and alternative sheet music versions
+- instruments as metadata
+- concerts and setlists
+- songs with missing sheet music
+- administration interface
+- musician access via a shared link
+- protected PDF files
+- mobile-friendly interface
 
-- låtbibliotek
-- aktuella och alternativa notversioner
-- instrument som metadata
-- spelningar och låtlistor
-- låtar som saknar noter
-- administratörsgränssnitt
-- åtkomst för musiker via delad länk
-- skyddade PDF-filer
-- mobilanpassat gränssnitt
+## 5. Outside the MVP
 
-## 5. Utanför MVP
+The following features are not planned for the first version:
 
-Följande funktioner planeras inte för den första versionen:
-
-- personliga annoterade noter
-- godkännande av musikeruppladdningar
-- avancerad versionshistorik
-- individuella användarkonton
+- personal annotated sheet music
+- approval of musician uploads
+- advanced version history
+- individual user accounts
