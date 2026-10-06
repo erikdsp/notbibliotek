@@ -20,6 +20,14 @@ func main() {
 	}
 
 	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		log.Fatal("DATABASE_URL is not set")
+	}
+
+	allowedOrigin := os.Getenv("CORS_ALLOWED_ORIGIN")
+	if allowedOrigin == "" {
+		log.Fatal("CORS_ALLOWED_ORIGIN is not set")
+	}
 
 	db, err := postgres.Open(dsn)
 	if err != nil {
@@ -69,6 +77,8 @@ func main() {
 		concertHandler,
 	)
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+	corsHandler := httpHandler.CORSMiddleware(allowedOrigin, router)
+
+	log.Fatal(http.ListenAndServe(":8080", corsHandler))
 
 }
