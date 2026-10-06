@@ -17,6 +17,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { useSongs } from "@/hooks/use-songs";
 
 const items = [
   { label: "Option 1", value: "option1" },
@@ -25,6 +26,16 @@ const items = [
 ];
 
 export function MusiciansView() {
+  const { data: songs, isLoading, isError } = useSongs();
+
+  if (isLoading) {
+    return <div>Loading songs...</div>;
+  }
+
+  if (isError) {
+    return <div>Failed to load songs.</div>;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-6 py-6">
@@ -132,6 +143,11 @@ export function MusiciansView() {
                   <TableCell className="font-medium">Song 3</TableCell>
                   <TableCell className="italic">missing</TableCell>
                 </TableRow>
+                {songs?.map((song) => (
+                  <TableRow key={song.id}>
+                    <TableCell className="font-medium">{song.title}</TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </section>
