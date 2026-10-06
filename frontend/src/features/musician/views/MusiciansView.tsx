@@ -18,6 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { useSongs } from "@/hooks/use-songs";
+import { useConcerts } from "@/hooks/use-concerts";
 
 const items = [
   { label: "Option 1", value: "option1" },
@@ -26,15 +27,40 @@ const items = [
 ];
 
 export function MusiciansView() {
-  const { data: songs, isLoading, isError } = useSongs();
+  const {
+    data: songs,
+    isLoading: songsIsLoading,
+    isError: songsIsError,
+  } = useSongs();
 
-  if (isLoading) {
-    return <div>Loading songs...</div>;
+  const {
+    data: concerts,
+    isLoading: concertsIsLoading,
+    isError: concertsIsError,
+  } = useConcerts();
+
+  if (songsIsLoading || concertsIsLoading) {
+    return <div>Loading...</div>;
   }
 
-  if (isError) {
+  if (songsIsError) {
     return <div>Failed to load songs.</div>;
   }
+
+  if (concertsIsError) {
+    return <div>Failed to load concerts.</div>;
+  }
+
+  const concertItems =
+    concerts?.map((concert) => ({
+      label: concert.name,
+      value: concert.key,
+    })) ?? [];
+
+  const concertSelectItems = [
+    { label: "All concerts", value: "all" },
+    ...concertItems,
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -50,13 +76,15 @@ export function MusiciansView() {
             <div className="flex flex-1 flex-col gap-2">
               <div>Concert</div>
               <div>
-                <Select items={items}>
-                  <SelectTrigger className="w-full md:w-45">
-                    <SelectValue placeholder="Options" />
+                <Select items={concertSelectItems}>
+                  <SelectTrigger className="w-full min-w-72">
+                    <SelectValue placeholder="Select a Concert" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      {items.map((item) => (
+                      <SelectItem value="all">All concerts</SelectItem>
+                      <Separator className="my-1" />
+                      {concertItems.map((item) => (
                         <SelectItem key={item.value} value={item.value}>
                           {item.label}
                         </SelectItem>
