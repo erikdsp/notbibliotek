@@ -19,6 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { useSongs } from "@/hooks/use-songs";
 import { useConcerts } from "@/hooks/use-concerts";
+import { useInstruments } from "@/hooks/use-instruments";
 
 const items = [
   { label: "Option 1", value: "option1" },
@@ -39,7 +40,13 @@ export function MusiciansView() {
     isError: concertsIsError,
   } = useConcerts();
 
-  if (songsIsLoading || concertsIsLoading) {
+const {
+    data: instruments,
+    isLoading: instrumentsIsLoading,
+    isError: instrumentsIsError,
+  } = useInstruments();
+
+  if (songsIsLoading || concertsIsLoading || instrumentsIsLoading) {
     return <div>Loading...</div>;
   }
 
@@ -51,6 +58,10 @@ export function MusiciansView() {
     return <div>Failed to load concerts.</div>;
   }
 
+  if (instrumentsIsError) {
+    return <div>Failed to load instruments.</div>;
+  }
+
   const concertItems =
     concerts?.map((concert) => ({
       label: concert.name,
@@ -60,6 +71,17 @@ export function MusiciansView() {
   const concertSelectItems = [
     { label: "All concerts", value: "all" },
     ...concertItems,
+  ];
+
+  const instrumentItems =
+    instruments?.map((instrument) => ({
+      label: instrument.name,
+      value: instrument.key,
+    })) ?? [];
+
+  const instrumentSelectItems = [
+    { label: "All instruments", value: "all" },
+    ...instrumentItems,
   ];
 
   return (
@@ -98,13 +120,15 @@ export function MusiciansView() {
             <div className="flex flex-1 flex-col gap-2">
               <div>Instrument</div>
               <div>
-                <Select items={items}>
-                  <SelectTrigger className="w-45">
-                    <SelectValue placeholder="Options" />
+                <Select items={instrumentSelectItems}>
+                  <SelectTrigger className="w-60">
+                    <SelectValue placeholder="Select instruments" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      {items.map((item) => (
+                      <SelectItem value="all">All instruments</SelectItem>
+                      <Separator className="my-1" />
+                      {instrumentItems.map((item) => (
                         <SelectItem key={item.value} value={item.value}>
                           {item.label}
                         </SelectItem>
