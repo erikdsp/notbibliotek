@@ -52,7 +52,7 @@ export async function fetchSongs(
   try {
     const songs = await apiGet<SongResponse[]>(url.toString());
 
-    log.debug("raw payload: ", songs);
+    log.debug("url: ", url.toString(), "raw payload: ", songs);
 
     return songs;
   } catch (error: unknown) {
