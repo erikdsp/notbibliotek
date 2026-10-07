@@ -89,6 +89,8 @@ export function MusiciansView() {
     return <div>Failed to load instruments.</div>;
   }
 
+  const selectedConcertDetails = concerts.find((c) => c.key == selectedConcert);
+
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-6 py-6">
@@ -119,8 +121,14 @@ export function MusiciansView() {
           <Separator />
 
           <section className="max-w-lg rounded-lg border p-6">
-            <h2 className="text-2xl font-bold mb-4">Concert Name</h2>
-            <p className="mb-2">Date</p>
+            <h2 className="text-2xl font-bold mb-4">
+              {selectedConcertDetails
+                ? selectedConcertDetails.name
+                : "All Songs in the Library"}{" "}
+            </h2>
+            {selectedConcertDetails && (
+              <p className="mb-2">{selectedConcertDetails.date}</p>
+            )}
             <Table>
               <TableHeader>
                 <TableRow>
