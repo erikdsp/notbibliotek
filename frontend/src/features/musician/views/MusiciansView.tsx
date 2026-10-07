@@ -43,6 +43,12 @@ export function MusiciansView() {
   };
 
   const {
+    data: allSongs = [],
+    isLoading: allSongsIsLoading,
+    isError: allSongsIsError,
+  } = useSongs();
+
+  const {
     data: songs = [],
     isLoading: songsIsLoading,
     isError: songsIsError,
@@ -62,11 +68,16 @@ export function MusiciansView() {
     isError: instrumentsIsError,
   } = useInstruments();
 
-  if (songsIsLoading || concertsIsLoading || instrumentsIsLoading) {
+  if (
+    songsIsLoading ||
+    allSongsIsLoading ||
+    concertsIsLoading ||
+    instrumentsIsLoading
+  ) {
     return <div>Loading...</div>;
   }
 
-  if (songsIsError) {
+  if (songsIsError || allSongsIsError) {
     return <div>Failed to load songs.</div>;
   }
 
@@ -92,7 +103,7 @@ export function MusiciansView() {
           <SheetMusicFilters
             concerts={concerts}
             instruments={instruments}
-            songs={songs}
+            songs={allSongs}
             selectedConcert={selectedConcert}
             onConcertChange={setSelectedConcert}
             selectedInstrument={selectedInstrument}
