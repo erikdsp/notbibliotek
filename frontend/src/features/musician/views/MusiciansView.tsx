@@ -27,6 +27,7 @@ export function MusiciansView() {
   );
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
   const [includeScore, setIncludeScore] = useState(false);
+  const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
 
   const filters: SongFilters = {
     concert:
@@ -61,15 +62,11 @@ export function MusiciansView() {
     isError: instrumentsIsError,
   } = useInstruments();
 
-  if (
-    songsIsLoading ||
-    concertsIsLoading ||
-    instrumentsIsLoading
-  ) {
+  if (songsIsLoading || concertsIsLoading || instrumentsIsLoading) {
     return <div>Loading...</div>;
   }
 
-  if (songsIsError ) {
+  if (songsIsError) {
     return <div>Failed to load songs.</div>;
   }
 
@@ -104,6 +101,8 @@ export function MusiciansView() {
             onPartChange={setSelectedPart}
             includeScore={includeScore}
             onIncludeScoreChange={setIncludeScore}
+            moreOptionsOpen={moreOptionsOpen}
+            onMoreOptionsOpenChange={setMoreOptionsOpen}
           />
 
           <Separator />

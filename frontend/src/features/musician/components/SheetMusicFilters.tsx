@@ -38,6 +38,9 @@ type SheetMusicFilterProps = {
 
   includeScore: boolean;
   onIncludeScoreChange: (checked: boolean) => void;
+
+  moreOptionsOpen: boolean;
+  onMoreOptionsOpenChange: (open: boolean) => void;
 };
 
 export function SheetMusicFilters({
@@ -52,6 +55,8 @@ export function SheetMusicFilters({
   onPartChange,
   includeScore,
   onIncludeScoreChange,
+  moreOptionsOpen,
+  onMoreOptionsOpenChange,
 }: SheetMusicFilterProps) {
   const concertItems =
     concerts?.map((concert) => ({
@@ -99,7 +104,7 @@ export function SheetMusicFilters({
   const partSelectItems = [{ label: "All parts", value: "all" }, ...partItems];
 
   return (
-    <Collapsible>
+    <Collapsible open={moreOptionsOpen} onOpenChange={onMoreOptionsOpenChange}>
       <div className="flex flex-col mb-2 gap-4 md:flex-row md:gap-15">
         <div className="flex flex-1 flex-col gap-2">
           <div>Concert</div>
