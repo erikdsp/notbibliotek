@@ -14,6 +14,11 @@ import { useInstruments } from "@/hooks/use-instruments";
 
 import { useState } from "react";
 import { SheetMusicFilters } from "../components/SheetMusicFilters";
+import type { SongFilters } from "@/services/songs-service";
+import { createLogger } from "@/utils/logger";
+import { formatDateTime } from "@/utils/format-time";
+
+const log = createLogger("MusiciansView");
 
 export function MusiciansView() {
   const [selectedConcert, setSelectedConcert] = useState<string | null>(null);
@@ -23,11 +28,26 @@ export function MusiciansView() {
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
   const [includeScore, setIncludeScore] = useState(false);
 
+  const filters: SongFilters = {
+    concert:
+      selectedConcert && selectedConcert !== "all"
+        ? selectedConcert
+        : undefined,
+    instrument:
+      selectedInstrument && selectedInstrument !== "all"
+        ? [selectedInstrument]
+        : undefined,
+    part: selectedPart && selectedPart !== "all" ? [selectedPart] : undefined,
+    include_score: includeScore || undefined,
+  };
+
   const {
     data: songs = [],
     isLoading: songsIsLoading,
     isError: songsIsError,
-  } = useSongs();
+  } = useSongs(filters);
+
+  log.debug("song filters: ", filters, "songs: ", songs);
 
   const {
     data: concerts = [],
@@ -41,11 +61,15 @@ export function MusiciansView() {
     isError: instrumentsIsError,
   } = useInstruments();
 
-  if (songsIsLoading || concertsIsLoading || instrumentsIsLoading) {
+  if (
+    songsIsLoading ||
+    concertsIsLoading ||
+    instrumentsIsLoading
+  ) {
     return <div>Loading...</div>;
   }
 
-  if (songsIsError) {
+  if (songsIsError ) {
     return <div>Failed to load songs.</div>;
   }
 
@@ -96,25 +120,54 @@ export function MusiciansView() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow>
-                  <TableCell className="font-medium">Song 1</TableCell>
-                  <TableCell>Oud</TableCell>
-                  <TableCell>Date/Time</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Song 2</TableCell>
-                  <TableCell>Oud</TableCell>
-                  <TableCell>Date/Time</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Song 3</TableCell>
-                  <TableCell className="italic">missing</TableCell>
-                </TableRow>
-                {songs?.map((song) => (
-                  <TableRow key={song.id}>
-                    <TableCell className="font-medium">{song.title}</TableCell>
-                  </TableRow>
-                ))}
+                {songs.map((song) => {
+                  const currentVersion = song.versions.find(
+                    (version) =>
+                      version.song_version_id === song.current_version_id,
+                  );
+
+                  if (!currentVersion) {
+                    return (
+                      <TableRow key={song.id}>
+                        <TableCell className="font-medium">
+                          {song.title}
+                        </TableCell>
+                        <TableCell className="italic">Missing</TableCell>
+                        <TableCell></TableCell>
+                      </TableRow>
+                    );
+                  }
+
+                  if (currentVersion.parts.length === 0) {
+                    return (
+                      <TableRow key={song.id}>
+                        <TableCell className="font-medium">
+                          {song.title}
+                        </TableCell>
+                        <TableCell className="italic">Missing</TableCell>
+                        <TableCell>
+                          {formatDateTime(currentVersion.published_at)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }
+
+                  return currentVersion.parts.map((part, partIndex) => (
+                    <TableRow key={part.id}>
+                      <TableCell className="font-medium">
+                        {partIndex === 0 ? song.title : null}
+                      </TableCell>
+
+                      <TableCell>{part.name}</TableCell>
+
+                      <TableCell>
+                        {partIndex === 0
+                          ? formatDateTime(currentVersion.published_at)
+                          : null}
+                      </TableCell>
+                    </TableRow>
+                  ));
+                })}
               </TableBody>
             </Table>
           </section>
