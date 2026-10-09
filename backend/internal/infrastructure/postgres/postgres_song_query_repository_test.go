@@ -3,6 +3,7 @@ package postgres
 import (
 	"database/sql"
 	"errors"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -362,14 +363,15 @@ func Test_WhenPartsAreProvidedThenAddJoinPartsFiltersJoinedParts(t *testing.T) {
 	}
 
 	sqlBuilder := psql.Select("Test")
-	sqlBuilder = addJoinParts(sqlBuilder, query.Parts)
+	sqlBuilder = addJoinParts(sqlBuilder, query.Parts, query.Instruments)
 	sql, args, err := sqlBuilder.ToSql()
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if !strings.Contains(sql, "LEFT JOIN parts part ON part.song_version_id = sv.id AND part.key IN ($1,$2)") {
+	if !strings.Contains(sql, "LEFT JOIN parts part ON part.song_version_id = sv.id") ||
+		!strings.Contains(sql, "part.key IN ($1,$2)") {
 		t.Errorf("expected query to filter joined parts, got: %s", sql)
 	}
 
@@ -387,7 +389,7 @@ func Test_WhenPartsAreNotProvidedThenAddJoinPartsIncludesAllParts(t *testing.T) 
 	query := application.SongQuery{}
 
 	sqlBuilder := psql.Select("Test")
-	sqlBuilder = addJoinParts(sqlBuilder, query.Parts)
+	sqlBuilder = addJoinParts(sqlBuilder, query.Parts, query.Instruments)
 	sql, args, err := sqlBuilder.ToSql()
 
 	if err != nil {
@@ -404,6 +406,51 @@ func Test_WhenPartsAreNotProvidedThenAddJoinPartsIncludesAllParts(t *testing.T) 
 
 	if strings.Contains(sql, "AND part.key IN") {
 		t.Errorf("expected query without part filtering, got: %s", sql)
+	}
+
+}
+
+func Test_WhenInstrumentsAreProvidedThenAddJoinPartsAddsExistsClause(t *testing.T) {
+
+	query := application.SongQuery{
+		Instruments: []string{"violin1", "violin2"},
+	}
+
+	sqlBuilder := psql.Select("Test")
+	sqlBuilder = addJoinParts(sqlBuilder, query.Parts, query.Instruments)
+	sql, args, err := sqlBuilder.ToSql()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedPattern :=
+		`LEFT JOIN parts part ON part\.song_version_id = sv\.id AND` +
+			`(?s:.*?)` +
+			`EXISTS \(` +
+			`(?s:.*?)` +
+			`SELECT 1` +
+			`(?s:.*?)` +
+			`FROM part_instruments pi` +
+			`(?s:.*?)` +
+			`JOIN instruments i ON i\.id = pi\.instrument_id` +
+			`(?s:.*?)` +
+			`WHERE pi\.part_id = part\.id` +
+			`(?s:.*?)` +
+			`AND i\.key IN \(\$1,\$2\)` +
+			`(?s:.*?)` +
+			`\)`
+
+	if !regexp.MustCompile(expectedPattern).MatchString(sql) {
+		t.Errorf("expected query to filter joined parts, got: %s", sql)
+	}
+
+	if len(args) != 2 {
+		t.Fatalf("expected 2 args, got %d", len(args))
+	}
+
+	if args[0] != "violin1" || args[1] != "violin2" {
+		t.Errorf("unexpected args: %v", args)
 	}
 
 }

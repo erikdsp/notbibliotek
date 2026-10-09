@@ -299,7 +299,7 @@ func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
 			"part.file_id",
 		)
 
-	sql = addJoinParts(sql, query.Parts)
+	sql = addJoinParts(sql, query.Parts, query.Instruments)
 
 	if query.Archived {
 		sql = sql.Where("s.archived_at IS NOT NULL")
@@ -337,7 +337,7 @@ func buildSongByIDQuery(id ulid.ULID, query application.SongByIDQuery) sq.Select
 			"part.file_id",
 		)
 
-	sql = addJoinParts(sql, query.Parts)
+	sql = addJoinParts(sql, query.Parts, query.Instruments)
 
 	sql = sql.Where(sq.Eq{"s.id": id})
 
@@ -367,18 +367,43 @@ func addScoreColumns(sql sq.SelectBuilder, includeScore bool) sq.SelectBuilder {
 	}
 }
 
-// adds left join for parts and conditional filtering on part key(s)
-func addJoinParts(sql sq.SelectBuilder, parts []string) sq.SelectBuilder {
+// adds left join for parts and conditional filtering by part key(s) and instrument key(s).
+// When both filters are provided, parts matching either filter are included.
+func addJoinParts(sql sq.SelectBuilder, parts []string, instruments []string) sq.SelectBuilder {
+
+	conditions := sq.Or{}
+
 	if len(parts) > 0 {
-		return sql.JoinClause(
-			sq.Expr(
-				"LEFT JOIN parts part ON part.song_version_id = sv.id AND ?",
-				sq.Eq{"part.key": parts},
-			),
-		)
-	} else {
-		return sql.LeftJoin(
-			"parts part ON part.song_version_id = sv.id",
-		)
+		conditions = append(conditions, sq.Eq{"part.key": parts})
 	}
+
+	if len(instruments) > 0 {
+		conditions = append(conditions, partMatchesInstrumentCondition(instruments))
+	}
+
+	if len(conditions) == 0 {
+		return sql.LeftJoin("parts part ON part.song_version_id = sv.id")
+	}
+
+	return sql.JoinClause(
+		sq.Expr(
+			"LEFT JOIN parts part ON part.song_version_id = sv.id AND ?",
+			conditions,
+		),
+	)
+
+}
+
+// partMatchesInstrumentCondition returns an EXISTS condition that checks
+// whether a part is linked to at least one of the specified instruments.
+func partMatchesInstrumentCondition(instruments []string) sq.Sqlizer {
+	return sq.Expr(`
+		EXISTS (
+			SELECT 1
+			FROM part_instruments pi
+			JOIN instruments i ON i.id = pi.instrument_id
+			WHERE pi.part_id = part.id
+			  AND ?
+		)
+	`, sq.Eq{"i.key": instruments})
 }
