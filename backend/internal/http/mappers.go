@@ -115,6 +115,23 @@ func toInstrumentResponses(instruments []domain.Instrument) []InstrumentResponse
 	return responses
 }
 
+func toPartInstrumentResponse(partInstrument application.PartInstruments) PartInstrumentResponse {
+	return PartInstrumentResponse{
+		PartID:      partInstrument.PartID,
+		Instruments: toInstrumentResponses(partInstrument.Instruments),
+	}
+}
+
+func toPartInstrumentResponses(partInstruments []application.PartInstruments) []PartInstrumentResponse {
+	responses := make([]PartInstrumentResponse, 0, len(partInstruments))
+
+	for _, partInstrument := range partInstruments {
+		responses = append(responses, toPartInstrumentResponse(partInstrument))
+	}
+
+	return responses
+}
+
 func toConcertResponse(concert domain.Concert) ConcertResponse {
 	return ConcertResponse{
 		ID:   concert.ID,

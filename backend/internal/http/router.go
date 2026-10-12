@@ -47,6 +47,7 @@ func NewRouter(
 	mux.HandleFunc("POST /api/v1/songs/{song_id}/versions/{version_id}/part/{key}", songVersionHandler.UploadPart)
 	mux.HandleFunc("PUT /api/v1/songs/{song_id}/versions/{version_id}/part/{key}", songVersionHandler.UpdatePart)
 	mux.HandleFunc("POST /api/v1/songs/{song_id}/versions/{version_id}/publish", songVersionHandler.Publish)
+	mux.HandleFunc("GET /api/v1/songs/{song_id}/versions/{version_id}/instruments", songVersionHandler.GetPartInstruments)
 
 	// Part Instrument Connections
 	mux.HandleFunc("POST /api/v1/parts/{part_id}/instruments/{instrument_id}", songVersionHandler.CreatePartInstrumentConnection)

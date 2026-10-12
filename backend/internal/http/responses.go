@@ -70,6 +70,11 @@ type InstrumentResponse struct {
 	Name string    `json:"name"`
 }
 
+type PartInstrumentResponse struct {
+	PartID      ulid.ULID            `json:"part_id"`
+	Instruments []InstrumentResponse `json:"instruments"`
+}
+
 type ConcertResponse struct {
 	ID   ulid.ULID `json:"id"`
 	Key  string    `json:"key"`
