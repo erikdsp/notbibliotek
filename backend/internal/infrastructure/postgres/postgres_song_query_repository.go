@@ -307,6 +307,10 @@ func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
 		sql = sql.Where("s.archived_at IS NULL")
 	}
 
+	if len(query.Concerts) > 0 {
+		sql = sql.Where(songMatchesConcertCondition(query.Concerts))
+	}
+
 	sql = sql.
 		OrderBy("s.id")
 
@@ -406,4 +410,18 @@ func partMatchesInstrumentCondition(instruments []string) sq.Sqlizer {
 			  AND ?
 		)
 	`, sq.Eq{"i.key": instruments})
+}
+
+// songMatchesConcertCondition returns an EXISTS condition that checks
+// whether a song is linked to at least one of the specified concerts.
+func songMatchesConcertCondition(concerts []string) sq.Sqlizer {
+	return sq.Expr(`
+			EXISTS (
+				SELECT 1
+				FROM concert_songs cs
+				JOIN concerts c ON c.id = cs.concert_id
+				WHERE cs.song_id = s.id
+				  AND ?
+			)
+		`, sq.Eq{"c.key": concerts})
 }
