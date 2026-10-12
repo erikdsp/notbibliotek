@@ -454,3 +454,48 @@ func Test_WhenInstrumentsAreProvidedThenAddJoinPartsAddsExistsClause(t *testing.
 	}
 
 }
+
+func Test_WhenConcertsAreProvidedThenbuildSongDetailsQueryAddsExistsClause(t *testing.T) {
+
+	query := application.SongQuery{
+		Concerts: []string{"gig1", "gig2"},
+	}
+
+	sqlBuilder := psql.Select("Test")
+	sqlBuilder = buildSongDetailsQuery(query)
+	sql, args, err := sqlBuilder.ToSql()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedPattern :=
+		`WHERE` +
+			`(?s:.*?)` +
+			`EXISTS \(` +
+			`(?s:.*?)` +
+			`SELECT 1` +
+			`(?s:.*?)` +
+			`FROM concert_songs cs` +
+			`(?s:.*?)` +
+			`JOIN concerts c ON c.id = cs.concert_id` +
+			`(?s:.*?)` +
+			`WHERE cs.song_id = s.id` +
+			`(?s:.*?)` +
+			`AND c\.key IN \(\$1,\$2\)` +
+			`(?s:.*?)` +
+			`\)`
+
+	if !regexp.MustCompile(expectedPattern).MatchString(sql) {
+		t.Errorf("expected query to filter joined concerts, got: %s", sql)
+	}
+
+	if len(args) != 2 {
+		t.Fatalf("expected 2 args, got %d", len(args))
+	}
+
+	if args[0] != "gig1" || args[1] != "gig2" {
+		t.Errorf("unexpected args: %v", args)
+	}
+
+}
