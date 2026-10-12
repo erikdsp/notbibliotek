@@ -297,6 +297,33 @@ func (h *SongVersionHandler) Publish(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (h *SongVersionHandler) GetPartInstruments(w http.ResponseWriter, r *http.Request) {
+	_, err := ulid.Parse(r.PathValue("song_id"))
+	if err != nil {
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	versionID, err := ulid.Parse(r.PathValue("version_id"))
+	if err != nil {
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	partInstruments, err := h.service.GetPartInstrumentsBySongVersionID(versionID)
+	if err != nil {
+		log.Printf("Publish failed: %v", err)
+		writeError(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	response := toPartInstrumentResponses(partInstruments)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+
+}
+
 func (h *SongVersionHandler) CreatePartInstrumentConnection(w http.ResponseWriter, r *http.Request) {
 
 	partID, err := ulid.Parse(r.PathValue("part_id"))

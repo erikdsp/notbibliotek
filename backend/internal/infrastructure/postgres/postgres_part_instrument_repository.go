@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/erikdsp/notbibliotek/backend/internal/application"
+	"github.com/erikdsp/notbibliotek/backend/internal/domain"
 	"github.com/google/uuid"
 	"github.com/oklog/ulid/v2"
 
@@ -21,6 +22,14 @@ const deletePartInstrumentQuery = `
     DELETE FROM part_instruments
     WHERE part_id = $1
 	  AND instrument_id = $2
+`
+
+const getPartInstrumentsBySongVersionIDQuery = `
+	SELECT pi.part_id, i.id, i.key, i.name
+	FROM part_instruments pi
+	JOIN instruments i ON i.id = pi.instrument_id
+	JOIN parts p ON p.id = pi.part_id
+	WHERE p.song_version_id = $1
 `
 
 type PostgresPartInstrumentRepository struct {
@@ -82,4 +91,52 @@ func (r *PostgresPartInstrumentRepository) Delete(partID ulid.ULID, instrumentID
 	}
 
 	return nil
+}
+
+func (r *PostgresPartInstrumentRepository) GetBySongVersionID(songVersionID ulid.ULID) ([]application.PartInstruments, error) {
+	rows, err := r.db.Query(
+		getPartInstrumentsBySongVersionIDQuery,
+		uuid.UUID(songVersionID),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	instrumentMap := make(map[ulid.ULID][]domain.Instrument)
+
+	for rows.Next() {
+		var dbPartID uuid.UUID
+		var dbInstrument dbInstrument
+
+		err := rows.Scan(
+			&dbPartID,
+			&dbInstrument.ID,
+			&dbInstrument.Key,
+			&dbInstrument.Name,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		partID := ulid.ULID(dbPartID)
+		instrument := dbInstrument.toDomain()
+		instrumentMap[partID] = append(instrumentMap[partID], instrument)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	result := make([]application.PartInstruments, 0, len(instrumentMap))
+
+	for id, instruments := range instrumentMap {
+		result = append(result, application.PartInstruments{
+			PartID:      id,
+			Instruments: instruments,
+		})
+	}
+
+	return result, nil
+
 }

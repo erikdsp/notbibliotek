@@ -260,6 +260,14 @@ func (s *SongVersionService) UpdatePart(songID ulid.ULID, versionID ulid.ULID,
 
 }
 
+func (s *SongVersionService) GetPartInstrumentsBySongVersionID(versionID ulid.ULID) ([]PartInstruments, error) {
+	partInstruments, err := s.partInstrumentRepository.GetBySongVersionID(versionID)
+	if err != nil {
+		return []PartInstruments{}, err
+	}
+	return partInstruments, nil
+}
+
 func (s *SongVersionService) PublishSongVersion(songID ulid.ULID, versionID ulid.ULID) (VersionDetails, error) {
 	version, err := s.repository.GetByID(versionID)
 	if err != nil {
