@@ -1156,6 +1156,10 @@ func (m *mockPartInstrumentRepository) Delete(partID ulid.ULID, instrumentID uli
 	return nil
 }
 
+func (m *mockPartInstrumentRepository) GetBySongVersionID(songVersionID ulid.ULID) ([]PartInstruments, error) {
+	return nil, nil
+}
+
 type mockFileStorage struct {
 	file           string
 	savedFileIDs   []ulid.ULID
