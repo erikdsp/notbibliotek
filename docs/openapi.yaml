@@ -414,6 +414,44 @@ paths:
               $ref: "#/components/schemas/UploadPartRequest"
       security:
         - adminAuth: []
+  /songs/{song_id}/versions/{version_id}/instruments:
+    get:
+      tags:
+        - Song Versions
+      summary: Get part instruments for song version
+      operationId: get-part-instruments-for-songversion
+      responses:
+        "200":
+          description: Part Instrument connections. Only parts with connections are included.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: 
+                  $ref: "#/components/schemas/PartInstrument"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "404":
+          description: Resource not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      parameters:
+        - name: song_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"
+        - name: version_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"
+      security:
+        - adminAuth: []
   /songs/{song_id}/versions/{version_id}/duplicate:
     post:
       tags:
@@ -1045,6 +1083,18 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Song"
+    PartInstrument:
+      type: object
+      properties: 
+        part_id:
+          $ref: "#/components/schemas/ULID"
+        instruments:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Instrument"
+      required:
+        - part_id
+        - instruments
     ConcertResponse:
       allOf:
         - $ref: "#/components/schemas/Concert"
