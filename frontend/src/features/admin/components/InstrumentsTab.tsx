@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { InstrumentDialog } from "./InstrumentDialog";
 import { Plus, Pencil, Trash } from "lucide-react";
 import {
   Table,
@@ -13,11 +15,16 @@ import { Button } from "@/components/ui/button";
 const log = createLogger("InstrumentsTab");
 
 export function InstrumentsTab() {
+  const [dialogOpen, setDialogOpen] = useState(false);
   log.debug("Instruments Tab");
 
   return (
     <section className="mx-auto max-w-lg rounded-lg">
-      <Button variant="outline" className="mx-auto flex">
+      <Button
+        variant="outline"
+        className="mx-auto flex"
+        onClick={() => setDialogOpen(true)}
+      >
         <Plus />
         Add Instrument
       </Button>
@@ -58,6 +65,11 @@ export function InstrumentsTab() {
           </TableBody>
         </Table>
       </div>
+      <InstrumentDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        editingInstrument={null}
+      />
     </section>
   );
 }
