@@ -19,6 +19,7 @@ func Test_WhenRowContainsValidSongVersionThenToApplicationReturnsCorrectSongDeta
 	versionID := ulid.Make()
 	scoreID := ulid.Make()
 	fileID := ulid.Make()
+	fileName := "File Name"
 
 	row := dbSongDetailRow{
 		Song: dbSongDetail{
@@ -40,6 +41,10 @@ func Test_WhenRowContainsValidSongVersionThenToApplicationReturnsCorrectSongDeta
 				UUID:  uuid.UUID(fileID),
 				Valid: true,
 			},
+			FileName: sql.NullString{
+				String: fileName,
+				Valid:  true,
+			},
 		},
 	}
 
@@ -53,13 +58,11 @@ func Test_WhenRowContainsValidSongVersionThenToApplicationReturnsCorrectSongDeta
 		t.Error("expected songIDs to match")
 	}
 
-	currentVersionID := *songDetails.CurrentVersionID
-
-	if currentVersionID != versionID {
-		t.Error("expected CurrentVersionID to match versionID")
+	if songDetails.CurrentVersionID != nil {
+		t.Error("expected CurrentVersionID to be nil")
 	}
 
-	if songDetails.Versions[currentVersionID].Score.ID != scoreID {
+	if songDetails.Versions[versionID].Score.ID != scoreID {
 		t.Error("expected scoreIDs to match")
 	}
 
@@ -96,6 +99,8 @@ func Test_WhenRowContainsPartThenToApplicationReturnsCorrectPart(t *testing.T) {
 	versionID := ulid.Make()
 	partID := ulid.Make()
 	fileID := ulid.Make()
+	scoreFileName := "File Name"
+	partFileName := "Part File Name"
 
 	row := dbSongDetailRow{
 		Song: dbSongDetail{
@@ -117,6 +122,10 @@ func Test_WhenRowContainsPartThenToApplicationReturnsCorrectPart(t *testing.T) {
 				UUID:  uuid.UUID(ulid.Make()),
 				Valid: true,
 			},
+			FileName: sql.NullString{
+				String: scoreFileName,
+				Valid:  true,
+			},
 		},
 		Part: dbPartDetail{
 			ID: uuid.NullUUID{
@@ -135,6 +144,10 @@ func Test_WhenRowContainsPartThenToApplicationReturnsCorrectPart(t *testing.T) {
 				UUID:  uuid.UUID(fileID),
 				Valid: true,
 			},
+			FileName: sql.NullString{
+				String: partFileName,
+				Valid:  true,
+			},
 		},
 	}
 
@@ -148,7 +161,11 @@ func Test_WhenRowContainsPartThenToApplicationReturnsCorrectPart(t *testing.T) {
 		t.Error("expected part IDs to match")
 	}
 
-	if partDetails.FileID != fileID {
+	if partDetails.File.ID != fileID {
+		t.Error("expected part fileIDs to match")
+	}
+
+	if partDetails.File.Name != partFileName {
 		t.Error("expected part fileIDs to match")
 	}
 
@@ -183,6 +200,10 @@ func Test_WhenRowIsMissingScoreThenToApplicationReturnsVersionWithoutScore(t *te
 				UUID:  uuid.UUID{},
 				Valid: false,
 			},
+			FileName: sql.NullString{
+				String: "",
+				Valid:  false,
+			},
 		},
 	}
 
@@ -192,11 +213,21 @@ func Test_WhenRowIsMissingScoreThenToApplicationReturnsVersionWithoutScore(t *te
 		t.Fatal(err)
 	}
 
-	currentVersionID := *songDetails.CurrentVersionID
+	if songDetails.CurrentVersionID != nil {
+		t.Error("expected CurrentVersionID to be nil")
+	}
 
-	if songDetails.Versions[currentVersionID].Score != nil {
+	versionID := ulid.ULID(row.SongVersion.ID.UUID)
+
+	version, exists := songDetails.Versions[versionID]
+	if !exists {
+		t.Fatal("expected version to exist")
+	}
+
+	if version.Score != nil {
 		t.Error("expected score to be nil")
 	}
+
 }
 func Test_WhenRowHasIncompleteScoreThenToApplicationReturnsCorrectError(t *testing.T) {
 
@@ -251,6 +282,10 @@ func Test_WhenRowHasIncompletePartThenToApplicationReturnsCorrectError(t *testin
 			FileID: uuid.NullUUID{
 				UUID:  uuid.UUID(ulid.Make()),
 				Valid: true,
+			},
+			FileName: sql.NullString{
+				String: "Some Name",
+				Valid:  true,
 			},
 		},
 		Part: dbPartDetail{

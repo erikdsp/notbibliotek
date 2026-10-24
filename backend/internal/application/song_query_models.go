@@ -29,16 +29,16 @@ type SongVersionDetails struct {
 
 // Internal type for score data used by VersionDetails
 type ScoreDetails struct {
-	ID     ulid.ULID
-	FileID ulid.ULID
+	ID   ulid.ULID
+	File domain.File
 }
 
 // Internal type for part data used by VersionDetails
 type PartDetails struct {
-	ID     ulid.ULID
-	Key    string
-	Name   string
-	FileID ulid.ULID
+	ID   ulid.ULID
+	Key  string
+	Name string
+	File domain.File
 }
 
 // type for handling query parameters for multiple songs

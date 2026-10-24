@@ -35,8 +35,11 @@ func toVersionResponse(version application.VersionDetails) VersionResponse {
 
 	if version.Score != nil {
 		score = &ScoreForVersion{
-			ID:     version.Score.ID,
-			FileID: version.Score.FileID,
+			ID: version.Score.ID,
+			File: FileResponse{
+				ID:   version.Score.File.ID,
+				Name: version.Score.File.Name,
+			},
 		}
 
 	}
@@ -45,10 +48,13 @@ func toVersionResponse(version application.VersionDetails) VersionResponse {
 
 	for _, part := range version.Parts {
 		response.Parts = append(response.Parts, PartForVersion{
-			ID:     part.ID,
-			Key:    part.Key,
-			Name:   part.Name,
-			FileID: part.FileID,
+			ID:   part.ID,
+			Key:  part.Key,
+			Name: part.Name,
+			File: FileResponse{
+				ID:   part.File.ID,
+				Name: part.File.Name,
+			},
 		})
 	}
 

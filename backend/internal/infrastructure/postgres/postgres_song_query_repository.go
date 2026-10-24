@@ -28,15 +28,17 @@ type dbSongVersionDetail struct {
 }
 
 type dbScoreDetail struct {
-	ID     uuid.NullUUID
-	FileID uuid.NullUUID
+	ID       uuid.NullUUID
+	FileID   uuid.NullUUID
+	FileName sql.NullString
 }
 
 type dbPartDetail struct {
-	ID     uuid.NullUUID
-	Key    sql.NullString
-	Name   sql.NullString
-	FileID uuid.NullUUID
+	ID       uuid.NullUUID
+	Key      sql.NullString
+	Name     sql.NullString
+	FileID   uuid.NullUUID
+	FileName sql.NullString
 }
 
 type dbSongDetailRow struct {
@@ -73,7 +75,8 @@ func (s dbSongDetailRow) toApplication() (application.SongDetails, application.P
 
 	var score *application.ScoreDetails
 
-	if s.Score.ID.Valid != s.Score.FileID.Valid {
+	if s.Score.ID.Valid != s.Score.FileID.Valid ||
+		s.Score.ID.Valid != s.Score.FileName.Valid {
 		return application.SongDetails{},
 			application.PartDetails{},
 			application.ErrIncompleteScore
@@ -81,8 +84,11 @@ func (s dbSongDetailRow) toApplication() (application.SongDetails, application.P
 
 	if s.Score.ID.Valid {
 		score = &application.ScoreDetails{
-			ID:     ulid.ULID(s.Score.ID.UUID),
-			FileID: ulid.ULID(s.Score.FileID.UUID),
+			ID: ulid.ULID(s.Score.ID.UUID),
+			File: domain.File{
+				ID:   ulid.ULID(s.Score.FileID.UUID),
+				Name: s.Score.FileName.String,
+			},
 		}
 	}
 
@@ -108,15 +114,18 @@ func (s dbSongDetailRow) toApplication() (application.SongDetails, application.P
 		return songDetails, application.PartDetails{}, nil
 	}
 
-	if !s.Part.FileID.Valid || !s.Part.Key.Valid || !s.Part.Name.Valid {
+	if !s.Part.FileID.Valid || !s.Part.Key.Valid || !s.Part.Name.Valid || !s.Part.FileName.Valid {
 		return songDetails, application.PartDetails{}, application.ErrIncompletePart
 	}
 
 	partDetails := application.PartDetails{
-		ID:     ulid.ULID(s.Part.ID.UUID),
-		Key:    s.Part.Key.String,
-		Name:   s.Part.Name.String,
-		FileID: ulid.ULID(s.Part.FileID.UUID),
+		ID:   ulid.ULID(s.Part.ID.UUID),
+		Key:  s.Part.Key.String,
+		Name: s.Part.Name.String,
+		File: domain.File{
+			ID:   ulid.ULID(s.Part.FileID.UUID),
+			Name: s.Part.FileName.String,
+		},
 	}
 
 	return songDetails, partDetails, nil
@@ -154,10 +163,12 @@ func (r *PostgresSongQueryRepository) GetAll(query application.SongQuery) ([]app
 			&dbRow.SongVersion.PublishedAt,
 			&dbRow.Score.ID,
 			&dbRow.Score.FileID,
+			&dbRow.Score.FileName,
 			&dbRow.Part.ID,
 			&dbRow.Part.Key,
 			&dbRow.Part.Name,
 			&dbRow.Part.FileID,
+			&dbRow.Part.FileName,
 		)
 		if err != nil {
 			return nil, err
@@ -231,10 +242,12 @@ func (r *PostgresSongQueryRepository) GetByID(id ulid.ULID, query application.So
 			&dbRow.SongVersion.PublishedAt,
 			&dbRow.Score.ID,
 			&dbRow.Score.FileID,
+			&dbRow.Score.FileName,
 			&dbRow.Part.ID,
 			&dbRow.Part.Key,
 			&dbRow.Part.Name,
 			&dbRow.Part.FileID,
+			&dbRow.Part.FileName,
 		)
 		if err != nil {
 			return application.SongDetails{}, err
@@ -317,6 +330,7 @@ func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
 			"part.key",
 			"part.name",
 			"part.file_id",
+			"part_file.name",
 		)
 
 	sql = addJoinParts(sql, query.Parts, query.Instruments)
@@ -364,6 +378,7 @@ func buildSongByIDQuery(id ulid.ULID, query application.SongByIDQuery) sq.Select
 			"part.key",
 			"part.name",
 			"part.file_id",
+			"part_file.name",
 		)
 
 	sql = addJoinParts(sql, query.Parts, query.Instruments)
@@ -383,15 +398,20 @@ func addScoreColumns(sql sq.SelectBuilder, includeScore bool) sq.SelectBuilder {
 			Columns(
 				"score.id",
 				"score.file_id",
+				"score_file.name",
 			).
 			LeftJoin(
 				"scores score ON score.song_version_id = sv.id",
+			).
+			LeftJoin(
+				"files score_file ON score_file.id = score.file_id",
 			)
 	} else {
 		return sql.
 			Columns(
 				"NULL AS score_id",
 				"NULL AS score_file_id",
+				"NULL AS score_file_name",
 			)
 	}
 }
@@ -411,16 +431,17 @@ func addJoinParts(sql sq.SelectBuilder, parts []string, instruments []string) sq
 	}
 
 	if len(conditions) == 0 {
-		return sql.LeftJoin("parts part ON part.song_version_id = sv.id")
+		sql = sql.LeftJoin("parts part ON part.song_version_id = sv.id")
+	} else {
+		sql = sql.JoinClause(
+			sq.Expr(
+				"LEFT JOIN parts part ON part.song_version_id = sv.id AND ?",
+				conditions,
+			),
+		)
 	}
 
-	return sql.JoinClause(
-		sq.Expr(
-			"LEFT JOIN parts part ON part.song_version_id = sv.id AND ?",
-			conditions,
-		),
-	)
-
+	return sql.LeftJoin("files part_file ON part_file.id = part.file_id")
 }
 
 // partMatchesInstrumentCondition returns an EXISTS condition that checks
