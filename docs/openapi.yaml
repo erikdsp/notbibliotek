@@ -25,7 +25,7 @@ paths:
       tags:
         - Songs
       summary: Get songs
-      description: Get songs in the library with rich version data.
+      description: Get songs in the library with rich data for their current versions.
       operationId: get-songs
       responses:
         "200":
@@ -77,7 +77,7 @@ paths:
       tags:
         - Songs
       summary: Get song by ID
-      description: Get a song from the library with rich version data.
+      description: Get a song from the library with rich data for all its versions.
       operationId: get-song-by-id
       responses:
         "200":
