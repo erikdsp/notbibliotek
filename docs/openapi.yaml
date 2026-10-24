@@ -25,7 +25,7 @@ paths:
       tags:
         - Songs
       summary: Get songs
-      description: Get songs in the library with rich version data.
+      description: Get songs in the library with rich data for their current versions.
       operationId: get-songs
       responses:
         "200":
@@ -77,7 +77,7 @@ paths:
       tags:
         - Songs
       summary: Get song by ID
-      description: Get a song from the library with rich version data.
+      description: Get a song from the library with rich data for all its versions.
       operationId: get-song-by-id
       responses:
         "200":
@@ -208,39 +208,6 @@ paths:
       security:
         - libraryAccess: []
   /songs/{song_id}/versions:
-    get:
-      tags:
-        - Song Versions
-      summary: Get all song versions for a song
-      description: Get all song versions for a song
-      operationId: get-song-versions
-      responses:
-        "200":
-          description: Song versions for the song.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/SongVersion"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/AuthenticationRequired"
-        "404":
-          description: Song not found.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      parameters:
-        - name: song_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/ULID"
-      security:
-        - adminAuth: []
     post:
       tags:
         - Song Versions

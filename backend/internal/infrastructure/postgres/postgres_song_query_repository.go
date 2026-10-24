@@ -92,7 +92,7 @@ func (s dbSongDetailRow) toApplication() (application.SongDetails, application.P
 			Title:      s.Song.Title,
 			ArchivedAt: s.Song.ArchivedAt,
 		},
-		CurrentVersionID: &songVersionID,
+		CurrentVersionID: nil,
 		Versions: map[ulid.ULID]*application.VersionDetails{
 			songVersionID: {
 				Version: application.SongVersionDetails{
@@ -171,12 +171,19 @@ func (r *PostgresSongQueryRepository) GetAll(query application.SongQuery) ([]app
 		currentSongID := song.Song.ID
 
 		if prevSongID == nil || currentSongID != *prevSongID {
+
+			if dbRow.SongVersion.ID.Valid {
+				versionID := ulid.ULID(dbRow.SongVersion.ID.UUID)
+				song.CurrentVersionID = &versionID
+			}
+
 			songs[currentSongID] = &song
 			songOrder = append(songOrder, currentSongID)
 			prevSongID = &currentSongID
 		}
-		if song.CurrentVersionID != nil && part.ID != (ulid.ULID{}) {
-			version := songs[currentSongID].Versions[*song.CurrentVersionID]
+		if dbRow.SongVersion.ID.Valid && part.ID != (ulid.ULID{}) {
+			versionID := ulid.ULID(dbRow.SongVersion.ID.UUID)
+			version := songs[currentSongID].Versions[versionID]
 			version.Parts = append(version.Parts, part)
 		}
 
@@ -242,11 +249,24 @@ func (r *PostgresSongQueryRepository) GetByID(id ulid.ULID, query application.So
 			result = song
 			first = false
 		}
-		if song.CurrentVersionID != nil && part.ID != (ulid.ULID{}) {
-			version := result.Versions[*song.CurrentVersionID]
-			version.Parts = append(version.Parts, part)
-		}
 
+		if dbRow.SongVersion.ID.Valid {
+			versionID := ulid.ULID(dbRow.SongVersion.ID.UUID)
+
+			if result.CurrentVersionID == nil && dbRow.SongVersion.PublishedAt != nil {
+				result.CurrentVersionID = &versionID
+			}
+
+			if _, exists := result.Versions[versionID]; !exists {
+				result.Versions[versionID] = song.Versions[versionID]
+			}
+
+			if part.ID != (ulid.ULID{}) {
+				version := result.Versions[versionID]
+				version.Parts = append(version.Parts, part)
+
+			}
+		}
 	}
 
 	if err := rows.Err(); err != nil {
@@ -329,7 +349,12 @@ func buildSongByIDQuery(id ulid.ULID, query application.SongByIDQuery) sq.Select
 			"sv.published_at",
 		).
 		From("songs s").
-		JoinClause(joinCurrentVersion)
+		LeftJoin("song_versions sv ON sv.song_id = s.id").
+		OrderBy(
+			"s.id",
+			"sv.published_at DESC NULLS LAST",
+			"sv.id",
+		)
 
 	sql = addScoreColumns(sql, query.IncludeScore)
 
