@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -8,120 +9,107 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { createLogger } from "@/utils/logger";
-import { ChevronUp, CopyPlus, Pencil, Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
+import { SongEditor } from "./SongEditor";
+import { useInstruments } from "@/hooks/use-instruments";
+import { useSongs } from "@/hooks/use-songs";
+import { formatSongVersion } from "@/utils/song-utils";
 
 const log = createLogger("SongsTab");
 
 export function SongsTab() {
-  log.debug("Songs Tab");
+  const [editingSongId, setEditingSongId] = useState<string | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
+
+  const {
+    data: instruments,
+    isLoading: instrumentsIsLoading,
+    error: instrumentsError,
+  } = useInstruments();
+  const {
+    data: songs,
+    isLoading: songsIsLoading,
+    error: songsError,
+  } = useSongs();
+
+  function openEditor(songId: string | null) {
+    setEditingSongId(songId);
+    setEditorOpen(true);
+  }
+
+  if (instrumentsIsLoading || songsIsLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (instrumentsError) {
+    log.error(instrumentsError);
+    return <div>Failed to load instruments.</div>;
+  }
+
+  if (songsError) {
+    log.error(songsError)
+    return <div>Failed to load songs.</div>;
+  }
+
+  const safeInstruments = instruments ?? [];
+  const safeSongs = songs ?? [];
+
+  const editingSong =
+    safeSongs.find((song) => song.id === editingSongId) ?? null;
 
   return (
     <section className="mx-auto max-w-4xl rounded-lg">
-      <Button variant="outline" className="mx-auto flex">
+      <Button
+        variant="outline"
+        className="mx-auto flex"
+        onClick={() => openEditor(null)}
+      >
         <Plus />
         Add Song
       </Button>
 
-      <div className="rounded-lg border p-1 mt-4 ">
+      <div className="mt-4 rounded-lg border p-1">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Title</TableHead>
-              <TableHead>Versions</TableHead>
-              <TableHead className="version-actions">Edit Versions</TableHead>
-              <TableHead className="song-actions">Edit Song</TableHead>
+              <TableHead>Current Version</TableHead>
+              <TableHead className="w-20 text-right">Edit</TableHead>
             </TableRow>
           </TableHeader>
+
           <TableBody>
-            <TableRow key={123}>
-              <TableCell className="font-medium">Water Song</TableCell>
-              <TableCell>
-                <>
-                  2026-10-13 10:15
-                  <span className="ml-4 font-medium">(Current)</span>
-                </>
-              </TableCell>
-              <TableCell>
-                <ChevronUp className="ml-8" />
-              </TableCell>
-              <TableCell>
-                {" "}
-                <Button variant="ghost" className={"rounded-md"}>
-                  <Pencil className="size-4" />
-                </Button>
-              </TableCell>
-            </TableRow>
-            <TableRow key="versionid2">
-              <TableCell></TableCell>
-              <TableCell className="text-xs">
-                <span>2026-10-12 22:30</span>
-                <span className="ml-4">(Draft)</span>
-              </TableCell>
-              <TableCell>
-                <Button variant="ghost" className={"rounded-md"}>
-                  <Pencil className="size-4" />
-                </Button>
-                <Button variant="ghost" className="rounded-md">
-                  <CopyPlus className="size-4" />
-                </Button>
-              </TableCell>
-            </TableRow>
-            <TableRow key="versionid1">
-              <TableCell></TableCell>
-              <TableCell className="text-xs">
-                <span>2026-10-13 10:15</span>
-                <span className="ml-4 font-medium">(Current)</span>
-              </TableCell>
-              <TableCell>
-                <Button variant="ghost" className={"rounded-md"}>
-                  <Pencil className="size-4" />
-                </Button>
-                <Button variant="ghost" className="rounded-md">
-                  <CopyPlus className="size-4" />
-                </Button>
-              </TableCell>
-            </TableRow>
-            <TableRow key="versionid3">
-              <TableCell></TableCell>
-              <TableCell className="text-xs">
-                <span>2026-09-25 16:05</span>
-                <span className="ml-4 font-medium"></span>
-              </TableCell>
-              <TableCell>
-                <Button variant="ghost" className="rounded-md">
-                  <Pencil className="size-4" />
-                </Button>
-                <Button variant="ghost" className="rounded-md">
-                  <CopyPlus className="size-4" />
-                </Button>
-              </TableCell>
-            </TableRow>
-            <TableRow key="songid-new-version">
-              <TableCell></TableCell>
-              <TableCell></TableCell>
-              <TableCell>
-                {" "}
-                <Button variant="outline" className="flex" size="sm">
-                  <Plus />
-                  New Version
-                </Button>
-              </TableCell>
-              <TableCell></TableCell>
-            </TableRow>
-            <TableRow key={456}>
-              <TableCell className="font-medium">Mist</TableCell>
-              <TableCell></TableCell>
-              <TableCell></TableCell>
-              <TableCell>
-                {" "}
-                <Button variant="ghost" className={"rounded-md"}>
-                  <Pencil className="size-4" />
-                </Button>
-              </TableCell>
-            </TableRow>
+            {safeSongs.map((song) => (
+              <TableRow key={song.id}>
+                <TableCell className="font-medium">{song.title}</TableCell>
+                <TableCell>
+                  {formatSongVersion(song, song.current_version_id) ?? "—"}
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Edit ${song.title}`}
+                    onClick={() => openEditor(song.id)}
+                  >
+                    <Pencil className="size-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </div>
+
+      {editorOpen && (
+        <SongEditor
+          key={editingSongId ?? "new"}
+          open={editorOpen}
+          onOpenChange={setEditorOpen}
+          song={editingSong}
+          instruments={safeInstruments}
+        />
+      )}
     </section>
   );
 }
