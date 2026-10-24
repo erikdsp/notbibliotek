@@ -271,7 +271,7 @@ func (h *SongVersionHandler) Publish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	version, err := h.service.PublishSongVersion(songID, versionID)
+	err = h.service.PublishSongVersion(songID, versionID)
 	if err != nil {
 		if errors.Is(err, application.ErrSongVersionNotFound) ||
 			errors.Is(err, application.ErrInvalidSongID) {
@@ -279,7 +279,7 @@ func (h *SongVersionHandler) Publish(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if errors.Is(err, application.ErrSongVersionAlreadyPublished) ||
-			errors.Is(err, application.ErrScoreNotFound) {
+			errors.Is(err, application.ErrMissingScore) {
 			writeError(w, err.Error(), http.StatusConflict)
 			return
 		}
@@ -289,12 +289,7 @@ func (h *SongVersionHandler) Publish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := toVersionResponse(version)
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
-
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *SongVersionHandler) GetPartInstruments(w http.ResponseWriter, r *http.Request) {

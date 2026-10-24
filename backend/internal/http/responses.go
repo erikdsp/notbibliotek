@@ -38,15 +38,15 @@ type PartResponse struct {
 }
 
 type ScoreForVersion struct {
-	ID     ulid.ULID `json:"id"`
-	FileID ulid.ULID `json:"file_id"`
+	ID   ulid.ULID    `json:"id"`
+	File FileResponse `json:"file"`
 }
 
 type PartForVersion struct {
-	ID     ulid.ULID `json:"id"`
-	Key    string    `json:"key"`
-	Name   string    `json:"name"`
-	FileID ulid.ULID `json:"file_id"`
+	ID   ulid.ULID    `json:"id"`
+	Key  string       `json:"key"`
+	Name string       `json:"name"`
+	File FileResponse `json:"file"`
 }
 
 type VersionResponse struct {

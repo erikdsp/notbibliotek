@@ -783,17 +783,13 @@ func Test_WhenValidVersionHasScoreAndZeroPartsThenPublishSongVersionIsSuccessful
 		FileID:        fileID,
 	})
 
-	version, err := f.service.PublishSongVersion(
+	err := f.service.PublishSongVersion(
 		songID,
 		versionID,
 	)
 
 	if err != nil {
 		t.Fatalf("expected successful publish, got %v", err)
-	}
-
-	if version.Version.ID != versionID {
-		t.Error("expected published SongVersionID to match versionID")
 	}
 
 	if f.repository.songVersions[0].PublishedAt == nil {
@@ -807,7 +803,7 @@ func Test_WhenSongVersionIsMissingThenPublishSongVersionReturnsCorrectError(t *t
 	versionID := ulid.Make()
 	f := newSongVersionServiceFixture(&songID, "", nil)
 
-	_, err := f.service.PublishSongVersion(
+	err := f.service.PublishSongVersion(
 		songID,
 		versionID,
 	)
@@ -825,7 +821,7 @@ func Test_WhenSongIDIsInvalidThenPublishSongVersionReturnsCorrectError(t *testin
 	f := newSongVersionServiceFixture(&songID, "", &versionID)
 
 	anotherSongID := ulid.Make()
-	_, err := f.service.PublishSongVersion(
+	err := f.service.PublishSongVersion(
 		anotherSongID,
 		versionID,
 	)
@@ -848,7 +844,7 @@ func Test_WhenVersionIsAlreadyPublishedThenPublishSongVersionReturnsCorrectError
 	now := time.Now()
 	f.repository.songVersions[0].PublishedAt = &now
 
-	_, err := f.service.PublishSongVersion(
+	err := f.service.PublishSongVersion(
 		songID,
 		versionID,
 	)
@@ -865,7 +861,7 @@ func Test_WhenScoreIsMissingThenPublishSongVersionReturnsCorrectError(t *testing
 	versionID := ulid.Make()
 	f := newSongVersionServiceFixture(&songID, "", &versionID)
 
-	_, err := f.service.PublishSongVersion(
+	err := f.service.PublishSongVersion(
 		songID,
 		versionID,
 	)
@@ -892,7 +888,7 @@ func Test_WhenPartRepositoryReturnsErrorThenPublishSongVersionReturnsError(t *te
 	partError := errors.New("part error")
 	f.partRepository.err = partError
 
-	_, err := f.service.PublishSongVersion(
+	err := f.service.PublishSongVersion(
 		songID,
 		versionID,
 	)
@@ -919,7 +915,7 @@ func Test_WhenSongVersionRepositoryReturnsErrorThenPublishSongVersionReturnsErro
 	songVersionError := errors.New("song version error")
 	f.repository.err = songVersionError
 
-	_, err := f.service.PublishSongVersion(
+	err := f.service.PublishSongVersion(
 		songID,
 		versionID,
 	)

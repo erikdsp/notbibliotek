@@ -462,12 +462,8 @@ paths:
       summary: Publish song version
       operationId: publish-song-version
       responses:
-        "200":
+        "204":
           description: Song version published.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Version"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -914,6 +910,16 @@ components:
         - id
         - song_id
         - published_at
+    File:
+      type: object
+      properties: 
+        id:
+          $ref: "#/components/schemas/ULID"
+        name:
+          type: string
+      required:
+        - id
+        - name
     Score:
       type: object
       properties:
@@ -1003,11 +1009,11 @@ components:
           properties:
             id:
               $ref: "#/components/schemas/ULID"
-            file_id:
-              $ref: "#/components/schemas/ULID"
+            file:
+              $ref: "#/components/schemas/File"
           required:
             - id
-            - file_id
+            - file
         parts:
           type: array
           items:
@@ -1019,13 +1025,13 @@ components:
                 type: string
               name:
                 type: string
-              file_id:
-                $ref: "#/components/schemas/ULID"
+              file:
+                $ref: "#/components/schemas/File"
             required:
               - id
               - key
               - name
-              - file_id
+              - file
       required:
         - song_version_id
         - published_at
