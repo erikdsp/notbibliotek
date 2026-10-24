@@ -268,29 +268,24 @@ func (s *SongVersionService) GetPartInstrumentsBySongVersionID(versionID ulid.UL
 	return partInstruments, nil
 }
 
-func (s *SongVersionService) PublishSongVersion(songID ulid.ULID, versionID ulid.ULID) (VersionDetails, error) {
+func (s *SongVersionService) PublishSongVersion(songID ulid.ULID, versionID ulid.ULID) error {
 	version, err := s.repository.GetByID(versionID)
 	if err != nil {
-		return VersionDetails{}, err
+		return err
 	}
 	if version.SongID != songID {
-		return VersionDetails{}, ErrInvalidSongID
+		return ErrInvalidSongID
 	}
 	if version.PublishedAt != nil {
-		return VersionDetails{}, ErrSongVersionAlreadyPublished
+		return ErrSongVersionAlreadyPublished
 	}
 
-	score, err := s.scoreRepository.GetBySongVersionID(versionID)
+	_, err = s.scoreRepository.GetBySongVersionID(versionID)
 	if err != nil {
 		if errors.Is(err, ErrScoreNotFound) {
-			return VersionDetails{}, ErrMissingScore
+			return ErrMissingScore
 		}
-		return VersionDetails{}, err
-	}
-
-	parts, err := s.partRepository.GetBySongVersionID(versionID)
-	if err != nil {
-		return VersionDetails{}, err
+		return err
 	}
 
 	now := time.Now()
@@ -298,16 +293,12 @@ func (s *SongVersionService) PublishSongVersion(songID ulid.ULID, versionID ulid
 
 	if err = s.repository.Publish(version); err != nil {
 		if errors.Is(err, ErrNoRowsAffected) {
-			return VersionDetails{}, ErrSongVersionAlreadyPublished
+			return ErrSongVersionAlreadyPublished
 		}
-		return VersionDetails{}, err
+		return err
 	}
 
-	return VersionDetails{
-		Version: toSongVersionDetails(version),
-		Score:   toScoreDetails(score),
-		Parts:   toPartsDetails(parts),
-	}, nil
+	return nil
 }
 
 func (s *SongVersionService) fileStorageRollback(fileID ulid.ULID) {
