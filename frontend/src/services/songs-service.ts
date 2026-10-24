@@ -1,10 +1,10 @@
-import { apiGet } from "@/lib";
+import { apiGet, apiPost } from "@/lib";
 import { ApiError } from "@/errors";
 import { API_BASE_URL } from "@/config";
 import { createLogger } from "@/utils/logger";
-import type { SongResponse } from "@/core/types";
+import type { SongResponse, Song, SongVersion } from "@/core/types";
 
-const log = createLogger("fetchSongs");
+const log = createLogger("songsService");
 
 export interface SongFilters {
   archived?: boolean;
@@ -58,6 +58,74 @@ export async function fetchSongs(
   } catch (error: unknown) {
     throw new ApiError(
       `Failed to fetch songs: ${(error as Error).message}`,
+      url.toString(),
+    );
+  }
+}
+
+/**
+ * Fetch a song from the library
+ * @returns Song with rich data for all its versions
+ * @throws ApiError if the request fails
+ */
+export async function fetchSong(songId: string): Promise<SongResponse> {
+  const url = new URL(`${API_BASE_URL}/songs/${songId}`);
+
+  try {
+    const song = await apiGet<SongResponse>(url.toString());
+
+    log.debug("url: ", url.toString(), "raw payload: ", song);
+
+    return song;
+  } catch (error: unknown) {
+    throw new ApiError(
+      `Failed to fetch song: ${(error as Error).message}`,
+      url.toString(),
+    );
+  }
+}
+
+
+/**
+ * Create a song in the library
+ * @returns Created song
+ * @throws ApiError if the request fails
+ */
+export async function createSong(title: string): Promise<Song> {
+  const url = new URL(`${API_BASE_URL}/songs`);
+
+  try {
+    const song = await apiPost<Song>(url.toString(), { title });
+
+    log.debug("url: ", url.toString(), "raw payload: ", song);
+
+    return song;
+  } catch (error: unknown) {
+    throw new ApiError(
+      `Failed to create song: ${(error as Error).message}`,
+      url.toString(),
+    );
+  }
+}
+
+
+/**
+ * Create a song version
+ * @returns Created song version
+ * @throws ApiError if the request fails
+ */
+export async function createSongVersion(songId: string): Promise<SongVersion> {
+  const url = new URL(`${API_BASE_URL}/songs/${songId}/versions`);
+
+  try {
+    const songVersion = await apiPost<SongVersion>(url.toString() );
+
+    log.debug("url: ", url.toString(), "raw payload: ", songVersion);
+
+    return songVersion;
+  } catch (error: unknown) {
+    throw new ApiError(
+      `Failed to create song version: ${(error as Error).message}`,
       url.toString(),
     );
   }

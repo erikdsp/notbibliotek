@@ -3,7 +3,7 @@ import { fetchSongs, type SongFilters, } from "@/services/songs-service"
 
 export function useSongs(filters: SongFilters = {}) {
   return useQuery({
-    queryKey: ["songs", filters],
+    queryKey: ["songs", "list", filters],
     queryFn: () => fetchSongs(filters),
     staleTime: Infinity,
   });
