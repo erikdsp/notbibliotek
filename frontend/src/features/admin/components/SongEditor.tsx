@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Eye, FileText, Plus, Upload, X } from "lucide-react";
+import { Eye, FileText, Plus, Upload, X, CopyPlus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,108 +29,74 @@ import { Badge } from "@/components/ui/badge";
 
 import type { SongResponse, Instrument } from "@/core/types";
 import { formatSongVersion } from "@/utils/song-utils";
+import { useSong, useCreateSong, useCreateSongVersion } from "@/hooks";
+import { createLogger } from "@/utils/logger";
+import type { EditablePart, EditableScore } from "@/features/admin/types";
+import {
+  makeEditableParts,
+  makeEditableScore,
+} from "@/features/admin/mappers/make-editable";
+import { suggestPartKey } from "@/features/admin/utils/suggest-part-key";
+import { initialVersionId } from "@/features/admin/utils/initial-version-id";
 
-type EditablePart = {
-  local_id: string;
-  id: string | null;
-  key: string;
-  name: string;
-  file_id: string | null;
-  file: File | null;
-  instrument_ids: string[];
-};
-
-type EditableScore = {
-  file_id: string | null;
-  file: File | null;
-  name: string;
-};
-
-type SongEditorProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  song: SongResponse | null;
-  instruments: Instrument[];
-};
+const log = createLogger("SongEditor");
 
 function createLocalId() {
   return crypto.randomUUID();
 }
 
-function suggestPartKey(filename: string) {
-  const name = filename
-    .replace(/\.pdf$/i, "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-
-  const matches = [
-    { pattern: /\bviolin\s*(?:i|1)\b/, key: "violin1" },
-    { pattern: /\bviolin\s*(?:ii|2)\b/, key: "violin2" },
-    { pattern: /\bviolin\b/, key: "violin" },
-    { pattern: /\bviola\b/, key: "viola" },
-    { pattern: /\bcello\b/, key: "cello" },
-    { pattern: /\bflute\b/, key: "flute" },
-    { pattern: /\bclarinet\b/, key: "clarinet" },
-  ];
-
-  return matches.find(({ pattern }) => pattern.test(name))?.key ?? "";
-}
-
-function makeEditableParts(
-  song: SongResponse | null,
-  versionId: string | null,
-): EditablePart[] {
-  const version = song?.versions.find(
-    (version) => version.song_version_id === versionId,
-  );
-
-  return (
-    version?.parts.map((part) => ({
-      local_id: part.id,
-      id: part.id,
-      key: part.key,
-      name: part.name,
-      file_id: part.file_id,
-      file: null,
-      instrument_ids: [],
-    })) ?? []
-  );
-}
-
-function makeEditableScore(
-  song: SongResponse | null,
-  versionId: string | null,
-): EditableScore | null {
-  const version = song?.versions.find(
-    (version) => version.song_version_id === versionId,
-  );
-
-  if (!version?.score) return null;
-
-  return {
-    file_id: version.score.file_id,
-    file: null,
-    name: "Score.pdf",
-  };
-}
-
-// Selects the first unpublished draft, or the current published version if no draft exists.
-function initialVersionId(song: SongResponse | null) {
-  if (!song) return null;
-
-  const draft = song.versions.find((version) => version.published_at === null);
-
-  return draft?.song_version_id ?? song.current_version_id;
-}
+type SongEditorProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  songId: string | null;
+  instruments: Instrument[];
+  onSongCreated: (songId: string) => void;
+};
 
 export function SongEditor({
   open,
   onOpenChange,
+  songId,
+  instruments,
+  onSongCreated,
+}: SongEditorProps) {
+  const { data: song, isPending, isError } = useSong(songId);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+        {songId !== null && isPending ? (
+          <div>Loading...</div>
+        ) : songId !== null && isError ? (
+          <div>Failed to load song.</div>
+        ) : (
+          <SongEditorForm
+            song={song ?? null}
+            instruments={instruments}
+            onOpenChange={onOpenChange}
+            onSongCreated={onSongCreated}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+type SongEditorFormProps = {
+  onOpenChange: (open: boolean) => void;
+  song: SongResponse | null;
+  instruments: Instrument[];
+  onSongCreated: (songId: string) => void;
+};
+
+export function SongEditorForm({
+  onOpenChange,
   song,
   instruments,
-}: SongEditorProps) {
+  onSongCreated,
+}: SongEditorFormProps) {
   const [title, setTitle] = useState(song?.title ?? "");
+  const [createdSongId, setCreatedSongId] = useState<string | null>(null);
   const [versionId, setVersionId] = useState<string | null>(() =>
     initialVersionId(song),
   );
@@ -143,6 +109,27 @@ export function SongEditor({
 
   const scoreInputRef = useRef<HTMLInputElement>(null);
   const partsInputRef = useRef<HTMLInputElement>(null);
+
+  const createSongMutation = useCreateSong();
+  const createSongVersionMutation = useCreateSongVersion();
+
+  async function handleCreateSong() {
+    try {
+      let songId = createdSongId;
+
+      if (songId === null) {
+        const newSong = await createSongMutation.mutateAsync(title.trim());
+        songId = newSong.id;
+        setCreatedSongId(songId);
+      }
+
+      await createSongVersionMutation.mutateAsync(songId);
+
+      onSongCreated(songId);
+    } catch (error) {
+      log.error("Failed to create song:", error);
+    }
+  }
 
   const selectedVersion = song?.versions.find(
     (version) => version.song_version_id === versionId,
@@ -161,8 +148,8 @@ export function SongEditor({
 
     setScore({
       file_id: null,
+      file_name: file.name,
       file,
-      name: file.name,
     });
   }
 
@@ -182,6 +169,7 @@ export function SongEditor({
           key,
           name: file.name.replace(/\.pdf$/i, ""),
           file_id: null,
+          file_name: file.name,
           file,
           instrument_ids: matchingInstrument ? [matchingInstrument.id] : [],
         };
@@ -237,371 +225,353 @@ export function SongEditor({
   )?.label;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>{song ? "Edit Song" : "Add Song"}</DialogTitle>
-          <DialogDescription>
-            {song
-              ? "A song version contains one score and any number of parts. "
-              : "Add a title and then continue to PDF uploads"}
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <DialogHeader>
+        <DialogTitle>{song ? "Edit Song" : "Add Song"}</DialogTitle>
+        <DialogDescription>
+          {song
+            ? "A song version contains one score and any number of parts. "
+            : "Add a title and then continue to PDF uploads"}
+        </DialogDescription>
+      </DialogHeader>
 
-        <div className="space-y-6 py-2">
-          {/* Song title */}
-          <div className="space-y-2">
-            <Label htmlFor="song-title">Song title</Label>
-            <Input
-              id="song-title"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="Song title"
-            />
-          </div>
+      <div className="space-y-6 py-2">
+        {/* Song title */}
+        <div className="space-y-2">
+          <Label htmlFor="song-title">Song title</Label>
+          <Input
+            id="song-title"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="Song title"
+          />
+        </div>
 
-          {song === null ? (
-            <DialogFooter>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
+        {song === null ? (
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
 
-              <Button disabled={!title.trim()}>Create & Continue</Button>
-            </DialogFooter>
-          ) : (
-            <>
-              {/* Version selector */}
+            <Button
+              disabled={
+                !title.trim() ||
+                createSongMutation.isPending ||
+                createSongVersionMutation.isPending
+              }
+              onClick={handleCreateSong}
+            >
+              Create & Continue
+            </Button>
+          </DialogFooter>
+        ) : (
+          <>
+            {/* Version selector */}
 
-              <div className="space-y-2">
-                <Label>Version</Label>
+            <div className="space-y-2">
+              <Label>Version</Label>
 
-                <div className="flex items-center gap-3">
-                  <Select value={versionId} onValueChange={selectVersion}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select version">
-                        {selectedVersionLabel}
-                      </SelectValue>
-                    </SelectTrigger>
+              <div className="flex items-center gap-3">
+                <Select value={versionId} onValueChange={selectVersion}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select version">
+                      {selectedVersionLabel}
+                    </SelectValue>
+                  </SelectTrigger>
 
-                    <SelectContent>
-                      {versionOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SelectContent>
+                    {versionOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-                  <Button variant="outline" disabled>
-                    <Plus />
-                    New Draft from Version
-                  </Button>
-                </div>
-              </div>
-
-              {/* <div className="flex items-end gap-3">
-                <div className="min-w-0 flex-1 space-y-2">
-                  <Label>Version</Label>
-
-                  <Select value={versionId} onValueChange={selectVersion}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select version">
-                        {selectedVersionLabel}
-                      </SelectValue>
-                    </SelectTrigger>
-
-                    <SelectContent>
-                      {versionOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button variant="outline" disabled >
-                  <Plus />
-                  New Version
+                <Button variant="outline" disabled>
+                  <CopyPlus />
+                  New Draft
                 </Button>
-              </div> */}
+                <Button variant="outline" disabled>
+                  <Plus />
+                  New Empty Draft
+                </Button>
+              </div>
+            </div>
 
-              {isPublished && (
-                <p className="text-sm text-muted-foreground">
-                  Published version. PDFs are read-only.
-                </p>
-              )}
+            {isPublished && (
+              <p className="text-sm text-muted-foreground">
+                Published version. PDFs are read-only.
+              </p>
+            )}
 
-              {/* Score */}
-              <section className="space-y-3">
-                <h3 className="font-semibold">Score</h3>
+            {/* Score */}
+            <section className="space-y-3">
+              <h3 className="font-semibold">Score</h3>
 
-                {score && (
-                  <div className="flex items-center gap-2 rounded-md border px-3 py-2">
-                    <FileText className="size-4 shrink-0 text-muted-foreground" />
+              {score && (
+                <div className="flex items-center gap-2 rounded-md border px-3 py-2">
+                  <FileText className="size-4 shrink-0 text-muted-foreground" />
 
-                    <span className="min-w-0 truncate text-sm">
-                      {score.name}
-                    </span>
+                  <span className="min-w-0 truncate text-sm">{score.file_name}</span>
 
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Preview score"
+                    disabled={!score.file}
+                    onClick={() => previewFile(score.file)}
+                  >
+                    <Eye className="size-4" />
+                  </Button>
+
+                  <div className="flex-1" />
+
+                  {!isPublished && (
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      aria-label="Preview score"
-                      disabled={!score.file}
-                      onClick={() => previewFile(score.file)}
+                      aria-label="Remove score"
+                      onClick={() => setScore(null)}
                     >
-                      <Eye className="size-4" />
+                      <X className="size-4" />
                     </Button>
+                  )}
+                </div>
+              )}
 
-                    <div className="flex-1" />
+              {!isPublished && (
+                <div
+                  className="flex min-h-28 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-4 text-center"
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    const file = event.dataTransfer.files[0];
+                    if (file) selectScore(file);
+                  }}
+                >
+                  <Upload className="size-5 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    Drop a Score PDF here
+                  </p>
 
-                    {!isPublished && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => scoreInputRef.current?.click()}
+                  >
+                    Select Score
+                  </Button>
+
+                  <input
+                    ref={scoreInputRef}
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) selectScore(file);
+                      event.target.value = "";
+                    }}
+                  />
+                </div>
+              )}
+            </section>
+
+            {/* Parts */}
+            <section className="space-y-3">
+              <h3 className="font-semibold">Parts</h3>
+
+              {!isPublished && (
+                <div
+                  className="flex min-h-28 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-4 text-center"
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    selectParts(event.dataTransfer.files);
+                  }}
+                >
+                  <Upload className="size-5 text-muted-foreground" />
+
+                  <p className="text-sm text-muted-foreground">
+                    Drop Part PDFs here
+                  </p>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => partsInputRef.current?.click()}
+                  >
+                    Select Parts
+                  </Button>
+
+                  <input
+                    ref={partsInputRef}
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    multiple
+                    className="hidden"
+                    onChange={(event) => {
+                      if (event.target.files) {
+                        selectParts(event.target.files);
+                      }
+                      event.target.value = "";
+                    }}
+                  />
+                </div>
+              )}
+
+              <div className="space-y-3">
+                {parts.map((part) => (
+                  <div
+                    key={part.local_id}
+                    className="space-y-3 rounded-lg border p-3"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FileText className="size-4 shrink-0 text-muted-foreground" />
+
+                      <span className="min-w-0 truncate text-sm">
+                        {part.file?.name ?? part.name}
+                      </span>
+
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        aria-label="Remove score"
-                        onClick={() => setScore(null)}
+                        aria-label={`Preview ${part.name}`}
+                        disabled={!part.file}
+                        onClick={() => previewFile(part.file)}
                       >
-                        <X className="size-4" />
+                        <Eye className="size-4" />
                       </Button>
-                    )}
-                  </div>
-                )}
 
-                {!isPublished && (
-                  <div
-                    className="flex min-h-28 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-4 text-center"
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={(event) => {
-                      event.preventDefault();
-                      const file = event.dataTransfer.files[0];
-                      if (file) selectScore(file);
-                    }}
-                  >
-                    <Upload className="size-5 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">
-                      Drop a Score PDF here
-                    </p>
+                      {part.id === null && (
+                        <Badge variant="secondary">New</Badge>
+                      )}
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => scoreInputRef.current?.click()}
-                    >
-                      Select Score
-                    </Button>
+                      <div className="flex-1" />
 
-                    <input
-                      ref={scoreInputRef}
-                      type="file"
-                      accept="application/pdf,.pdf"
-                      className="hidden"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        if (file) selectScore(file);
-                        event.target.value = "";
-                      }}
-                    />
-                  </div>
-                )}
-              </section>
-
-              {/* Parts */}
-              <section className="space-y-3">
-                <h3 className="font-semibold">Parts</h3>
-
-                {!isPublished && (
-                  <div
-                    className="flex min-h-28 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-4 text-center"
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={(event) => {
-                      event.preventDefault();
-                      selectParts(event.dataTransfer.files);
-                    }}
-                  >
-                    <Upload className="size-5 text-muted-foreground" />
-
-                    <p className="text-sm text-muted-foreground">
-                      Drop Part PDFs here
-                    </p>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => partsInputRef.current?.click()}
-                    >
-                      Select Parts
-                    </Button>
-
-                    <input
-                      ref={partsInputRef}
-                      type="file"
-                      accept="application/pdf,.pdf"
-                      multiple
-                      className="hidden"
-                      onChange={(event) => {
-                        if (event.target.files) {
-                          selectParts(event.target.files);
-                        }
-                        event.target.value = "";
-                      }}
-                    />
-                  </div>
-                )}
-
-                <div className="space-y-3">
-                  {parts.map((part) => (
-                    <div
-                      key={part.local_id}
-                      className="space-y-3 rounded-lg border p-3"
-                    >
-                      <div className="flex items-center gap-2">
-                        <FileText className="size-4 shrink-0 text-muted-foreground" />
-
-                        <span className="min-w-0 truncate text-sm">
-                          {part.file?.name ?? part.name}
-                        </span>
-
+                      {!isPublished && (
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          aria-label={`Preview ${part.name}`}
-                          disabled={!part.file}
-                          onClick={() => previewFile(part.file)}
+                          aria-label={`Remove ${part.name}`}
+                          onClick={() =>
+                            setParts((current) =>
+                              current.filter(
+                                (item) => item.local_id !== part.local_id,
+                              ),
+                            )
+                          }
                         >
-                          <Eye className="size-4" />
+                          <X className="size-4" />
                         </Button>
+                      )}
+                    </div>
 
-                        {part.id === null && (
-                          <Badge variant="secondary">New</Badge>
-                        )}
-
-                        <div className="flex-1" />
-
-                        {!isPublished && (
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            aria-label={`Remove ${part.name}`}
-                            onClick={() =>
-                              setParts((current) =>
-                                current.filter(
-                                  (item) => item.local_id !== part.local_id,
-                                ),
-                              )
-                            }
-                          >
-                            <X className="size-4" />
-                          </Button>
-                        )}
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Part Key</Label>
+                        <Input
+                          value={part.key}
+                          disabled={isPublished}
+                          onChange={(event) =>
+                            updatePart(part.local_id, {
+                              key: event.target.value,
+                            })
+                          }
+                          placeholder="e.g. violin1"
+                        />
                       </div>
 
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label>Part Key</Label>
-                          <Input
-                            value={part.key}
-                            disabled={isPublished}
-                            onChange={(event) =>
-                              updatePart(part.local_id, {
-                                key: event.target.value,
-                              })
-                            }
-                            placeholder="e.g. violin1"
-                          />
-                        </div>
+                      <div className="space-y-2">
+                        <Label>Instruments</Label>
 
-                        <div className="space-y-2">
-                          <Label>Instruments</Label>
+                        <div className="flex min-h-9 flex-wrap items-center gap-1 rounded-md border px-2 py-1">
+                          {part.instrument_ids.map((id) => {
+                            const instrument = instruments.find(
+                              (instrument) => instrument.id === id,
+                            );
 
-                          <div className="flex min-h-9 flex-wrap items-center gap-1 rounded-md border px-2 py-1">
-                            {part.instrument_ids.map((id) => {
-                              const instrument = instruments.find(
-                                (instrument) => instrument.id === id,
-                              );
+                            if (!instrument) return null;
 
-                              if (!instrument) return null;
+                            return (
+                              <Badge
+                                key={id}
+                                variant="secondary"
+                                className="gap-1"
+                              >
+                                {instrument.name}
 
-                              return (
-                                <Badge
-                                  key={id}
-                                  variant="secondary"
-                                  className="gap-1"
+                                <button
+                                  type="button"
+                                  aria-label={`Remove ${instrument.name}`}
+                                  onClick={() => toggleInstrument(part, id)}
                                 >
-                                  {instrument.name}
+                                  <X className="size-3" />
+                                </button>
+                              </Badge>
+                            );
+                          })}
 
-                                  <button
-                                    type="button"
-                                    aria-label={`Remove ${instrument.name}`}
-                                    onClick={() => toggleInstrument(part, id)}
-                                  >
-                                    <X className="size-3" />
-                                  </button>
-                                </Badge>
-                              );
-                            })}
+                          <Popover>
+                            <PopoverTrigger
+                              render={
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7"
+                                />
+                              }
+                            >
+                              <Plus className="size-3" />
+                              Add instrument
+                            </PopoverTrigger>
 
-                            <Popover>
-                              <PopoverTrigger
-                                render={
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-7"
+                            <PopoverContent
+                              align="start"
+                              className="w-56 space-y-2"
+                            >
+                              {instruments.map((instrument) => (
+                                <label
+                                  key={instrument.id}
+                                  className="flex cursor-pointer items-center gap-2 text-sm"
+                                >
+                                  <Checkbox
+                                    checked={part.instrument_ids.includes(
+                                      instrument.id,
+                                    )}
+                                    onCheckedChange={() =>
+                                      toggleInstrument(part, instrument.id)
+                                    }
                                   />
-                                }
-                              >
-                                <Plus className="size-3" />
-                                Add instrument
-                              </PopoverTrigger>
 
-                              <PopoverContent
-                                align="start"
-                                className="w-56 space-y-2"
-                              >
-                                {instruments.map((instrument) => (
-                                  <label
-                                    key={instrument.id}
-                                    className="flex cursor-pointer items-center gap-2 text-sm"
-                                  >
-                                    <Checkbox
-                                      checked={part.instrument_ids.includes(
-                                        instrument.id,
-                                      )}
-                                      onCheckedChange={() =>
-                                        toggleInstrument(part, instrument.id)
-                                      }
-                                    />
-
-                                    {instrument.name}
-                                  </label>
-                                ))}
-                              </PopoverContent>
-                            </Popover>
-                          </div>
+                                  {instrument.name}
+                                </label>
+                              ))}
+                            </PopoverContent>
+                          </Popover>
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </section>
+                  </div>
+                ))}
+              </div>
+            </section>
 
-              <DialogFooter>
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
-                  Close
-                </Button>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Close
+              </Button>
 
-                <Button variant="outline" disabled>
-                  Save Draft
-                </Button>
+              <Button variant="outline" disabled>
+                Save Draft
+              </Button>
 
-                <Button disabled>Publish Version</Button>
-              </DialogFooter>
-            </>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+              <Button disabled>Publish Version</Button>
+            </DialogFooter>
+          </>
+        )}
+      </div>
+    </>
   );
 }

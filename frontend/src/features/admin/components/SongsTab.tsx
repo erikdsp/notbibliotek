@@ -54,9 +54,6 @@ export function SongsTab() {
   const safeInstruments = instruments ?? [];
   const safeSongs = songs ?? [];
 
-  const editingSong =
-    safeSongs.find((song) => song.id === editingSongId) ?? null;
-
   return (
     <section className="mx-auto max-w-4xl rounded-lg">
       <Button
@@ -106,8 +103,9 @@ export function SongsTab() {
           key={editingSongId ?? "new"}
           open={editorOpen}
           onOpenChange={setEditorOpen}
-          song={editingSong}
+          songId={editingSongId}
           instruments={safeInstruments}
+          onSongCreated={setEditingSongId}
         />
       )}
     </section>
