@@ -431,7 +431,7 @@ export function SongEditorForm({
                       <FileText className="size-4 shrink-0 text-muted-foreground" />
 
                       <span className="min-w-0 truncate text-sm">
-                        {part.file?.name ?? part.name}
+                        {part.file_name ?? part.name}
                       </span>
 
                       <Button

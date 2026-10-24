@@ -15,12 +15,18 @@ export type Version = {
 
 export type VersionScore = {
   id: string;
-  file_id: string;
+  file: {
+    id: string;
+    name: string;
+  };
 };
 
 export type VersionPart = {
   id: string;
   key: string;
   name: string;
-  file_id: string;
+  file: {
+    id: string;
+    name: string;
+  };
 };

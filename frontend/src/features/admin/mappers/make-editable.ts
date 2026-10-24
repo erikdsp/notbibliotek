@@ -15,8 +15,8 @@ export function makeEditableParts(
       id: part.id,
       key: part.key,
       name: part.name,
-      file_id: part.file_id,
-      file_name: "Dummy Name",
+      file_id: part.file.id,
+      file_name: part.file.name,
       file: null,
       instrument_ids: [],
     })) ?? []
@@ -34,8 +34,8 @@ export function makeEditableScore(
   if (!version?.score) return null;
 
   return {
-    file_id: version.score.file_id,
-    file_name: "Dummy Name",
+    file_id: version.score.file.id,
+    file_name: version.score.file.name,
     file: null,
   };
 }
