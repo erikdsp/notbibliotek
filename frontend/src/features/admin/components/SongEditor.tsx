@@ -500,10 +500,6 @@ export function SongEditorForm({
                         <Eye className="size-4" />
                       </Button>
 
-                      {part.id === null && (
-                        <Badge variant="secondary">New</Badge>
-                      )}
-
                       <div className="flex-1" />
 
                       {!isPublished && (
@@ -525,6 +521,18 @@ export function SongEditorForm({
                     </div>
 
                     <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Part Name</Label>
+                        <Input
+                          value={part.name}
+                          disabled={isPublished}
+                          onChange={(event) =>
+                            updatePart(part.local_id, {
+                              name: event.target.value,
+                            })
+                          }
+                        />
+                      </div>
                       <div className="space-y-2">
                         <Label>Part Key</Label>
                         <Input
