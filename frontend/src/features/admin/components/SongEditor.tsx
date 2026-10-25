@@ -38,6 +38,16 @@ import {
 } from "@/features/admin/mappers/make-editable";
 import { suggestPartKey } from "@/features/admin/utils/suggest-part-key";
 import { initialVersionId } from "@/features/admin/utils/initial-version-id";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const log = createLogger("SongEditor");
 
@@ -106,6 +116,39 @@ export function SongEditorForm({
   const [parts, setParts] = useState<EditablePart[]>(() =>
     makeEditableParts(song, initialVersionId(song)),
   );
+  const [pendingVersionId, setPendingVersionId] = useState<string | null>(null);
+
+  const titleIsDirty = title !== (song?.title ?? "");
+  const originalScore = makeEditableScore(song, versionId);
+  const scoreIsDirty =
+    score?.file_id !== originalScore?.file_id || score?.file != null;
+
+  const originalParts = makeEditableParts(song, versionId);
+
+  function partHasChanged(
+    part: EditablePart,
+    originalParts: EditablePart[],
+  ): boolean {
+    const original = originalParts.find((p) => p.id === part.id);
+
+    if (!original) {
+      return true;
+    }
+
+    return (
+      part.key !== original.key ||
+      part.name !== original.name ||
+      part.file_id !== original.file_id ||
+      part.file != null
+    );
+  }
+
+  const partsAreDirty =
+    parts.length !== originalParts.length ||
+    parts.some((part) => partHasChanged(part, originalParts));
+
+  const versionIsDirty = scoreIsDirty || partsAreDirty;
+  const isDirty = titleIsDirty || versionIsDirty;
 
   const scoreInputRef = useRef<HTMLInputElement>(null);
   const partsInputRef = useRef<HTMLInputElement>(null);
@@ -137,10 +180,21 @@ export function SongEditorForm({
 
   const isPublished = selectedVersion?.published_at != null;
 
-  function selectVersion(nextVersionId: string | null) {
+  function switchVersion(nextVersionId: string | null) {
     setVersionId(nextVersionId);
     setScore(makeEditableScore(song, nextVersionId));
     setParts(makeEditableParts(song, nextVersionId));
+  }
+
+  function selectVersion(nextVersionId: string | null) {
+    if (nextVersionId === versionId) return;
+
+    if (versionIsDirty) {
+      setPendingVersionId(nextVersionId);
+      return;
+    }
+
+    switchVersion(nextVersionId);
   }
 
   function selectScore(file: File) {
@@ -313,7 +367,9 @@ export function SongEditorForm({
                 <div className="flex items-center gap-2 rounded-md border px-3 py-2">
                   <FileText className="size-4 shrink-0 text-muted-foreground" />
 
-                  <span className="min-w-0 truncate text-sm">{score.file_name}</span>
+                  <span className="min-w-0 truncate text-sm">
+                    {score.file_name}
+                  </span>
 
                   <Button
                     variant="ghost"
@@ -569,6 +625,38 @@ export function SongEditorForm({
 
               <Button disabled>Publish Version</Button>
             </DialogFooter>
+
+            <AlertDialog
+              open={pendingVersionId !== null}
+              onOpenChange={(open) => {
+                if (!open) setPendingVersionId(null);
+              }}
+            >
+              <AlertDialogContent overlayClassName="bg-black/40 supports-backdrop-filter:backdrop-blur-[1px]">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Your unsaved changes to Score and Parts will be lost.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+
+                  <AlertDialogAction
+                    onClick={() => {
+                      if (pendingVersionId === null) return;
+
+                      switchVersion(pendingVersionId);
+                      setPendingVersionId(null);
+                    }}
+                  >
+                    Discard & Switch
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
           </>
         )}
       </div>
