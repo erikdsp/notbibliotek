@@ -165,9 +165,7 @@ export function SongEditorForm({
   }
 
   function handleOpenChange(nextOpen: boolean) {
-    if (nextOpen) {
-      onOpenChange(true);
-    } else {
+    if (!nextOpen) {
       requestClose();
     }
   }
