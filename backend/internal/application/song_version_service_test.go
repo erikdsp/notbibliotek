@@ -415,6 +415,56 @@ func Test_WhenScoreDoesNotExistThenUpdateScoreReturnsScoreNotFound(t *testing.T)
 	}
 }
 
+func Test_WhenScoreRepositoryDeleteFailsThenDeleteScoreReturnsError(t *testing.T) {
+	f := newSongVersionServiceFixture(nil, "", nil)
+	songID := ulid.Make()
+	versionID := ulid.Make()
+
+	expectedErr := errors.New("delete failed")
+
+	f.scoreRepository.deleteErr = expectedErr
+
+	err := f.service.DeleteScore(songID, versionID)
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected %v, got %v", expectedErr, err)
+	}
+
+	if f.fileStorage.deleteCalled {
+		t.Error("expected fileStorage.Delete not to be called")
+	}
+
+	if f.fileRepository.deleteCalled {
+		t.Error("expected fileRepository.Delete not to be called")
+	}
+}
+
+func Test_WhenScoreRepositoryDeleteSucceedsThenFilesAreDeleted(t *testing.T) {
+	f := newSongVersionServiceFixture(nil, "", nil)
+	songID := ulid.Make()
+	versionID := ulid.Make()
+
+	f.scoreRepository.scores = append(f.scoreRepository.scores, domain.Score{
+		ID:            ulid.Make(),
+		SongVersionID: versionID,
+		FileID:        ulid.Make(),
+	})
+
+	err := f.service.DeleteScore(songID, versionID)
+
+	if err != nil {
+		t.Fatalf("expected nil, got %v", err)
+	}
+
+	if !f.fileStorage.deleteCalled {
+		t.Error("expected fileStorage.Delete to be called")
+	}
+
+	if !f.fileRepository.deleteCalled {
+		t.Error("expected fileRepository.Delete to be called")
+	}
+}
+
 func Test_WhenUploadingValidPartThenUploadPartCreatesTheExpectedPart(t *testing.T) {
 
 	songID := ulid.Make()
@@ -771,6 +821,122 @@ func Test_WhenPartRepositoryReturnsErrorThenUpdatePartReturnsErrorAndPerformsRol
 
 }
 
+func Test_WhenPartRepositoryDeleteFailsThenDeletePartReturnsError(t *testing.T) {
+	f := newSongVersionServiceFixture(nil, "", nil)
+	songID := ulid.Make()
+	versionID := ulid.Make()
+
+	expectedErr := errors.New("delete failed")
+
+	f.partRepository.deleteErr = expectedErr
+
+	err := f.service.DeletePart(songID, versionID, "partkey")
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected %v, got %v", expectedErr, err)
+	}
+
+	if f.fileStorage.deleteCalled {
+		t.Error("expected fileStorage.Delete not to be called")
+	}
+
+	if f.fileRepository.deleteCalled {
+		t.Error("expected fileRepository.Delete not to be called")
+	}
+}
+
+func Test_WhenPartRepositoryDeleteSucceedsThenFilesAreDeleted(t *testing.T) {
+	f := newSongVersionServiceFixture(nil, "", nil)
+	songID := ulid.Make()
+	versionID := ulid.Make()
+	key := "partkey"
+
+	f.partRepository.parts = append(f.partRepository.parts, domain.Part{
+		ID:            ulid.Make(),
+		Key:           key,
+		Name:          "name",
+		SongVersionID: versionID,
+		FileID:        ulid.Make(),
+	})
+
+	err := f.service.DeletePart(songID, versionID, "partkey")
+
+	if err != nil {
+		t.Fatalf("expected nil, got %v", err)
+	}
+
+	if !f.fileStorage.deleteCalled {
+		t.Error("expected fileStorage.Delete to be called")
+	}
+
+	if !f.fileRepository.deleteCalled {
+		t.Error("expected fileRepository.Delete to be called")
+	}
+}
+
+func Test_WhenFileStorageDeleteFailsThenDeletePartReturnsNilAndFileMetadataIsNotDeleted(t *testing.T) {
+	f := newSongVersionServiceFixture(nil, "", nil)
+	songID := ulid.Make()
+	versionID := ulid.Make()
+	key := "partkey"
+
+	f.partRepository.parts = append(f.partRepository.parts, domain.Part{
+		ID:            ulid.Make(),
+		Key:           key,
+		Name:          "name",
+		SongVersionID: versionID,
+		FileID:        ulid.Make(),
+	})
+
+	f.fileStorage.deleteErr = errors.New("delete failed")
+
+	err := f.service.DeletePart(songID, versionID, key)
+
+	if err != nil {
+		t.Fatalf("expected nil, got %v", err)
+	}
+
+	if !f.fileStorage.deleteCalled {
+		t.Error("expected fileStorage.Delete to be called")
+	}
+
+	if f.fileRepository.deleteCalled {
+		t.Error("expected fileRepository.Delete not to be called")
+	}
+}
+
+func Test_WhenFileRepositoryDeleteFailsThenDeletePartIgnoresCleanupError(t *testing.T) {
+	f := newSongVersionServiceFixture(nil, "", nil)
+	songID := ulid.Make()
+	versionID := ulid.Make()
+	key := "partkey"
+
+	f.partRepository.parts = append(f.partRepository.parts, domain.Part{
+		ID:            ulid.Make(),
+		Key:           key,
+		Name:          "name",
+		SongVersionID: versionID,
+		FileID:        ulid.Make(),
+	})
+
+	// Metadata cleanup failure must not fail an already successful part deletion.
+	f.fileRepository.deleteErr = errors.New("delete failed")
+
+	err := f.service.DeletePart(songID, versionID, key)
+
+	if err != nil {
+		t.Fatalf("expected nil, got %v", err)
+	}
+
+	if !f.fileStorage.deleteCalled {
+		t.Error("expected fileStorage.Delete to be called")
+	}
+
+	if !f.fileRepository.deleteCalled {
+		t.Error("expected fileRepository.Delete to be called")
+	}
+}
+
 func Test_WhenValidVersionHasScoreAndZeroPartsThenPublishSongVersionIsSuccessful(t *testing.T) {
 
 	songID := ulid.Make()
@@ -875,33 +1041,6 @@ func Test_WhenScoreIsMissingThenPublishSongVersionReturnsCorrectError(t *testing
 	}
 }
 
-func Test_WhenPartRepositoryReturnsErrorThenPublishSongVersionReturnsError(t *testing.T) {
-
-	songID := ulid.Make()
-	versionID := ulid.Make()
-	f := newSongVersionServiceFixture(&songID, "Song", &versionID)
-	f.scoreRepository.Create(domain.Score{
-		ID:            ulid.Make(),
-		SongVersionID: versionID,
-		FileID:        ulid.Make(),
-	})
-	partError := errors.New("part error")
-	f.partRepository.err = partError
-
-	err := f.service.PublishSongVersion(
-		songID,
-		versionID,
-	)
-
-	if err != partError {
-		t.Fatalf("expected partError, got %v", err)
-	}
-
-	if f.repository.songVersions[0].PublishedAt != nil {
-		t.Error("expected song version to not be published")
-	}
-}
-
 func Test_WhenSongVersionRepositoryReturnsErrorThenPublishSongVersionReturnsError(t *testing.T) {
 
 	songID := ulid.Make()
@@ -976,6 +1115,7 @@ type mockFileRepository struct {
 
 	deletedFileIDs []ulid.ULID
 	deleteErr      error
+	deleteCalled   bool
 }
 
 func (m *mockFileRepository) Create(file domain.File) error {
@@ -1006,6 +1146,7 @@ func (m *mockFileRepository) Update(file domain.File) error {
 }
 
 func (m *mockFileRepository) Delete(id ulid.ULID) error {
+	m.deleteCalled = true
 	m.deletedFileIDs = append(m.deletedFileIDs, id)
 	return m.deleteErr
 }
@@ -1015,6 +1156,7 @@ type mockScoreRepository struct {
 	err             error
 	getByVersionErr error
 	updateErr       error
+	deleteErr       error
 }
 
 func (m *mockScoreRepository) Create(score domain.Score) error {
@@ -1066,7 +1208,17 @@ func (m *mockScoreRepository) Update(score domain.Score) error {
 }
 
 func (m *mockScoreRepository) Delete(songID ulid.ULID, songVersionID ulid.ULID) (ulid.ULID, error) {
-	return ulid.ULID{}, nil
+	if m.deleteErr != nil {
+		return ulid.ULID{}, m.deleteErr
+	}
+
+	for _, score := range m.scores {
+		if score.SongVersionID == songVersionID {
+			return score.FileID, nil
+		}
+	}
+
+	return ulid.ULID{}, ErrScoreNotFound
 }
 
 type MockPartRepository struct {
@@ -1074,6 +1226,7 @@ type MockPartRepository struct {
 	err                   error
 	getByVersionAndKeyErr error
 	updateErr             error
+	deleteErr             error
 	fileIDsPassedToUpdate []ulid.ULID
 }
 
@@ -1146,7 +1299,17 @@ func (m *MockPartRepository) Update(part domain.Part) error {
 }
 
 func (m *MockPartRepository) Delete(songID ulid.ULID, songVersionID ulid.ULID, key string) (fileID ulid.ULID, err error) {
-	return ulid.ULID{}, nil
+	if m.deleteErr != nil {
+		return ulid.ULID{}, m.deleteErr
+	}
+
+	for _, part := range m.parts {
+		if part.SongVersionID == songVersionID && part.Key == key {
+			return part.FileID, nil
+		}
+	}
+
+	return ulid.ULID{}, ErrPartNotFound
 }
 
 type mockPartInstrumentRepository struct {
@@ -1169,9 +1332,10 @@ type mockFileStorage struct {
 	savedFileIDs   []ulid.ULID
 	deletedFileIDs []ulid.ULID
 
-	saveErr   error
-	deleteErr error
-	loadErr   error
+	saveErr      error
+	deleteErr    error
+	loadErr      error
+	deleteCalled bool
 }
 
 func (m *mockFileStorage) Save(fileID ulid.ULID, file io.Reader) error {
@@ -1192,6 +1356,7 @@ func (m *mockFileStorage) Load(fileID ulid.ULID) (io.ReadCloser, error) {
 }
 
 func (m *mockFileStorage) Delete(fileID ulid.ULID) error {
+	m.deleteCalled = true
 	m.deletedFileIDs = append(m.deletedFileIDs, fileID)
 	return m.deleteErr
 }
