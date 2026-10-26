@@ -34,14 +34,6 @@ const updateScoreQuery = `
 	WHERE id = $1
 `
 
-const selectAndLockSongVersionQuery = `
-	SELECT published_at
-	FROM song_versions
-	WHERE id = $1
-	  AND song_id = $2
-	FOR UPDATE;
-`
-
 const deleteScoreQuery = `
 	DELETE FROM scores
 	WHERE song_version_id = $1
