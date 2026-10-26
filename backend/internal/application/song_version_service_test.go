@@ -1145,6 +1145,10 @@ func (m *MockPartRepository) Update(part domain.Part) error {
 
 }
 
+func (m *MockPartRepository) Delete(songID ulid.ULID, songVersionID ulid.ULID, key string) (fileID ulid.ULID, err error) {
+	return ulid.ULID{}, nil
+}
+
 type mockPartInstrumentRepository struct {
 }
 

@@ -279,6 +279,25 @@ func (s *SongVersionService) UpdatePart(songID ulid.ULID, versionID ulid.ULID,
 
 }
 
+func (s *SongVersionService) DeletePart(songID ulid.ULID, versionID ulid.ULID, key string) error {
+
+	fileID, err := s.partRepository.Delete(songID, versionID, key)
+	if err != nil {
+		return err
+	}
+
+	if err := s.fileStorage.Delete(fileID); err != nil {
+		log.Printf("failed to delete stored file %s: %v", fileID, err)
+		return nil
+	}
+
+	if err := s.fileRepository.Delete(fileID); err != nil {
+		log.Printf("failed to delete file metadata %s: %v", fileID, err)
+	}
+
+	return nil
+}
+
 func (s *SongVersionService) GetPartInstrumentsBySongVersionID(versionID ulid.ULID) ([]PartInstruments, error) {
 	partInstruments, err := s.partInstrumentRepository.GetBySongVersionID(versionID)
 	if err != nil {
