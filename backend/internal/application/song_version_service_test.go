@@ -1065,6 +1065,10 @@ func (m *mockScoreRepository) Update(score domain.Score) error {
 	return ErrScoreNotFound
 }
 
+func (m *mockScoreRepository) Delete(songID ulid.ULID, songVersionID ulid.ULID) (ulid.ULID, error) {
+	return ulid.ULID{}, nil
+}
+
 type MockPartRepository struct {
 	parts                 []domain.Part
 	err                   error

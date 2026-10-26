@@ -159,6 +159,25 @@ func (s *SongVersionService) UpdateScore(songID ulid.ULID, versionID ulid.ULID,
 
 }
 
+func (s *SongVersionService) DeleteScore(songID ulid.ULID, versionID ulid.ULID) error {
+
+	fileID, err := s.scoreRepository.Delete(songID, versionID)
+	if err != nil {
+		return err
+	}
+
+	if err := s.fileStorage.Delete(fileID); err != nil {
+		log.Printf("failed to delete stored file %s: %v", fileID, err)
+		return nil
+	}
+
+	if err := s.fileRepository.Delete(fileID); err != nil {
+		log.Printf("failed to delete file metadata %s: %v", fileID, err)
+	}
+
+	return nil
+}
+
 func (s *SongVersionService) UploadPart(songID ulid.ULID, versionID ulid.ULID,
 	key string, partName string, fileName string, file io.Reader) (domain.Part, error) {
 
