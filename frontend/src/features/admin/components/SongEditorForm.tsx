@@ -50,7 +50,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { usePartInstruments } from "@/hooks/use-part-instruments";
 
-const log = createLogger("SongVersionEditor");
+const log = createLogger("SongEditorForm");
 
 function createLocalId() {
   return crypto.randomUUID();
@@ -66,7 +66,7 @@ type PartsEdits = {
   parts: EditablePart[];
 };
 
-type SongVersionEditorProps = {
+type SongEditorFormProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   song: SongResponse | null;
@@ -74,13 +74,13 @@ type SongVersionEditorProps = {
   onSongCreated: (songId: string) => void;
 };
 
-export function SongVersionEditor({
+export function SongEditorForm({
   open,
   onOpenChange,
   song,
   instruments,
   onSongCreated,
-}: SongVersionEditorProps) {
+}: SongEditorFormProps) {
   const [title, setTitle] = useState(song?.title ?? "");
   const [createdSongId, setCreatedSongId] = useState<string | null>(null);
   const [versionId, setVersionId] = useState<string | null>(() =>

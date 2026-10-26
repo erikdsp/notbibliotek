@@ -1,6 +1,6 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { Instrument } from "@/core/types";
-import { SongVersionEditor } from "@/features/admin/components/SongVersionEditor";
+import { SongEditorForm } from "@/features/admin/components/SongEditorForm";
 
 import { useSong } from "@/hooks";
 import { createLogger } from "@/utils/logger";
@@ -38,7 +38,7 @@ export function SongEditor({
   }
 
   return (
-    <SongVersionEditor
+    <SongEditorForm
       open={open}
       song={song ?? null}
       instruments={instruments}
