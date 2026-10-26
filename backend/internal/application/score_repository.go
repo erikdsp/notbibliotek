@@ -10,4 +10,5 @@ type ScoreRepository interface {
 	GetByID(id ulid.ULID) (domain.Score, error)
 	GetBySongVersionID(songVersionID ulid.ULID) (domain.Score, error)
 	Update(score domain.Score) error
+	Delete(songID ulid.ULID, songVersionID ulid.ULID) (fileID ulid.ULID, err error)
 }

@@ -306,6 +306,35 @@ paths:
               $ref: "#/components/schemas/UploadScoreRequest"
       security:
         - adminAuth: []
+    delete:
+      tags:
+        - Song Versions
+      summary: Delete score
+      operationId: delete-score
+      responses:
+        "204":
+          description: Score deleted.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "404":
+          description: Song or version not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Conflict. Song version already published.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      parameters:
+        - $ref: "#/components/parameters/songId"
+        - $ref: "#/components/parameters/versionId"
+      security:
+        - adminAuth: []
   /songs/{song_id}/versions/{version_id}/part/{key}:
     post:
       tags:
@@ -379,6 +408,36 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/UploadPartRequest"
+      security:
+        - adminAuth: []
+    delete:
+      tags:
+        - Song Versions
+      summary: Delete part
+      operationId: delete-part
+      responses:
+        "204":
+          description: Part deleted.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "404":
+          description: Song, song version or part not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Conflict. Song version already published.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"        
+      parameters:
+        - $ref: "#/components/parameters/songId"
+        - $ref: "#/components/parameters/versionId"
+        - $ref: "#/components/parameters/key"
       security:
         - adminAuth: []
   /songs/{song_id}/versions/{version_id}/instruments:

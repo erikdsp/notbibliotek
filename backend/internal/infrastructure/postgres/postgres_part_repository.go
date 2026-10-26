@@ -26,7 +26,7 @@ const getPartBySongVersionIDAndKeyQuery = `
 	SELECT id, key, name, song_version_id, file_id
 	FROM parts
 	WHERE song_version_id = $1
-	AND key = $2
+	  AND key = $2
 `
 
 const getPartsBySongVersionIDQuery = `
@@ -40,6 +40,13 @@ const updatePartQuery = `
 	SET file_id = $2,
 	    name = $3
 	WHERE id = $1
+`
+
+const deletePartQuery = `
+	DELETE FROM parts
+	WHERE song_version_id = $1
+	  AND key = $2
+	RETURNING file_id;
 `
 
 type PostgresPartRepository struct {
@@ -177,5 +184,54 @@ func (r *PostgresPartRepository) Update(part domain.Part) error {
 	)
 
 	return err
+
+}
+
+func (r *PostgresPartRepository) Delete(songID ulid.ULID, songVersionID ulid.ULID, key string) (ulid.ULID, error) {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return ulid.ULID{}, err
+	}
+	defer tx.Rollback()
+
+	var publishedAt sql.NullTime
+
+	err = tx.QueryRow(
+		selectAndLockSongVersionQuery,
+		uuid.UUID(songVersionID),
+		uuid.UUID(songID),
+	).Scan(&publishedAt)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ulid.ULID{}, application.ErrSongVersionNotFound
+		}
+		return ulid.ULID{}, err
+	}
+
+	if publishedAt.Valid {
+		return ulid.ULID{}, application.ErrSongVersionAlreadyPublished
+	}
+
+	var dbFileID uuid.UUID
+
+	err = tx.QueryRow(
+		deletePartQuery,
+		uuid.UUID(songVersionID),
+		key,
+	).Scan(&dbFileID)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ulid.ULID{}, application.ErrPartNotFound
+		}
+		return ulid.ULID{}, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return ulid.ULID{}, err
+	}
+
+	return ulid.ULID(dbFileID), nil
 
 }

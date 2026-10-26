@@ -30,6 +30,14 @@ const updateSongVersionQuery = `
 	  AND published_at IS NULL
 `
 
+const selectAndLockSongVersionQuery = `
+	SELECT published_at
+	FROM song_versions
+	WHERE id = $1
+	  AND song_id = $2
+	FOR UPDATE;
+`
+
 type PostgresSongVersionRepository struct {
 	db *sql.DB
 }
