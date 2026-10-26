@@ -294,6 +294,44 @@ func (h *SongVersionHandler) UpdatePart(w http.ResponseWriter, r *http.Request) 
 
 }
 
+func (h *SongVersionHandler) DeletePart(w http.ResponseWriter, r *http.Request) {
+	songID, err := ulid.Parse(r.PathValue("song_id"))
+	if err != nil {
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	versionID, err := ulid.Parse(r.PathValue("version_id"))
+	if err != nil {
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	key := r.PathValue("key")
+
+	err = h.service.DeletePart(songID, versionID, key)
+	if err != nil {
+		if errors.Is(err, application.ErrSongVersionNotFound) {
+			writeError(w, "song version not found for specified song", http.StatusNotFound)
+			return
+		}
+		if errors.Is(err, application.ErrPartNotFound) {
+			writeError(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		if errors.Is(err, application.ErrSongVersionAlreadyPublished) {
+			writeError(w, err.Error(), http.StatusConflict)
+			return
+		}
+
+		log.Printf("DeletePart failed: %v", err)
+		writeError(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *SongVersionHandler) Publish(w http.ResponseWriter, r *http.Request) {
 	songID, err := ulid.Parse(r.PathValue("song_id"))
 	if err != nil {
