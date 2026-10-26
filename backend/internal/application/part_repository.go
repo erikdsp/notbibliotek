@@ -13,4 +13,5 @@ type PartRepository interface {
 	// Returns an empty slice when the song version has no parts.
 	GetBySongVersionID(songVersionID ulid.ULID) ([]domain.Part, error)
 	Update(part domain.Part) error
+	Delete(songID ulid.ULID, songVersionID ulid.ULID, key string) (fileID ulid.ULID, err error)
 }

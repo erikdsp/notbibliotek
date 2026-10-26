@@ -34,6 +34,12 @@ const updateScoreQuery = `
 	WHERE id = $1
 `
 
+const deleteScoreQuery = `
+	DELETE FROM scores
+	WHERE song_version_id = $1
+	RETURNING file_id;
+`
+
 type PostgresScoreRepository struct {
 	db *sql.DB
 }
@@ -123,4 +129,51 @@ func (r *PostgresScoreRepository) Update(score domain.Score) error {
 
 	return err
 
+}
+
+func (r *PostgresScoreRepository) Delete(songID ulid.ULID, songVersionID ulid.ULID) (ulid.ULID, error) {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return ulid.ULID{}, err
+	}
+	defer tx.Rollback()
+
+	var publishedAt sql.NullTime
+
+	err = tx.QueryRow(
+		selectAndLockSongVersionQuery,
+		uuid.UUID(songVersionID),
+		uuid.UUID(songID),
+	).Scan(&publishedAt)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ulid.ULID{}, application.ErrSongVersionNotFound
+		}
+		return ulid.ULID{}, err
+	}
+
+	if publishedAt.Valid {
+		return ulid.ULID{}, application.ErrSongVersionAlreadyPublished
+	}
+
+	var dbFileID uuid.UUID
+
+	err = tx.QueryRow(
+		deleteScoreQuery,
+		uuid.UUID(songVersionID),
+	).Scan(&dbFileID)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ulid.ULID{}, application.ErrScoreNotFound
+		}
+		return ulid.ULID{}, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return ulid.ULID{}, err
+	}
+
+	return ulid.ULID(dbFileID), nil
 }
