@@ -145,6 +145,42 @@ func (h *SongVersionHandler) UpdateScore(w http.ResponseWriter, r *http.Request)
 
 }
 
+func (h *SongVersionHandler) DeleteScore(w http.ResponseWriter, r *http.Request) {
+	songID, err := ulid.Parse(r.PathValue("song_id"))
+	if err != nil {
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	versionID, err := ulid.Parse(r.PathValue("version_id"))
+	if err != nil {
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	err = h.service.DeleteScore(songID, versionID)
+	if err != nil {
+		if errors.Is(err, application.ErrSongVersionNotFound) {
+			writeError(w, "song version not found for specified song", http.StatusNotFound)
+			return
+		}
+		if errors.Is(err, application.ErrScoreNotFound) {
+			writeError(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		if errors.Is(err, application.ErrSongVersionAlreadyPublished) {
+			writeError(w, err.Error(), http.StatusConflict)
+			return
+		}
+
+		log.Printf("DeleteScore failed: %v", err)
+		writeError(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *SongVersionHandler) UploadPart(w http.ResponseWriter, r *http.Request) {
 	songID, err := ulid.Parse(r.PathValue("song_id"))
 	if err != nil {
