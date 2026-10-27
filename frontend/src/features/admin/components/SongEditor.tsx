@@ -27,7 +27,9 @@ export function SongEditor({
   if (!open) return null;
 
   if (songId !== null && (isPending || error)) {
-    log.error(error);
+    if (error) {
+      log.error(error);
+    }
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent>

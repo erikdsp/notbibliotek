@@ -49,6 +49,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { usePartInstruments } from "@/hooks/use-part-instruments";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { saveSongDraft } from "@/features/admin/services/save-song-draft";
 
 const log = createLogger("SongEditorForm");
 
@@ -81,6 +83,7 @@ export function SongEditorForm({
   instruments,
   onSongCreated,
 }: SongEditorFormProps) {
+  const queryClient = useQueryClient();
   const [title, setTitle] = useState(song?.title ?? "");
   const [createdSongId, setCreatedSongId] = useState<string | null>(null);
   const [versionId, setVersionId] = useState<string | null>(() =>
@@ -112,9 +115,7 @@ export function SongEditorForm({
       : null;
 
   const parts =
-    editedParts?.versionId === versionId
-      ? editedParts.parts
-      : (originalParts ?? []);
+    editedParts?.versionId === versionId ? editedParts.parts : originalParts;
 
   function partHasChanged(
     part: EditablePart,
@@ -140,6 +141,7 @@ export function SongEditorForm({
 
   const partsAreDirty =
     originalParts !== null &&
+    parts !== null &&
     (parts.length !== originalParts.length ||
       parts.some((part) => partHasChanged(part, originalParts)));
 
@@ -328,66 +330,44 @@ export function SongEditorForm({
     }));
   }
 
-  async function handleSaveDraft() {
-    if (titleIsDirty) {
-      // PATCH song
+  async function handleSaveDraftSuccess() {
+    if (song === null) return;
+
+    await queryClient.refetchQueries({
+      queryKey: ["songs", "byId", song.id],
+      exact: true,
+    });
+
+    setEditedScore(null);
+  }
+
+  function handleSaveDraftError(error: Error) {
+    log.error("Failed to save draft", error);
+  }
+
+  const saveDraftMutation = useMutation({
+    mutationFn: saveSongDraft,
+    onSuccess: handleSaveDraftSuccess,
+    onError: handleSaveDraftError,
+  });
+
+  function handleSaveDraft() {
+    if (song === null) {
+      return;
     }
 
-    if (scoreIsDirty) {
-      if (originalScore === null) {
-        // POST score
-      } else if (originalScore !== null && score === null) {
-        // DELETE score
-      } else if (originalScore !== null && score?.file != null) {
-        // PUT score
-      }
-    }
-
-    if (partsAreDirty) {
-      const originalPartsById = new Map(
-        originalParts.map((part) => [part.id, part]),
-      );
-
-      for (const part of parts) {
-        if (part.id === null) {
-          // POST part
-          // CREATE instrument connections
-          continue;
-        }
-
-        const original = originalPartsById.get(part.id);
-        if (!original) continue;
-
-        if (
-          part.key !== original.key ||
-          part.name !== original.name ||
-          part.file != null
-        ) {
-          // PUT part
-        }
-
-        for (const id of part.instrument_ids) {
-          if (!original.instrument_ids.includes(id)) {
-            // CREATE instrument connections
-          }
-        }
-
-        for (const id of original.instrument_ids) {
-          if (!part.instrument_ids.includes(id)) {
-            // DELETE instrument connection
-          }
-        }
-
-      }
-
-      const editedPartIds = new Set(parts.map((part) => part.id));
-
-      for (const original of originalParts) {
-        if (!editedPartIds.has(original.id)) {
-          // DELETE part
-        }
-      }
-    }
+    saveDraftMutation.mutate({
+      songId: song.id,
+      versionId,
+      title,
+      titleIsDirty,
+      scoreIsDirty,
+      partsAreDirty,
+      score,
+      originalScore,
+      parts,
+      originalParts,
+    });
   }
 
   return (
@@ -600,146 +580,149 @@ export function SongEditorForm({
                     )}
 
                     <div className="space-y-3">
-                      {parts.map((part) => (
-                        <div
-                          key={part.local_id}
-                          className="space-y-3 rounded-lg border p-3"
-                        >
-                          <div className="flex items-center gap-2">
-                            <FileText className="size-4 shrink-0 text-muted-foreground" />
+                      {parts !== null &&
+                        parts.map((part) => (
+                          <div
+                            key={part.local_id}
+                            className="space-y-3 rounded-lg border p-3"
+                          >
+                            <div className="flex items-center gap-2">
+                              <FileText className="size-4 shrink-0 text-muted-foreground" />
 
-                            <span className="min-w-0 truncate text-sm">
-                              {part.file_name ?? part.name}
-                            </span>
+                              <span className="min-w-0 truncate text-sm">
+                                {part.file_name ?? part.name}
+                              </span>
 
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              aria-label={`Preview ${part.name}`}
-                              disabled={!part.file}
-                              onClick={() => previewFile(part.file)}
-                            >
-                              <Eye className="size-4" />
-                            </Button>
-
-                            <div className="flex-1" />
-
-                            {!isPublished && (
                               <Button
                                 variant="ghost"
                                 size="icon-sm"
-                                aria-label={`Remove ${part.name}`}
-                                onClick={() => handleRemovePart(part.local_id)}
+                                aria-label={`Preview ${part.name}`}
+                                disabled={!part.file}
+                                onClick={() => previewFile(part.file)}
                               >
-                                <X className="size-4" />
+                                <Eye className="size-4" />
                               </Button>
-                            )}
-                          </div>
 
-                          <div className="grid gap-3 sm:grid-cols-2">
-                            <div className="space-y-2">
-                              <Label>Part Name</Label>
-                              <Input
-                                value={part.name}
-                                disabled={isPublished}
-                                onChange={(event) =>
-                                  updatePart(part.local_id, {
-                                    name: event.target.value,
-                                  })
-                                }
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Part Key</Label>
-                              <Input
-                                value={part.key}
-                                disabled={isPublished}
-                                onChange={(event) =>
-                                  updatePart(part.local_id, {
-                                    key: event.target.value,
-                                  })
-                                }
-                                placeholder="e.g. violin1"
-                              />
+                              <div className="flex-1" />
+
+                              {!isPublished && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  aria-label={`Remove ${part.name}`}
+                                  onClick={() =>
+                                    handleRemovePart(part.local_id)
+                                  }
+                                >
+                                  <X className="size-4" />
+                                </Button>
+                              )}
                             </div>
 
-                            <div className="space-y-2">
-                              <Label>Instruments</Label>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <div className="space-y-2">
+                                <Label>Part Name</Label>
+                                <Input
+                                  value={part.name}
+                                  disabled={isPublished}
+                                  onChange={(event) =>
+                                    updatePart(part.local_id, {
+                                      name: event.target.value,
+                                    })
+                                  }
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Part Key</Label>
+                                <Input
+                                  value={part.key}
+                                  disabled={isPublished}
+                                  onChange={(event) =>
+                                    updatePart(part.local_id, {
+                                      key: event.target.value,
+                                    })
+                                  }
+                                  placeholder="e.g. violin1"
+                                />
+                              </div>
 
-                              <div className="flex min-h-9 flex-wrap items-center gap-1 rounded-md border px-2 py-1">
-                                {part.instrument_ids.map((id) => {
-                                  const instrument = instruments.find(
-                                    (instrument) => instrument.id === id,
-                                  );
+                              <div className="space-y-2">
+                                <Label>Instruments</Label>
 
-                                  if (!instrument) return null;
+                                <div className="flex min-h-9 flex-wrap items-center gap-1 rounded-md border px-2 py-1">
+                                  {part.instrument_ids.map((id) => {
+                                    const instrument = instruments.find(
+                                      (instrument) => instrument.id === id,
+                                    );
 
-                                  return (
-                                    <Badge
-                                      key={id}
-                                      variant="secondary"
-                                      className="gap-1"
-                                    >
-                                      {instrument.name}
+                                    if (!instrument) return null;
 
-                                      <button
-                                        type="button"
-                                        aria-label={`Remove ${instrument.name}`}
-                                        onClick={() =>
-                                          toggleInstrument(part, id)
-                                        }
+                                    return (
+                                      <Badge
+                                        key={id}
+                                        variant="secondary"
+                                        className="gap-1"
                                       >
-                                        <X className="size-3" />
-                                      </button>
-                                    </Badge>
-                                  );
-                                })}
-
-                                <Popover>
-                                  <PopoverTrigger
-                                    render={
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-7"
-                                      />
-                                    }
-                                  >
-                                    <Plus className="size-3" />
-                                    Add instrument
-                                  </PopoverTrigger>
-
-                                  <PopoverContent
-                                    align="start"
-                                    className="w-56 space-y-2"
-                                  >
-                                    {instruments.map((instrument) => (
-                                      <label
-                                        key={instrument.id}
-                                        className="flex cursor-pointer items-center gap-2 text-sm"
-                                      >
-                                        <Checkbox
-                                          checked={part.instrument_ids.includes(
-                                            instrument.id,
-                                          )}
-                                          onCheckedChange={() =>
-                                            toggleInstrument(
-                                              part,
-                                              instrument.id,
-                                            )
-                                          }
-                                        />
-
                                         {instrument.name}
-                                      </label>
-                                    ))}
-                                  </PopoverContent>
-                                </Popover>
+
+                                        <button
+                                          type="button"
+                                          aria-label={`Remove ${instrument.name}`}
+                                          onClick={() =>
+                                            toggleInstrument(part, id)
+                                          }
+                                        >
+                                          <X className="size-3" />
+                                        </button>
+                                      </Badge>
+                                    );
+                                  })}
+
+                                  <Popover>
+                                    <PopoverTrigger
+                                      render={
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-7"
+                                        />
+                                      }
+                                    >
+                                      <Plus className="size-3" />
+                                      Add instrument
+                                    </PopoverTrigger>
+
+                                    <PopoverContent
+                                      align="start"
+                                      className="w-56 space-y-2"
+                                    >
+                                      {instruments.map((instrument) => (
+                                        <label
+                                          key={instrument.id}
+                                          className="flex cursor-pointer items-center gap-2 text-sm"
+                                        >
+                                          <Checkbox
+                                            checked={part.instrument_ids.includes(
+                                              instrument.id,
+                                            )}
+                                            onCheckedChange={() =>
+                                              toggleInstrument(
+                                                part,
+                                                instrument.id,
+                                              )
+                                            }
+                                          />
+
+                                          {instrument.name}
+                                        </label>
+                                      ))}
+                                    </PopoverContent>
+                                  </Popover>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   </section>
                 </>
@@ -751,8 +734,12 @@ export function SongEditorForm({
                   Close
                 </Button>
 
-                <Button variant="outline" disabled onClick={handleSaveDraft}>
-                  Save Draft
+                <Button
+                  variant="outline"
+                  disabled={!isDirty || saveDraftMutation.isPending}
+                  onClick={handleSaveDraft}
+                >
+                  {saveDraftMutation.isPending ? "Saving..." : "Save Draft"}
                 </Button>
 
                 <Button disabled>Publish Version</Button>
