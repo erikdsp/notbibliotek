@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from "@/lib";
+import { apiGet, apiPost, apiPut } from "@/lib";
 import { ApiError } from "@/errors";
 import { API_BASE_URL } from "@/config";
 import { createLogger } from "@/utils/logger";
@@ -56,10 +56,14 @@ export async function fetchSongs(
 
     return songs;
   } catch (error: unknown) {
-    throw new ApiError(
-      `Failed to fetch songs: ${(error as Error).message}`,
-      url.toString(),
-    );
+    if (error instanceof ApiError) {
+      throw new ApiError(
+        `Failed to fetch songs: ${error.message}`,
+        url.toString(),
+        error.status,
+      );
+    }
+    throw error;
   }
 }
 
@@ -78,13 +82,16 @@ export async function fetchSong(songId: string): Promise<SongResponse> {
 
     return song;
   } catch (error: unknown) {
-    throw new ApiError(
-      `Failed to fetch song: ${(error as Error).message}`,
-      url.toString(),
-    );
+    if (error instanceof ApiError) {
+      throw new ApiError(
+        `Failed to fetch song: ${error.message}`,
+        url.toString(),
+        error.status,
+      );
+    }
+    throw error;
   }
 }
-
 
 /**
  * Create a song in the library
@@ -101,10 +108,41 @@ export async function createSong(title: string): Promise<Song> {
 
     return song;
   } catch (error: unknown) {
-    throw new ApiError(
-      `Failed to create song: ${(error as Error).message}`,
-      url.toString(),
-    );
+    if (error instanceof ApiError) {
+      throw new ApiError(
+        `Failed to create song: ${error.message}`,
+        url.toString(),
+        error.status,
+      );
+    }
+    throw error;
+  }
+}
+
+
+/**
+ * Update a song in the library
+ * @returns Updated song
+ * @throws ApiError if the request fails
+ */
+export async function updateSong(songId: string, title?: string, archive?: boolean): Promise<Song> {
+  const url = new URL(`${API_BASE_URL}/songs/${songId}`);
+
+  try {
+    const song = await apiPut<Song>(url.toString(), { title, archive });
+
+    log.debug("url: ", url.toString(), "raw payload: ", song);
+
+    return song;
+  } catch (error: unknown) {
+    if (error instanceof ApiError) {
+      throw new ApiError(
+        `Failed to update song: ${error.message}`,
+        url.toString(),
+        error.status,
+      );
+    }
+    throw error;
   }
 }
 
@@ -118,15 +156,19 @@ export async function createSongVersion(songId: string): Promise<SongVersion> {
   const url = new URL(`${API_BASE_URL}/songs/${songId}/versions`);
 
   try {
-    const songVersion = await apiPost<SongVersion>(url.toString() );
+    const songVersion = await apiPost<SongVersion>(url.toString());
 
     log.debug("url: ", url.toString(), "raw payload: ", songVersion);
 
     return songVersion;
   } catch (error: unknown) {
-    throw new ApiError(
-      `Failed to create song version: ${(error as Error).message}`,
-      url.toString(),
-    );
+    if (error instanceof ApiError) {
+      throw new ApiError(
+        `Failed to create song version: ${error.message}`,
+        url.toString(),
+        error.status,
+      );
+    }
+    throw error;
   }
 }

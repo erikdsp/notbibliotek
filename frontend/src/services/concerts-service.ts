@@ -21,9 +21,13 @@ export async function fetchConcerts(): Promise<ConcertResponse[]> {
 
     return concerts;
   } catch (error: unknown) {
-    throw new ApiError(
-      `Failed to fetch concerts: ${(error as Error).message}`,
-      url.toString(),
-    );
+    if (error instanceof ApiError) {
+      throw new ApiError(
+        `Failed to fetch concerts: ${error.message}`,
+        url.toString(),
+        error.status,
+      );
+    }
+    throw error;
   }
 }

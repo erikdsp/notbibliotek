@@ -21,9 +21,13 @@ export async function fetchInstruments(): Promise<Instrument[]> {
 
     return instruments;
   } catch (error: unknown) {
-    throw new ApiError(
-      `Failed to fetch instruments: ${(error as Error).message}`,
-      url.toString(),
-    );
+    if (error instanceof ApiError) {
+      throw new ApiError(
+        `Failed to fetch instruments: ${error.message}`,
+        url.toString(),
+        error.status,
+      );
+    }
+    throw error;
   }
 }
