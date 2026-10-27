@@ -328,6 +328,68 @@ export function SongEditorForm({
     }));
   }
 
+  async function handleSaveDraft() {
+    if (titleIsDirty) {
+      // PATCH song
+    }
+
+    if (scoreIsDirty) {
+      if (originalScore === null) {
+        // POST score
+      } else if (originalScore !== null && score === null) {
+        // DELETE score
+      } else if (originalScore !== null && score?.file != null) {
+        // PUT score
+      }
+    }
+
+    if (partsAreDirty) {
+      const originalPartsById = new Map(
+        originalParts.map((part) => [part.id, part]),
+      );
+
+      for (const part of parts) {
+        if (part.id === null) {
+          // POST part
+          // CREATE instrument connections
+          continue;
+        }
+
+        const original = originalPartsById.get(part.id);
+        if (!original) continue;
+
+        if (
+          part.key !== original.key ||
+          part.name !== original.name ||
+          part.file != null
+        ) {
+          // PUT part
+        }
+
+        for (const id of part.instrument_ids) {
+          if (!original.instrument_ids.includes(id)) {
+            // CREATE instrument connections
+          }
+        }
+
+        for (const id of original.instrument_ids) {
+          if (!part.instrument_ids.includes(id)) {
+            // DELETE instrument connection
+          }
+        }
+
+      }
+
+      const editedPartIds = new Set(parts.map((part) => part.id));
+
+      for (const original of originalParts) {
+        if (!editedPartIds.has(original.id)) {
+          // DELETE part
+        }
+      }
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
@@ -689,7 +751,7 @@ export function SongEditorForm({
                   Close
                 </Button>
 
-                <Button variant="outline" disabled>
+                <Button variant="outline" disabled onClick={handleSaveDraft}>
                   Save Draft
                 </Button>
 
