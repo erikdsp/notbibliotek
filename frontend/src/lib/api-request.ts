@@ -12,16 +12,17 @@ interface ApiRequestOptions {
 }
 
 /**
- * Generic HTTP request helper for JSON APIs.
+ * Generic HTTP request helper.
  *
  * Supports GET, POST, PUT, PATCH, and DELETE requests with optional
- * JSON request bodies and custom headers.
+ * JSON and multipart/form-data request bodies.
+ * Parses JSON responses and returns undefined for empty responses.
  *
  * @template T - Expected response type
  * @param url - The endpoint to send the request to
- * @param options - Request configuration including HTTP method, optional JSON body, and headers
- * @returns Parsed JSON response of type T, or an empty object for responses with no content (204)
- * @throws ApiError if the request fails, returns a non-success status code, or the response cannot be parsed
+ * @param options - Request configuration including HTTP method, optional body, and headers
+ * @returns Parsed JSON response of type T, or undefined for responses with no content
+ * @throws ApiError if the request fails
  */
 export async function apiRequest<T>(
   url: string,
@@ -29,16 +30,24 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const { method = "GET", body, headers = {} } = options;
 
+  const isFormData = body instanceof FormData;
+
+  const requestHeaders = new Headers(headers);
+
+  if (body !== undefined && !isFormData && !requestHeaders.has("Content-Type")) {
+    requestHeaders.set("Content-Type", "application/json");
+  }
+
   try {
     const response = await fetch(url, {
       method,
-      headers: {
-        ...(body !== undefined && {
-          "Content-Type": "application/json",
-        }),
-        ...headers,
-      },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      headers: requestHeaders,
+      body:
+        body === undefined
+          ? undefined
+          : isFormData
+            ? body
+            : JSON.stringify(body),
     });
 
     log.debug(`${method} response`, response);
@@ -51,20 +60,22 @@ export async function apiRequest<T>(
       );
     }
 
-    // No content
-    if (response.status === 204) {
-      return {} as T;
+    const rawText = await response.text();
+
+    if (rawText.length === 0) {
+      return undefined as T;
     }
 
-    const rawJson = await response.json();
-    return rawJson as T;
-  } catch (error) {
+    return JSON.parse(rawText) as T;
+  } catch (error: unknown) {
     if (error instanceof ApiError) {
       throw error;
     }
 
     throw new ApiError(
-      `Unexpected ${method} error: ${(error as Error).message}`,
+      `Unexpected ${method} error: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
       url,
     );
   }
