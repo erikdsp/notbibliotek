@@ -207,7 +207,7 @@ export function SongEditorForm({
     switchVersion(nextVersionId);
   }
 
-  function selectScore(file: File) {
+  function addScoreFile(file: File) {
     if (file.type !== "application/pdf") return;
 
     if (versionId === null) return;
@@ -222,7 +222,7 @@ export function SongEditorForm({
     });
   }
 
-  function selectParts(files: FileList | File[]) {
+  function addPartFiles(files: FileList | File[]) {
     const newParts = Array.from(files)
       .filter((file) => file.type === "application/pdf")
       .map((file): EditablePart => {
@@ -463,7 +463,7 @@ export function SongEditorForm({
                         onDrop={(event) => {
                           event.preventDefault();
                           const file = event.dataTransfer.files[0];
-                          if (file) selectScore(file);
+                          if (file) addScoreFile(file);
                         }}
                       >
                         <Upload className="size-5 text-muted-foreground" />
@@ -486,7 +486,7 @@ export function SongEditorForm({
                           className="hidden"
                           onChange={(event) => {
                             const file = event.target.files?.[0];
-                            if (file) selectScore(file);
+                            if (file) addScoreFile(file);
                             event.target.value = "";
                           }}
                         />
@@ -504,7 +504,7 @@ export function SongEditorForm({
                         onDragOver={(event) => event.preventDefault()}
                         onDrop={(event) => {
                           event.preventDefault();
-                          selectParts(event.dataTransfer.files);
+                          addPartFiles(event.dataTransfer.files);
                         }}
                       >
                         <Upload className="size-5 text-muted-foreground" />
@@ -529,7 +529,7 @@ export function SongEditorForm({
                           className="hidden"
                           onChange={(event) => {
                             if (event.target.files) {
-                              selectParts(event.target.files);
+                              addPartFiles(event.target.files);
                             }
                             event.target.value = "";
                           }}
