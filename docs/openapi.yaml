@@ -335,7 +335,7 @@ paths:
         - $ref: "#/components/parameters/versionId"
       security:
         - adminAuth: []
-  /songs/{song_id}/versions/{version_id}/part/{key}:
+  /songs/{song_id}/versions/{version_id}/parts:
     post:
       tags:
         - Song Versions
@@ -359,7 +359,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "409":
-          description: Part already uploaded. Use put to replace.
+          description: Part already uploaded. Use patch to update/replace.
           content:
             application/json:
               schema:
@@ -367,7 +367,6 @@ paths:
       parameters:
         - $ref: "#/components/parameters/songId"
         - $ref: "#/components/parameters/versionId"
-        - $ref: "#/components/parameters/key"
       requestBody:
         required: true
         content:
@@ -376,14 +375,15 @@ paths:
               $ref: "#/components/schemas/UploadPartRequest"
       security:
         - adminAuth: []
-    put:
+  /parts/{part_id}:
+    patch:
       tags:
         - Song Versions
-      summary: Replace part
-      operationId: replace-part
+      summary: Update part
+      operationId: update-part
       responses:
         "200":
-          description: Part replaced.
+          description: Part updated.
           content:
             application/json:
               schema:
@@ -399,15 +399,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
       parameters:
-        - $ref: "#/components/parameters/songId"
-        - $ref: "#/components/parameters/versionId"
-        - $ref: "#/components/parameters/key"
+        - $ref: "#/components/parameters/partId"
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/UploadPartRequest"
+              $ref: "#/components/schemas/UpdatePartRequest"
       security:
         - adminAuth: []
     delete:
@@ -435,9 +433,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"        
       parameters:
-        - $ref: "#/components/parameters/songId"
-        - $ref: "#/components/parameters/versionId"
-        - $ref: "#/components/parameters/key"
+        - $ref: "#/components/parameters/partId"
       security:
         - adminAuth: []
   /songs/{song_id}/versions/{version_id}/instruments:
@@ -1200,11 +1196,28 @@ components:
       properties:
         name:
           type: string
+          description: "Name of the part. Example: Violin 1"
+        key:
+          type: string
+          description: "Must be unique for song version. Example: violin1"
         file:
           $ref: "#/components/schemas/PdfContent"
       required:
         - name
+        - key
         - file
+    UpdatePartRequest:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          description: "Name of the part. Example: Violin 2"
+        key:
+          type: string
+          description: "Must be unique for song version. Example: violin2"
+        file:
+          $ref: "#/components/schemas/PdfContent"
     PdfContent:
       type: string
       format: binary
@@ -1246,13 +1259,12 @@ components:
       required: true
       schema:
         $ref: "#/components/schemas/ULID"
-    key:
-      name: key
+    partId:
+      name: part_id
       in: path
-      description: "Key, must be unique for song version. Example: violin1"
       required: true
       schema:
-        type: string
+        $ref: "#/components/schemas/ULID"
     archivedQuery:
       name: archived
       in: query
