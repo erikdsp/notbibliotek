@@ -1,7 +1,14 @@
 import type { EditablePart, EditableScore } from "@/features/admin/types";
 import {
+  createPartInstrumentConnection,
+  deletePartInstrumentConnection,
+} from "@/services/part-instruments-service";
+import {
+  deletePart,
   deleteScore,
+  updatePart,
   updateScore,
+  uploadPart,
   uploadScore,
 } from "@/services/song-version-service";
 import { updateSong } from "@/services/songs-service";
@@ -35,7 +42,6 @@ export async function saveSongDraft({
   originalParts,
 }: saveSongDraftParams) {
   if (titleIsDirty) {
-    log.debug("Updating title", title);
     await updateSong(songId, title);
   }
 
@@ -65,42 +71,51 @@ export async function saveSongDraft({
 
     for (const part of parts) {
       if (part.id === null && part.file !== null) {
+        log.debug("Posting part: ", part);
+        const createdPart = await uploadPart(
+          songId,
+          versionId,
+          part.key,
+          part.name,
+          part.file,
+        );
 
-        // const createdPart = await uploadPart(songId, versionId, part.key, part.name, part.file,);
-
-        for (const instrumentId of part.instrument_ids) {
-          log.debug("Create connections for instrumentId: ", instrumentId)
-          // await createPartInstrumentConnection(createdPart.id, instrumentId);
+        for (const id of part.instrument_ids) {
+          log.debug("Create connections for partId: ", createdPart.id ," instrumentId: ", id);
+          await createPartInstrumentConnection(createdPart.id, id);
         }
         continue;
       }
 
       const original = originalPartsById.get(part.id);
       if (!original) continue;
-
-      if (
-        part.name !== original.name ||
-        part.file != null
-      ) {
-        if (part.file === null) {
-          throw new Error(
-            `Cannot update part "${part.name}" without a PDF file`,
-          );
-        }
-        // await updatePart(songId, versionId, part.key, part.name, part.file);
-      }
-
       if (part.id === null) continue;
+
+      const name = part.name !== original.name ? part.name : undefined;
+      const key = part.key !== original.key ? part.key : undefined;
+      const file = part.file != null ? part.file : undefined;
+
+      if (name !== undefined || key !== undefined || file !== undefined) {
+        log.debug("Updating part: ", part);
+        await updatePart({
+          partId: part.id,
+          name,
+          key,
+          file,
+        });
+      }
 
       for (const id of part.instrument_ids) {
         if (!original.instrument_ids.includes(id)) {
-          // await createPartInstrumentConnection(part.id, id);
+          log.debug("Create connections for partId: ", part.id ," instrumentId: ", id);
+          await createPartInstrumentConnection(part.id, id);
         }
       }
 
       for (const id of original.instrument_ids) {
         if (!part.instrument_ids.includes(id)) {
-          // await deletePartInstrumentConnection(part.id, id);
+           log.debug("Delete connections for partId: ", part.id ," instrumentId: ", id);
+          await deletePartInstrumentConnection(part.id, id);
         }
       }
     }
@@ -109,7 +124,9 @@ export async function saveSongDraft({
 
     for (const original of originalParts) {
       if (!editedPartIds.has(original.id)) {
-        // await deletePart(songId, versionId, original.key);
+        if (original.id === null) continue;
+        log.debug("Deleting part: ", original);
+        await deletePart(original.id);
       }
     }
   }

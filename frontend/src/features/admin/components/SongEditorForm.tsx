@@ -51,6 +51,7 @@ import {
 import { usePartInstruments } from "@/hooks/use-part-instruments";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { saveSongDraft } from "@/features/admin/services/save-song-draft";
+import { refetchSongQueries } from "@/features/admin/lib/refetch-song-queries";
 
 const log = createLogger("SongEditorForm");
 
@@ -332,17 +333,16 @@ export function SongEditorForm({
 
   async function handleSaveDraftSuccess() {
     if (song === null) return;
-
-    await queryClient.refetchQueries({
-      queryKey: ["songs", "byId", song.id],
-      exact: true,
-    });
-
+    await refetchSongQueries(queryClient, song.id, versionId);
     setEditedScore(null);
+    setEditedParts(null);
   }
 
-  function handleSaveDraftError(error: Error) {
+  async function handleSaveDraftError(error: Error) {
     log.error("Failed to save draft", error);
+
+    if (song === null) return;
+    await refetchSongQueries(queryClient, song.id, versionId);
   }
 
   const saveDraftMutation = useMutation({
