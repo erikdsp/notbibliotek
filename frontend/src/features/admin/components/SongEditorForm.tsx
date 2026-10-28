@@ -100,6 +100,7 @@ export function SongEditorForm({
   const [editedParts, setEditedParts] = useState<PartsEdits | null>(null);
   const [pendingVersionId, setPendingVersionId] = useState<string | null>(null);
   const [confirmClose, setConfirmClose] = useState(false);
+  const [saveErrorOpen, setSaveErrorOpen] = useState(false);
 
   const titleIsDirty = title !== (song?.title ?? "");
   const originalScore = makeEditableScore(song, versionId);
@@ -340,7 +341,7 @@ export function SongEditorForm({
 
   async function handleSaveDraftError(error: Error) {
     log.error("Failed to save draft", error);
-
+    setSaveErrorOpen(true);
     if (song === null) return;
     await refetchSongQueries(queryClient, song.id, versionId);
   }
@@ -799,6 +800,35 @@ export function SongEditorForm({
                       }}
                     >
                       Discard Changes
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              
+              <AlertDialog open={saveErrorOpen} onOpenChange={setSaveErrorOpen}>
+                <AlertDialogContent overlayClassName="bg-black/40 supports-backdrop-filter:backdrop-blur-[0.5px]">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Save Draft failed</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Some changes may have been saved successfully. You can
+                      close the editor and reload the saved data, or keep
+                      editing. Retrying Save Draft may fail because some changes
+                      have already been saved.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Keep Editing</AlertDialogCancel>
+
+                    <AlertDialogAction
+                      onClick={() => {
+                        setEditedScore(null);
+                        setEditedParts(null);
+                        setSaveErrorOpen(false);
+                        onOpenChange(false);
+                      }}
+                    >
+                      Close and Reload (Recommended)
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
