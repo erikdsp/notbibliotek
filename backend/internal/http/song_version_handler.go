@@ -199,11 +199,16 @@ func (h *SongVersionHandler) UploadPart(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	key := r.PathValue("key")
-
 	name := r.FormValue("name")
+	key := r.FormValue("key")
+
 	if name == "" {
 		writeError(w, "missing name", http.StatusBadRequest)
+		return
+	}
+
+	if key == "" {
+		writeError(w, "missing key", http.StatusBadRequest)
 		return
 	}
 
@@ -222,7 +227,7 @@ func (h *SongVersionHandler) UploadPart(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 		if errors.Is(err, application.ErrConflictingOperation) {
-			writeError(w, "this part is already uploaded. use put for updates", http.StatusConflict)
+			writeError(w, "this part is already uploaded. use patch for updates", http.StatusConflict)
 			return
 		}
 
@@ -240,13 +245,7 @@ func (h *SongVersionHandler) UploadPart(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *SongVersionHandler) UpdatePart(w http.ResponseWriter, r *http.Request) {
-	songID, err := ulid.Parse(r.PathValue("song_id"))
-	if err != nil {
-		writeError(w, "bad request", http.StatusBadRequest)
-		return
-	}
-
-	versionID, err := ulid.Parse(r.PathValue("version_id"))
+	partID, err := ulid.Parse(r.PathValue("part_id"))
 	if err != nil {
 		writeError(w, "bad request", http.StatusBadRequest)
 		return
@@ -257,26 +256,28 @@ func (h *SongVersionHandler) UpdatePart(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	key := r.PathValue("key")
-
+	key := r.FormValue("key")
 	name := r.FormValue("name")
-	if name == "" {
-		writeError(w, "missing name", http.StatusBadRequest)
-		return
-	}
 
 	file, fileHeader, err := r.FormFile("file")
-	if err != nil {
-		writeError(w, "missing file", http.StatusBadRequest)
+
+	fileName := ""
+	if err == nil {
+		defer file.Close()
+		fileName = fileHeader.Filename
+	} else if !errors.Is(err, http.ErrMissingFile) {
+		writeError(w, "invalid file", http.StatusBadRequest)
 		return
 	}
-	defer file.Close()
 
-	part, err := h.service.UpdatePart(songID, versionID, key, name, fileHeader.Filename, file)
+	part, err := h.service.UpdatePart(partID, key, name, fileName, file)
 	if err != nil {
-		if errors.Is(err, application.ErrSongVersionNotFound) ||
-			errors.Is(err, application.ErrInvalidSongID) ||
-			errors.Is(err, application.ErrPartNotFound) {
+		if errors.Is(err, application.ErrSongVersionAlreadyPublished) ||
+			errors.Is(err, application.ErrConflictingOperation) {
+			writeError(w, err.Error(), http.StatusConflict)
+			return
+		}
+		if errors.Is(err, application.ErrPartNotFound) {
 			writeError(w, err.Error(), http.StatusNotFound)
 			return
 		}
@@ -295,26 +296,14 @@ func (h *SongVersionHandler) UpdatePart(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *SongVersionHandler) DeletePart(w http.ResponseWriter, r *http.Request) {
-	songID, err := ulid.Parse(r.PathValue("song_id"))
+	partID, err := ulid.Parse(r.PathValue("part_id"))
 	if err != nil {
 		writeError(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
-	versionID, err := ulid.Parse(r.PathValue("version_id"))
+	err = h.service.DeletePart(partID)
 	if err != nil {
-		writeError(w, "bad request", http.StatusBadRequest)
-		return
-	}
-
-	key := r.PathValue("key")
-
-	err = h.service.DeletePart(songID, versionID, key)
-	if err != nil {
-		if errors.Is(err, application.ErrSongVersionNotFound) {
-			writeError(w, "song version not found for specified song", http.StatusNotFound)
-			return
-		}
 		if errors.Is(err, application.ErrPartNotFound) {
 			writeError(w, err.Error(), http.StatusNotFound)
 			return

@@ -192,11 +192,6 @@ func (s *SongVersionService) UploadPart(songID ulid.ULID, versionID ulid.ULID,
 		return domain.Part{}, ErrInvalidOperation
 	}
 
-	_, err = s.partRepository.GetBySongVersionIDAndKey(versionID, key)
-	if err == nil {
-		return domain.Part{}, ErrConflictingOperation
-	}
-
 	fileID := ulid.Make()
 
 	err = s.fileStorage.Save(fileID, file)
@@ -231,23 +226,25 @@ func (s *SongVersionService) UploadPart(songID ulid.ULID, versionID ulid.ULID,
 
 }
 
-func (s *SongVersionService) UpdatePart(songID ulid.ULID, versionID ulid.ULID,
+func (s *SongVersionService) UpdatePart(partID ulid.ULID,
 	key string, partName string, fileName string, file io.Reader) (domain.Part, error) {
 
-	version, err := s.repository.GetByID(versionID)
+	part, err := s.partRepository.GetByID(partID)
 	if err != nil {
 		return domain.Part{}, err
-	}
-	if version.SongID != songID {
-		return domain.Part{}, ErrInvalidSongID
-	}
-	if version.PublishedAt != nil {
-		return domain.Part{}, ErrInvalidOperation
 	}
 
-	part, err := s.partRepository.GetBySongVersionIDAndKey(versionID, key)
-	if err != nil {
-		return domain.Part{}, err
+	if key != "" {
+		part.Key = key
+	}
+
+	if partName != "" {
+		part.Name = partName
+	}
+
+	if file == nil {
+		err = s.partRepository.Update(part)
+		return part, err
 	}
 
 	fileID := ulid.Make()
@@ -279,9 +276,9 @@ func (s *SongVersionService) UpdatePart(songID ulid.ULID, versionID ulid.ULID,
 
 }
 
-func (s *SongVersionService) DeletePart(songID ulid.ULID, versionID ulid.ULID, key string) error {
+func (s *SongVersionService) DeletePart(partID ulid.ULID) error {
 
-	fileID, err := s.partRepository.Delete(songID, versionID, key)
+	fileID, err := s.partRepository.Delete(partID)
 	if err != nil {
 		return err
 	}

@@ -8,10 +8,9 @@ import (
 type PartRepository interface {
 	Create(part domain.Part) error
 	GetByID(id ulid.ULID) (domain.Part, error)
-	GetBySongVersionIDAndKey(songVersionID ulid.ULID, key string) (domain.Part, error)
 
 	// Returns an empty slice when the song version has no parts.
 	GetBySongVersionID(songVersionID ulid.ULID) ([]domain.Part, error)
 	Update(part domain.Part) error
-	Delete(songID ulid.ULID, songVersionID ulid.ULID, key string) (fileID ulid.ULID, err error)
+	Delete(id ulid.ULID) (fileID ulid.ULID, err error)
 }
