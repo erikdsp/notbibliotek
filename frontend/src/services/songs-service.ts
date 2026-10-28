@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPut } from "@/lib";
+import { apiGet, apiPatch, apiPost } from "@/lib";
 import { ApiError } from "@/errors";
 import { API_BASE_URL } from "@/config";
 import { createLogger } from "@/utils/logger";
@@ -129,7 +129,7 @@ export async function updateSong(songId: string, title?: string, archive?: boole
   const url = new URL(`${API_BASE_URL}/songs/${songId}`);
 
   try {
-    const song = await apiPut<Song>(url.toString(), { title, archive });
+    const song = await apiPatch<Song>(url.toString(), { title, archive });
 
     log.debug("url: ", url.toString(), "raw payload: ", song);
 
