@@ -9,6 +9,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/oklog/ulid/v2"
+
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 const insertPartQuery = `
@@ -22,13 +24,6 @@ const getPartByIDQuery = `
 	WHERE id = $1
 `
 
-const getPartBySongVersionIDAndKeyQuery = `
-	SELECT id, key, name, song_version_id, file_id
-	FROM parts
-	WHERE song_version_id = $1
-	  AND key = $2
-`
-
 const getPartsBySongVersionIDQuery = `
 	SELECT id, key, name, song_version_id, file_id
 	FROM parts
@@ -38,14 +33,22 @@ const getPartsBySongVersionIDQuery = `
 const updatePartQuery = `
     UPDATE parts
 	SET file_id = $2,
-	    name = $3
+	    name = $3,
+		key = $4
 	WHERE id = $1
+`
+
+const selectAndLockSongVersionByPartIdQuery = `
+	SELECT sv.published_at
+	FROM song_versions sv
+	JOIN parts p ON p.song_version_id = sv.id
+	WHERE p.id = $1
+	FOR UPDATE OF sv;
 `
 
 const deletePartQuery = `
 	DELETE FROM parts
-	WHERE song_version_id = $1
-	  AND key = $2
+	WHERE id = $1
 	RETURNING file_id;
 `
 
@@ -88,7 +91,12 @@ func (r *PostgresPartRepository) Create(part domain.Part) error {
 		uuid.UUID(part.FileID),
 	)
 
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == ErrUniqueViolation {
+		return application.ErrConflictingOperation
+	}
 	return err
+
 }
 
 func (r *PostgresPartRepository) GetByID(id ulid.ULID) (domain.Part, error) {
@@ -97,31 +105,6 @@ func (r *PostgresPartRepository) GetByID(id ulid.ULID) (domain.Part, error) {
 	err := r.db.QueryRow(
 		getPartByIDQuery,
 		uuid.UUID(id),
-	).Scan(
-		&dbPart.ID,
-		&dbPart.Key,
-		&dbPart.Name,
-		&dbPart.SongVersionID,
-		&dbPart.FileID,
-	)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return domain.Part{}, application.ErrPartNotFound
-		}
-
-		return domain.Part{}, err
-	}
-
-	return dbPart.toDomain(), nil
-}
-
-func (r *PostgresPartRepository) GetBySongVersionIDAndKey(songVersionID ulid.ULID, key string) (domain.Part, error) {
-	var dbPart dbPart
-
-	err := r.db.QueryRow(
-		getPartBySongVersionIDAndKeyQuery,
-		uuid.UUID(songVersionID),
-		key,
 	).Scan(
 		&dbPart.ID,
 		&dbPart.Key,
@@ -176,18 +159,49 @@ func (r *PostgresPartRepository) GetBySongVersionID(songVersionID ulid.ULID) ([]
 }
 
 func (r *PostgresPartRepository) Update(part domain.Part) error {
-	_, err := r.db.Exec(
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var publishedAt sql.NullTime
+
+	err = tx.QueryRow(
+		selectAndLockSongVersionByPartIdQuery, uuid.UUID(part.ID)).Scan(&publishedAt)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return application.ErrPartNotFound
+	}
+	if err != nil {
+		return err
+	}
+
+	if publishedAt.Valid {
+		return application.ErrSongVersionAlreadyPublished
+	}
+
+	_, err = tx.Exec(
 		updatePartQuery,
 		uuid.UUID(part.ID),
 		uuid.UUID(part.FileID),
 		part.Name,
+		part.Key,
 	)
 
-	return err
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == ErrUniqueViolation {
+		return application.ErrConflictingOperation
+	}
 
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
-func (r *PostgresPartRepository) Delete(songID ulid.ULID, songVersionID ulid.ULID, key string) (ulid.ULID, error) {
+func (r *PostgresPartRepository) Delete(partID ulid.ULID) (ulid.ULID, error) {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return ulid.ULID{}, err
@@ -197,14 +211,13 @@ func (r *PostgresPartRepository) Delete(songID ulid.ULID, songVersionID ulid.ULI
 	var publishedAt sql.NullTime
 
 	err = tx.QueryRow(
-		selectAndLockSongVersionQuery,
-		uuid.UUID(songVersionID),
-		uuid.UUID(songID),
+		selectAndLockSongVersionByPartIdQuery,
+		uuid.UUID(partID),
 	).Scan(&publishedAt)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return ulid.ULID{}, application.ErrSongVersionNotFound
+			return ulid.ULID{}, application.ErrPartNotFound
 		}
 		return ulid.ULID{}, err
 	}
@@ -217,8 +230,7 @@ func (r *PostgresPartRepository) Delete(songID ulid.ULID, songVersionID ulid.ULI
 
 	err = tx.QueryRow(
 		deletePartQuery,
-		uuid.UUID(songVersionID),
-		key,
+		uuid.UUID(partID),
 	).Scan(&dbFileID)
 
 	if err != nil {

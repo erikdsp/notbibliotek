@@ -533,20 +533,15 @@ func Test_WhenUploadingValidPartThenUploadPartCreatesTheExpectedPart(t *testing.
 	}
 }
 
-func Test_WhenPartWithSameKeyAlreadyExistsThenUploadPartReturnsErrConflictingOperation(t *testing.T) {
+func Test_WhenPartRepositoryReturnsConflictThenUploadPartReturnsErrConflictingOperation(t *testing.T) {
 
 	songID := ulid.Make()
 	versionID := ulid.Make()
 	key := "partkey"
 	name := "Part Name"
 	f := newSongVersionServiceFixture(&songID, "", &versionID)
-	f.partRepository.parts = append(f.partRepository.parts, domain.Part{
-		ID:            ulid.Make(),
-		Key:           key,
-		Name:          name,
-		SongVersionID: versionID,
-		FileID:        ulid.Make(),
-	})
+
+	f.partRepository.err = ErrConflictingOperation
 
 	_, err := f.service.UploadPart(
 		songID,
@@ -629,8 +624,7 @@ func Test_WhenPartExistsThenUpdatePartReplacesPartFile(t *testing.T) {
 	})
 
 	part, err := f.service.UpdatePart(
-		songID,
-		versionID,
+		partID,
 		key,
 		name,
 		"new-part.pdf",
@@ -688,35 +682,13 @@ func Test_WhenPartExistsThenUpdatePartReplacesPartFile(t *testing.T) {
 	}
 }
 
-func Test_WhenSongVersionDoesNotExistThenUpdatePartReturnsSongVersionNotFound(t *testing.T) {
+func Test_WhenSongVersionDoesNotExistThenUpdatePartReturnsPartNotFound(t *testing.T) {
 
 	f := newSongVersionServiceFixture(nil, "", nil)
-	songID := ulid.Make()
-	versionID := ulid.Make()
+	partID := ulid.Make()
 
 	_, err := f.service.UpdatePart(
-		songID,
-		versionID,
-		"partkey",
-		"Part Name",
-		"test.pdf",
-		nil,
-	)
-
-	if !errors.Is(err, ErrSongVersionNotFound) {
-		t.Fatalf("expected SongVersionNotFound, got %v", err)
-	}
-}
-
-func Test_WhenPartDoesNotExistThenUpdatePartReturnsPartNotFound(t *testing.T) {
-
-	songID := ulid.Make()
-	versionID := ulid.Make()
-	f := newSongVersionServiceFixture(&songID, "", &versionID)
-
-	_, err := f.service.UpdatePart(
-		songID,
-		versionID,
+		partID,
 		"partkey",
 		"Part Name",
 		"test.pdf",
@@ -728,29 +700,56 @@ func Test_WhenPartDoesNotExistThenUpdatePartReturnsPartNotFound(t *testing.T) {
 	}
 }
 
-func Test_WhenSongVersionIsAlreadyPublishedThenUpdatePartReturnsErrInvalidOperation(t *testing.T) {
+func Test_WhenPartDoesNotExistThenUpdatePartReturnsPartNotFound(t *testing.T) {
 
 	songID := ulid.Make()
 	versionID := ulid.Make()
-	key := "partkey"
-	name := "Part Name"
-	now := time.Now()
 	f := newSongVersionServiceFixture(&songID, "", &versionID)
-	f.repository.songVersions[0].PublishedAt = &now
+	partID := ulid.Make()
 
 	_, err := f.service.UpdatePart(
-		songID,
-		versionID,
+		partID,
+		"partkey",
+		"Part Name",
+		"test.pdf",
+		nil,
+	)
+
+	if !errors.Is(err, ErrPartNotFound) {
+		t.Fatalf("expected PartNotFound, got %v", err)
+	}
+}
+
+func Test_WhenPartRepositoryUpdateFailsThenUpdatePartReturnsErrSongVersionAlreadyPublished(t *testing.T) {
+
+	versionID := ulid.Make()
+	partID := ulid.Make()
+	key := "partkey"
+	name := "Part Name"
+	f := newSongVersionServiceFixture(nil, "", nil)
+
+	f.partRepository.parts = append(f.partRepository.parts, domain.Part{
+		ID:            partID,
+		Key:           key,
+		Name:          name,
+		SongVersionID: versionID,
+		FileID:        ulid.Make(),
+	})
+
+	f.partRepository.updateErr = ErrSongVersionAlreadyPublished
+
+	_, err := f.service.UpdatePart(
+		partID,
 		key,
 		name,
 		"test.pdf",
 		nil,
 	)
 
-	if !errors.Is(err, ErrInvalidOperation) {
+	if !errors.Is(err, ErrSongVersionAlreadyPublished) {
 		t.Fatalf(
 			"expected error %q, got %q",
-			ErrInvalidOperation,
+			ErrSongVersionAlreadyPublished,
 			err,
 		)
 	}
@@ -766,7 +765,9 @@ func Test_WhenPartRepositoryReturnsErrorThenUpdatePartReturnsErrorAndPerformsRol
 	key := "partkey"
 	name := "Part Name"
 	partError := errors.New("part repository error")
+
 	f := newSongVersionServiceFixture(&songID, "", &versionID)
+
 	f.partRepository.parts = append(f.partRepository.parts, domain.Part{
 		ID:            partID,
 		Key:           key,
@@ -774,15 +775,15 @@ func Test_WhenPartRepositoryReturnsErrorThenUpdatePartReturnsErrorAndPerformsRol
 		SongVersionID: versionID,
 		FileID:        fileID,
 	})
+
 	f.partRepository.updateErr = partError
 
 	_, err := f.service.UpdatePart(
-		songID,
-		versionID,
+		partID,
 		key,
 		name,
 		"test.pdf",
-		nil,
+		strings.NewReader("test PDF content"),
 	)
 
 	if !errors.Is(err, partError) {
@@ -791,6 +792,10 @@ func Test_WhenPartRepositoryReturnsErrorThenUpdatePartReturnsErrorAndPerformsRol
 			partError,
 			err,
 		)
+	}
+
+	if len(f.fileStorage.savedFileIDs) != 1 {
+		t.Fatalf("expected 1 saved file, got %d", len(f.fileStorage.savedFileIDs))
 	}
 
 	if len(f.fileStorage.deletedFileIDs) != 1 {
@@ -823,14 +828,13 @@ func Test_WhenPartRepositoryReturnsErrorThenUpdatePartReturnsErrorAndPerformsRol
 
 func Test_WhenPartRepositoryDeleteFailsThenDeletePartReturnsError(t *testing.T) {
 	f := newSongVersionServiceFixture(nil, "", nil)
-	songID := ulid.Make()
-	versionID := ulid.Make()
+	partID := ulid.Make()
 
 	expectedErr := errors.New("delete failed")
 
 	f.partRepository.deleteErr = expectedErr
 
-	err := f.service.DeletePart(songID, versionID, "partkey")
+	err := f.service.DeletePart(partID)
 
 	if !errors.Is(err, expectedErr) {
 		t.Fatalf("expected %v, got %v", expectedErr, err)
@@ -847,19 +851,18 @@ func Test_WhenPartRepositoryDeleteFailsThenDeletePartReturnsError(t *testing.T) 
 
 func Test_WhenPartRepositoryDeleteSucceedsThenFilesAreDeleted(t *testing.T) {
 	f := newSongVersionServiceFixture(nil, "", nil)
-	songID := ulid.Make()
-	versionID := ulid.Make()
-	key := "partkey"
+	partID := ulid.Make()
+	fileID := ulid.Make()
 
 	f.partRepository.parts = append(f.partRepository.parts, domain.Part{
-		ID:            ulid.Make(),
-		Key:           key,
+		ID:            partID,
+		Key:           "partkey",
 		Name:          "name",
-		SongVersionID: versionID,
-		FileID:        ulid.Make(),
+		SongVersionID: ulid.Make(),
+		FileID:        fileID,
 	})
 
-	err := f.service.DeletePart(songID, versionID, "partkey")
+	err := f.service.DeletePart(partID)
 
 	if err != nil {
 		t.Fatalf("expected nil, got %v", err)
@@ -876,21 +879,19 @@ func Test_WhenPartRepositoryDeleteSucceedsThenFilesAreDeleted(t *testing.T) {
 
 func Test_WhenFileStorageDeleteFailsThenDeletePartReturnsNilAndFileMetadataIsNotDeleted(t *testing.T) {
 	f := newSongVersionServiceFixture(nil, "", nil)
-	songID := ulid.Make()
-	versionID := ulid.Make()
-	key := "partkey"
+	partID := ulid.Make()
 
 	f.partRepository.parts = append(f.partRepository.parts, domain.Part{
-		ID:            ulid.Make(),
-		Key:           key,
+		ID:            partID,
+		Key:           "key",
 		Name:          "name",
-		SongVersionID: versionID,
+		SongVersionID: ulid.Make(),
 		FileID:        ulid.Make(),
 	})
 
 	f.fileStorage.deleteErr = errors.New("delete failed")
 
-	err := f.service.DeletePart(songID, versionID, key)
+	err := f.service.DeletePart(partID)
 
 	if err != nil {
 		t.Fatalf("expected nil, got %v", err)
@@ -907,22 +908,20 @@ func Test_WhenFileStorageDeleteFailsThenDeletePartReturnsNilAndFileMetadataIsNot
 
 func Test_WhenFileRepositoryDeleteFailsThenDeletePartIgnoresCleanupError(t *testing.T) {
 	f := newSongVersionServiceFixture(nil, "", nil)
-	songID := ulid.Make()
-	versionID := ulid.Make()
-	key := "partkey"
+	partID := ulid.Make()
 
 	f.partRepository.parts = append(f.partRepository.parts, domain.Part{
-		ID:            ulid.Make(),
-		Key:           key,
+		ID:            partID,
+		Key:           "key",
 		Name:          "name",
-		SongVersionID: versionID,
+		SongVersionID: ulid.Make(),
 		FileID:        ulid.Make(),
 	})
 
 	// Metadata cleanup failure must not fail an already successful part deletion.
 	f.fileRepository.deleteErr = errors.New("delete failed")
 
-	err := f.service.DeletePart(songID, versionID, key)
+	err := f.service.DeletePart(partID)
 
 	if err != nil {
 		t.Fatalf("expected nil, got %v", err)
@@ -1298,13 +1297,13 @@ func (m *MockPartRepository) Update(part domain.Part) error {
 
 }
 
-func (m *MockPartRepository) Delete(songID ulid.ULID, songVersionID ulid.ULID, key string) (fileID ulid.ULID, err error) {
+func (m *MockPartRepository) Delete(ID ulid.ULID) (fileID ulid.ULID, err error) {
 	if m.deleteErr != nil {
 		return ulid.ULID{}, m.deleteErr
 	}
 
 	for _, part := range m.parts {
-		if part.SongVersionID == songVersionID && part.Key == key {
+		if part.ID == ID {
 			return part.FileID, nil
 		}
 	}
