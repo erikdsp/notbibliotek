@@ -49,6 +49,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { usePartInstruments } from "@/hooks/use-part-instruments";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { saveSongDraft } from "@/features/admin/services/save-song-draft";
+import { refetchSongQueries } from "@/features/admin/lib/refetch-song-queries";
+import { validateSongDraft } from "@/features/admin/lib/validate-song-draft";
 
 const log = createLogger("SongEditorForm");
 
@@ -81,6 +85,7 @@ export function SongEditorForm({
   instruments,
   onSongCreated,
 }: SongEditorFormProps) {
+  const queryClient = useQueryClient();
   const [title, setTitle] = useState(song?.title ?? "");
   const [createdSongId, setCreatedSongId] = useState<string | null>(null);
   const [versionId, setVersionId] = useState<string | null>(() =>
@@ -96,6 +101,7 @@ export function SongEditorForm({
   const [editedParts, setEditedParts] = useState<PartsEdits | null>(null);
   const [pendingVersionId, setPendingVersionId] = useState<string | null>(null);
   const [confirmClose, setConfirmClose] = useState(false);
+  const [saveErrorOpen, setSaveErrorOpen] = useState(false);
 
   const titleIsDirty = title !== (song?.title ?? "");
   const originalScore = makeEditableScore(song, versionId);
@@ -112,9 +118,7 @@ export function SongEditorForm({
       : null;
 
   const parts =
-    editedParts?.versionId === versionId
-      ? editedParts.parts
-      : (originalParts ?? []);
+    editedParts?.versionId === versionId ? editedParts.parts : originalParts;
 
   function partHasChanged(
     part: EditablePart,
@@ -140,11 +144,18 @@ export function SongEditorForm({
 
   const partsAreDirty =
     originalParts !== null &&
+    parts !== null &&
     (parts.length !== originalParts.length ||
       parts.some((part) => partHasChanged(part, originalParts)));
 
   const versionIsDirty = scoreIsDirty || partsAreDirty;
   const isDirty = titleIsDirty || versionIsDirty;
+
+  const validationErrors = validateSongDraft(title, parts);
+
+  const isValid =
+    validationErrors.title === undefined &&
+    Object.keys(validationErrors.parts).length === 0;
 
   function requestClose() {
     if (song !== null && isDirty) {
@@ -207,7 +218,7 @@ export function SongEditorForm({
     switchVersion(nextVersionId);
   }
 
-  function selectScore(file: File) {
+  function addScoreFile(file: File) {
     if (file.type !== "application/pdf") return;
 
     if (versionId === null) return;
@@ -222,7 +233,7 @@ export function SongEditorForm({
     });
   }
 
-  function selectParts(files: FileList | File[]) {
+  function addPartFiles(files: FileList | File[]) {
     const newParts = Array.from(files)
       .filter((file) => file.type === "application/pdf")
       .map((file): EditablePart => {
@@ -328,6 +339,45 @@ export function SongEditorForm({
     }));
   }
 
+  async function handleSaveDraftSuccess() {
+    if (song === null) return;
+    await refetchSongQueries(queryClient, song.id, versionId);
+    setEditedScore(null);
+    setEditedParts(null);
+  }
+
+  async function handleSaveDraftError(error: Error) {
+    log.error("Failed to save draft", error);
+    setSaveErrorOpen(true);
+    if (song === null) return;
+    await refetchSongQueries(queryClient, song.id, versionId);
+  }
+
+  const saveDraftMutation = useMutation({
+    mutationFn: saveSongDraft,
+    onSuccess: handleSaveDraftSuccess,
+    onError: handleSaveDraftError,
+  });
+
+  function handleSaveDraft() {
+    if (song === null) {
+      return;
+    }
+
+    saveDraftMutation.mutate({
+      songId: song.id,
+      versionId,
+      title,
+      titleIsDirty,
+      scoreIsDirty,
+      partsAreDirty,
+      score,
+      originalScore,
+      parts,
+      originalParts,
+    });
+  }
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
@@ -343,13 +393,17 @@ export function SongEditorForm({
         <div className="space-y-6 py-2">
           {/* Song title */}
           <div className="space-y-2">
-            <Label htmlFor="song-title">Song title</Label>
+            <Label htmlFor="song-title">Song Title</Label>
             <Input
               id="song-title"
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Song title"
             />
+
+            {validationErrors.title && (
+              <p className="text-sm text-muted-foreground">(required)</p>
+            )}
           </div>
 
           {song === null ? (
@@ -463,7 +517,7 @@ export function SongEditorForm({
                         onDrop={(event) => {
                           event.preventDefault();
                           const file = event.dataTransfer.files[0];
-                          if (file) selectScore(file);
+                          if (file) addScoreFile(file);
                         }}
                       >
                         <Upload className="size-5 text-muted-foreground" />
@@ -486,7 +540,7 @@ export function SongEditorForm({
                           className="hidden"
                           onChange={(event) => {
                             const file = event.target.files?.[0];
-                            if (file) selectScore(file);
+                            if (file) addScoreFile(file);
                             event.target.value = "";
                           }}
                         />
@@ -504,7 +558,7 @@ export function SongEditorForm({
                         onDragOver={(event) => event.preventDefault()}
                         onDrop={(event) => {
                           event.preventDefault();
-                          selectParts(event.dataTransfer.files);
+                          addPartFiles(event.dataTransfer.files);
                         }}
                       >
                         <Upload className="size-5 text-muted-foreground" />
@@ -529,7 +583,7 @@ export function SongEditorForm({
                           className="hidden"
                           onChange={(event) => {
                             if (event.target.files) {
-                              selectParts(event.target.files);
+                              addPartFiles(event.target.files);
                             }
                             event.target.value = "";
                           }}
@@ -538,146 +592,165 @@ export function SongEditorForm({
                     )}
 
                     <div className="space-y-3">
-                      {parts.map((part) => (
-                        <div
-                          key={part.local_id}
-                          className="space-y-3 rounded-lg border p-3"
-                        >
-                          <div className="flex items-center gap-2">
-                            <FileText className="size-4 shrink-0 text-muted-foreground" />
-
-                            <span className="min-w-0 truncate text-sm">
-                              {part.file_name ?? part.name}
-                            </span>
-
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              aria-label={`Preview ${part.name}`}
-                              disabled={!part.file}
-                              onClick={() => previewFile(part.file)}
+                      {parts !== null &&
+                        parts.map((part) => {
+                          const partErrors =
+                            validationErrors.parts[part.local_id];
+                          return (
+                            <div
+                              key={part.local_id}
+                              className="space-y-3 rounded-lg border p-3"
                             >
-                              <Eye className="size-4" />
-                            </Button>
+                              <div className="flex items-center gap-2">
+                                <FileText className="size-4 shrink-0 text-muted-foreground" />
 
-                            <div className="flex-1" />
+                                <span className="min-w-0 truncate text-sm">
+                                  {part.file_name ?? part.name}
+                                </span>
 
-                            {!isPublished && (
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                aria-label={`Remove ${part.name}`}
-                                onClick={() => handleRemovePart(part.local_id)}
-                              >
-                                <X className="size-4" />
-                              </Button>
-                            )}
-                          </div>
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  aria-label={`Preview ${part.name}`}
+                                  disabled={!part.file}
+                                  onClick={() => previewFile(part.file)}
+                                >
+                                  <Eye className="size-4" />
+                                </Button>
 
-                          <div className="grid gap-3 sm:grid-cols-2">
-                            <div className="space-y-2">
-                              <Label>Part Name</Label>
-                              <Input
-                                value={part.name}
-                                disabled={isPublished}
-                                onChange={(event) =>
-                                  updatePart(part.local_id, {
-                                    name: event.target.value,
-                                  })
-                                }
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Part Key</Label>
-                              <Input
-                                value={part.key}
-                                disabled={isPublished}
-                                onChange={(event) =>
-                                  updatePart(part.local_id, {
-                                    key: event.target.value,
-                                  })
-                                }
-                                placeholder="e.g. violin1"
-                              />
-                            </div>
+                                <div className="flex-1" />
 
-                            <div className="space-y-2">
-                              <Label>Instruments</Label>
-
-                              <div className="flex min-h-9 flex-wrap items-center gap-1 rounded-md border px-2 py-1">
-                                {part.instrument_ids.map((id) => {
-                                  const instrument = instruments.find(
-                                    (instrument) => instrument.id === id,
-                                  );
-
-                                  if (!instrument) return null;
-
-                                  return (
-                                    <Badge
-                                      key={id}
-                                      variant="secondary"
-                                      className="gap-1"
-                                    >
-                                      {instrument.name}
-
-                                      <button
-                                        type="button"
-                                        aria-label={`Remove ${instrument.name}`}
-                                        onClick={() =>
-                                          toggleInstrument(part, id)
-                                        }
-                                      >
-                                        <X className="size-3" />
-                                      </button>
-                                    </Badge>
-                                  );
-                                })}
-
-                                <Popover>
-                                  <PopoverTrigger
-                                    render={
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-7"
-                                      />
+                                {!isPublished && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    aria-label={`Remove ${part.name}`}
+                                    onClick={() =>
+                                      handleRemovePart(part.local_id)
                                     }
                                   >
-                                    <Plus className="size-3" />
-                                    Add instrument
-                                  </PopoverTrigger>
+                                    <X className="size-4" />
+                                  </Button>
+                                )}
+                              </div>
 
-                                  <PopoverContent
-                                    align="start"
-                                    className="w-56 space-y-2"
-                                  >
-                                    {instruments.map((instrument) => (
-                                      <label
-                                        key={instrument.id}
-                                        className="flex cursor-pointer items-center gap-2 text-sm"
+                              <div className="grid gap-3 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                  <Label>Part Name</Label>
+                                  <Input
+                                    value={part.name}
+                                    disabled={isPublished}
+                                    onChange={(event) =>
+                                      updatePart(part.local_id, {
+                                        name: event.target.value,
+                                      })
+                                    }
+                                    aria-invalid={!!partErrors?.name}
+                                  />
+                                  {partErrors?.name && (
+                                    <p className="text-sm text-destructive">
+                                      {partErrors.name}
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Part Key</Label>
+                                  <Input
+                                    value={part.key}
+                                    disabled={isPublished}
+                                    onChange={(event) =>
+                                      updatePart(part.local_id, {
+                                        key: event.target.value,
+                                      })
+                                    }
+                                    aria-invalid={!!partErrors?.key}
+                                    placeholder="e.g. violin1"
+                                  />
+                                  {partErrors?.key && (
+                                    <p className="text-sm text-destructive">
+                                      {partErrors.key}
+                                    </p>
+                                  )}
+                                </div>
+
+                                <div className="space-y-2">
+                                  <Label>Instruments</Label>
+
+                                  <div className="flex min-h-9 flex-wrap items-center gap-1 rounded-md border px-2 py-1">
+                                    {part.instrument_ids.map((id) => {
+                                      const instrument = instruments.find(
+                                        (instrument) => instrument.id === id,
+                                      );
+
+                                      if (!instrument) return null;
+
+                                      return (
+                                        <Badge
+                                          key={id}
+                                          variant="secondary"
+                                          className="gap-1"
+                                        >
+                                          {instrument.name}
+
+                                          <button
+                                            type="button"
+                                            aria-label={`Remove ${instrument.name}`}
+                                            onClick={() =>
+                                              toggleInstrument(part, id)
+                                            }
+                                          >
+                                            <X className="size-3" />
+                                          </button>
+                                        </Badge>
+                                      );
+                                    })}
+
+                                    <Popover>
+                                      <PopoverTrigger
+                                        render={
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-7"
+                                          />
+                                        }
                                       >
-                                        <Checkbox
-                                          checked={part.instrument_ids.includes(
-                                            instrument.id,
-                                          )}
-                                          onCheckedChange={() =>
-                                            toggleInstrument(
-                                              part,
-                                              instrument.id,
-                                            )
-                                          }
-                                        />
+                                        <Plus className="size-3" />
+                                        Add instrument
+                                      </PopoverTrigger>
 
-                                        {instrument.name}
-                                      </label>
-                                    ))}
-                                  </PopoverContent>
-                                </Popover>
+                                      <PopoverContent
+                                        align="start"
+                                        className="w-56 space-y-2"
+                                      >
+                                        {instruments.map((instrument) => (
+                                          <label
+                                            key={instrument.id}
+                                            className="flex cursor-pointer items-center gap-2 text-sm"
+                                          >
+                                            <Checkbox
+                                              checked={part.instrument_ids.includes(
+                                                instrument.id,
+                                              )}
+                                              onCheckedChange={() =>
+                                                toggleInstrument(
+                                                  part,
+                                                  instrument.id,
+                                                )
+                                              }
+                                            />
+
+                                            {instrument.name}
+                                          </label>
+                                        ))}
+                                      </PopoverContent>
+                                    </Popover>
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </div>
-                      ))}
+                          );
+                        })}
                     </div>
                   </section>
                 </>
@@ -689,8 +762,12 @@ export function SongEditorForm({
                   Close
                 </Button>
 
-                <Button variant="outline" disabled>
-                  Save Draft
+                <Button
+                  variant="outline"
+                  disabled={!isDirty || saveDraftMutation.isPending || !isValid}
+                  onClick={handleSaveDraft}
+                >
+                  {saveDraftMutation.isPending ? "Saving..." : "Save Draft"}
                 </Button>
 
                 <Button disabled>Publish Version</Button>
@@ -750,6 +827,35 @@ export function SongEditorForm({
                       }}
                     >
                       Discard Changes
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              <AlertDialog open={saveErrorOpen} onOpenChange={setSaveErrorOpen}>
+                <AlertDialogContent overlayClassName="bg-black/40 supports-backdrop-filter:backdrop-blur-[0.5px]">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Save Draft failed</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Some changes may have been saved successfully. You can
+                      close the editor and reload the saved data, or keep
+                      editing. Retrying Save Draft may fail because some changes
+                      have already been saved.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Keep Editing</AlertDialogCancel>
+
+                    <AlertDialogAction
+                      onClick={() => {
+                        setEditedScore(null);
+                        setEditedParts(null);
+                        setSaveErrorOpen(false);
+                        onOpenChange(false);
+                      }}
+                    >
+                      Close and Reload (Recommended)
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
