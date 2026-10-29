@@ -36,7 +36,7 @@ import {
   makeEditableParts,
   makeEditableScore,
 } from "@/features/admin/mappers/make-editable";
-import { suggestPartKey } from "@/features/admin/utils/suggest-part-key";
+import { suggestPartMetadata } from "@/features/admin/utils/suggest-part-metadata";
 import { initialVersionId } from "@/features/admin/utils/initial-version-id";
 import {
   AlertDialog,
@@ -237,7 +237,7 @@ export function SongEditorForm({
     const newParts = Array.from(files)
       .filter((file) => file.type === "application/pdf")
       .map((file): EditablePart => {
-        const key = suggestPartKey(file.name);
+        const {key, name }= suggestPartMetadata(file.name);
 
         const matchingInstrument = instruments.find(
           (instrument) => instrument.key === key,
@@ -247,7 +247,7 @@ export function SongEditorForm({
           local_id: createLocalId(),
           id: null,
           key,
-          name: file.name.replace(/\.pdf$/i, ""),
+          name,
           file_id: null,
           file_name: file.name,
           file,
