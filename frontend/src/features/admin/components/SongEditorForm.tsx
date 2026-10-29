@@ -54,6 +54,11 @@ import { saveSongDraft } from "@/features/admin/services/save-song-draft";
 import { refetchSongQueries } from "@/features/admin/lib/refetch-song-queries";
 import { validateSongDraft } from "@/features/admin/lib/validate-song-draft";
 import { defaultInstrumentMappings } from "@/features/admin/lib/default-instrument-mappings";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const log = createLogger("SongEditorForm");
 
@@ -193,6 +198,19 @@ export function SongEditorForm({
       onSongCreated(songId);
     } catch (error) {
       log.error("Failed to create song:", error);
+    }
+  }
+
+  async function handleCreateEmptyDraft() {
+    if (song === null) return;
+
+    try {
+      const createdVersion = await createSongVersionMutation.mutateAsync(
+        song.id,
+      );
+      switchVersion(createdVersion.id);
+    } catch (error) {
+      log.error("Failed to create song version:", error);
     }
   }
 
@@ -452,10 +470,28 @@ export function SongEditorForm({
                     <CopyPlus />
                     New Draft
                   </Button>
-                  <Button variant="outline" disabled>
-                    <Plus />
-                    New Empty Draft
-                  </Button>
+
+                  <Tooltip>
+                    <TooltipTrigger render={<span />}>
+                      <Button
+                        variant="outline"
+                        disabled={
+                          isDirty || createSongVersionMutation.isPending
+                        }
+                        onClick={handleCreateEmptyDraft}
+                      >
+                        <Plus />
+                        New Empty Draft
+                      </Button>
+                    </TooltipTrigger>
+
+                    {isDirty && (
+                      <TooltipContent>
+                        Save or discard changes before creating a new draft.
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+
                 </div>
               </div>
 
