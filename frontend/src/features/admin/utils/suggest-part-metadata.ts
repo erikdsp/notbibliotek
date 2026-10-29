@@ -55,12 +55,12 @@ export function suggestPartMetadata(filename: string): partMetaData {
     {
       key: "flute1",
       name: "Flute 1",
-      patterns: [/\bflute[\s_.-]*1\b/, /\bfl[\s_.-]*1\b/],
+      patterns: [/\bflute[\s_.-]*(?:1|i)\b/, /\bfl[\s_.-]*(?:1|i)\b/],
     },
     {
       key: "flute2",
       name: "Flute 2",
-      patterns: [/\bflute[\s_.-]*2\b/, /\bfl[\s_.-]*2\b/],
+      patterns: [/\bflute[\s_.-]*(?:2|ii)\b/, /\bfl[\s_.-]*(?:2|ii)\b/],
     },
     {
       key: "flute",
@@ -114,12 +114,21 @@ export function suggestPartMetadata(filename: string): partMetaData {
       patterns: [/\bten[\s_.-]*sax\b/, /\btenor[\s_.-]*sax(?:ophone)?\b/],
     },
     {
+      key: "trombone1",
+      name: "Trombone 1",
+      patterns: [
+        /\btrombone[\s_.-]*(?:1|i)\b/,
+        /\btrb[\s_.-]*(?:1|i)\b/,
+        /\btb[\s_.-]*(?:1|i)\b/,
+      ],
+    },
+    {
       key: "trombone2",
       name: "Trombone 2",
       patterns: [
-        /\btrombone[\s_.-]*2\b/,
-        /\btrb[\s_.-]*2\b/,
-        /\btb[\s_.-]*2\b/,
+        /\btrombone[\s_.-]*(?:2|ii)\b/,
+        /\btrb[\s_.-]*(?:2|ii)\b/,
+        /\btb[\s_.-]*(?:2|ii)\b/,
       ],
     },
     {
