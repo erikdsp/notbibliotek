@@ -36,8 +36,8 @@ import {
   makeEditableParts,
   makeEditableScore,
 } from "@/features/admin/mappers/make-editable";
-import { suggestPartMetadata } from "@/features/admin/utils/suggest-part-metadata";
-import { initialVersionId } from "@/features/admin/utils/initial-version-id";
+import { suggestPartMetadata } from "@/features/admin/lib/suggest-part-metadata";
+import { initialVersionId } from "@/features/admin/lib/initial-version-id";
 import {
   AlertDialog,
   AlertDialogAction,
