@@ -14,7 +14,7 @@ export function makeEditableParts(
     return [];
   }
 
-  return version.parts.map((part) => {
+  return version.parts.map((part) => {    
     const connections = partInstruments.find(
       (item) => item.part_id === part.id,
     );
