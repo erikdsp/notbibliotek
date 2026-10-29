@@ -346,7 +346,9 @@ func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
 	}
 
 	sql = sql.
-		OrderBy("s.id")
+		OrderBy("s.id",
+			"part_file.name ASC",
+		)
 
 	return sql
 }
@@ -365,9 +367,9 @@ func buildSongByIDQuery(id ulid.ULID, query application.SongByIDQuery) sq.Select
 		From("songs s").
 		LeftJoin("song_versions sv ON sv.song_id = s.id").
 		OrderBy(
-			"s.id",
 			"sv.published_at DESC NULLS LAST",
 			"sv.id",
+			"part_file.name ASC",
 		)
 
 	sql = addScoreColumns(sql, query.IncludeScore)
@@ -384,9 +386,6 @@ func buildSongByIDQuery(id ulid.ULID, query application.SongByIDQuery) sq.Select
 	sql = addJoinParts(sql, query.Parts, query.Instruments)
 
 	sql = sql.Where(sq.Eq{"s.id": id})
-
-	sql = sql.
-		OrderBy("s.id")
 
 	return sql
 }
