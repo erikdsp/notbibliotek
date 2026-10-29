@@ -24,6 +24,14 @@ func toSongResponses(songs []domain.Song) []SongResponse {
 	return responses
 }
 
+func toSongVersionResponse(songVersion domain.SongVersion) SongVersionResponse {
+	return SongVersionResponse{
+		ID:          songVersion.ID,
+		SongID:      songVersion.SongID,
+		PublishedAt: songVersion.PublishedAt,
+	}
+}
+
 func toVersionResponse(version application.VersionDetails) VersionResponse {
 	response := VersionResponse{
 		SongVersionID: version.Version.ID,
