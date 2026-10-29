@@ -92,6 +92,7 @@ export function SongEditorForm({
   onSongCreated,
 }: SongEditorFormProps) {
   const queryClient = useQueryClient();
+  const [isAddingSong] = useState(song === null);
   const [title, setTitle] = useState(song?.title ?? "");
   const [createdSongId, setCreatedSongId] = useState<string | null>(null);
   const [versionId, setVersionId] = useState<string | null>(() =>
@@ -401,11 +402,9 @@ export function SongEditorForm({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{song ? "Edit Song" : "Add Song"}</DialogTitle>
+          <DialogTitle>{isAddingSong ? "Add Song" : "Edit Song"}</DialogTitle>
           <DialogDescription>
-            {song
-              ? "A song version contains one score and any number of parts. "
-              : "Add a title and then continue to PDF uploads"}
+            {!song && "Add a title and then continue to PDF uploads"}
           </DialogDescription>
         </DialogHeader>
 
@@ -491,7 +490,6 @@ export function SongEditorForm({
                       </TooltipContent>
                     )}
                   </Tooltip>
-
                 </div>
               </div>
 
