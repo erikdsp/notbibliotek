@@ -43,10 +43,11 @@ func (h *SongVersionHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	}
 
+	response := toSongVersionResponse(songVersion)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	json.NewEncoder(w).Encode(songVersion)
+	json.NewEncoder(w).Encode(response)
 }
 
 func (h *SongVersionHandler) UploadScore(w http.ResponseWriter, r *http.Request) {
