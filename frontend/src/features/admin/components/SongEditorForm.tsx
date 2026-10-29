@@ -36,8 +36,8 @@ import {
   makeEditableParts,
   makeEditableScore,
 } from "@/features/admin/mappers/make-editable";
-import { suggestPartKey } from "@/features/admin/utils/suggest-part-key";
-import { initialVersionId } from "@/features/admin/utils/initial-version-id";
+import { suggestPartMetadata } from "@/features/admin/lib/suggest-part-metadata";
+import { initialVersionId } from "@/features/admin/lib/initial-version-id";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,6 +53,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { saveSongDraft } from "@/features/admin/services/save-song-draft";
 import { refetchSongQueries } from "@/features/admin/lib/refetch-song-queries";
 import { validateSongDraft } from "@/features/admin/lib/validate-song-draft";
+import { defaultInstrumentMappings } from "@/features/admin/lib/default-instrument-mappings";
 
 const log = createLogger("SongEditorForm");
 
@@ -234,28 +235,28 @@ export function SongEditorForm({
   }
 
   function addPartFiles(files: FileList | File[]) {
+    if (versionId === null || originalParts === null) return;
+
     const newParts = Array.from(files)
       .filter((file) => file.type === "application/pdf")
       .map((file): EditablePart => {
-        const key = suggestPartKey(file.name);
-
-        const matchingInstrument = instruments.find(
-          (instrument) => instrument.key === key,
-        );
+        const { key, name } = suggestPartMetadata(file.name);
+        const instrumentKeys = defaultInstrumentMappings[key] ?? [];
+        const instrumentIds = instruments
+          .filter((instrument) => instrumentKeys.includes(instrument.key))
+          .map((instrument) => instrument.id);
 
         return {
           local_id: createLocalId(),
           id: null,
           key,
-          name: file.name.replace(/\.pdf$/i, ""),
+          name,
           file_id: null,
           file_name: file.name,
           file,
-          instrument_ids: matchingInstrument ? [matchingInstrument.id] : [],
+          instrument_ids: instrumentIds,
         };
       });
-
-    if (versionId === null || originalParts === null) return;
 
     setEditedParts((current) => ({
       versionId,
