@@ -390,10 +390,10 @@ export function SongEditorForm({
 
   function handleSaveDraft() {
     if (song === null) {
-      return;
+      return Promise.resolve();
     }
 
-    saveDraftMutation.mutate({
+    return saveDraftMutation.mutateAsync({
       songId: song.id,
       versionId,
       title,
@@ -407,8 +407,24 @@ export function SongEditorForm({
     });
   }
 
-  function handlePublishVersion() {
-    log.debug("Publishing Song Version");
+  async function handlePublishVersion() {
+    if (song === null || versionId === null || isPublished || !isValid) {
+      return;
+    }
+    try {
+      if (isDirty) {
+        await handleSaveDraft();
+      }
+
+      log.debug("Publishing Song Version");
+      // await publishSongVersion(song.id, versionId);
+      await refetchSongQueries(queryClient, song.id, versionId);
+
+      setConfirmPublish(false);
+      onOpenChange(false);
+    } catch (error) {
+      log.error("Failed to publish song version", error);
+    }
   }
 
   return (
@@ -1022,7 +1038,12 @@ export function SongEditorForm({
             <Button variant="outline" onClick={() => setConfirmPublish(false)}>
               Keep Editing
             </Button>
-            <Button onClick={handlePublishVersion}>Publish Version</Button>
+            <Button
+              disabled={saveDraftMutation.isPending}
+              onClick={handlePublishVersion}
+            >
+              {saveDraftMutation.isPending ? "Saving..." : "Publish Version"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
