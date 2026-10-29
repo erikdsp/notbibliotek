@@ -6,8 +6,8 @@ export function useCreateSongVersion() {
 
   return useMutation({
     mutationFn: (songId: string) => createSongVersion(songId),
-    onSuccess: (_version, songId) => {
-      queryClient.invalidateQueries({
+    onSuccess: async (_version, songId) => {
+      await queryClient.invalidateQueries({
         queryKey: ["songs", "byId", songId],
       });
     },
