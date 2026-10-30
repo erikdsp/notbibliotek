@@ -69,6 +69,16 @@ export function MusiciansView() {
     isError: instrumentsIsError,
   } = useInstruments();
 
+  function handleSelectInstrument(instrumentId: string | null) {
+    setSelectedInstrument(instrumentId);
+    setSelectedPart(null);
+  }
+
+  function handleSelectPart(partId: string | null) {
+    setSelectedPart(partId);
+    setSelectedInstrument(null);
+  }
+
   if (
     songsIsLoading ||
     allSongsIsLoading ||
@@ -110,9 +120,9 @@ export function MusiciansView() {
             selectedConcert={selectedConcert}
             onConcertChange={setSelectedConcert}
             selectedInstrument={selectedInstrument}
-            onInstrumentChange={setSelectedInstrument}
+            onInstrumentChange={handleSelectInstrument}
             selectedPart={selectedPart}
-            onPartChange={setSelectedPart}
+            onPartChange={handleSelectPart}
             includeScore={includeScore}
             onIncludeScoreChange={setIncludeScore}
             moreOptionsOpen={moreOptionsOpen}
