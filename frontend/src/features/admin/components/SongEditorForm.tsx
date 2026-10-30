@@ -173,6 +173,7 @@ export function SongEditorForm({
 
   const isValid =
     validationErrors.title === undefined &&
+    score !== null &&
     Object.keys(validationErrors.parts).length === 0;
 
   function requestClose() {
