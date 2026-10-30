@@ -29,18 +29,19 @@ export function MusiciansView() {
   const [includeScore, setIncludeScore] = useState(false);
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
 
+  const concertSelected = selectedConcert !== null && selectedConcert !== "all";
+  const instrumentSelected =
+    selectedInstrument !== null && selectedInstrument !== "all";
+  const partSelected = selectedPart !== null && selectedPart !== "all";
+
   const filters: SongFilters = {
-    concert:
-      selectedConcert && selectedConcert !== "all"
-        ? selectedConcert
-        : undefined,
-    instrument:
-      selectedInstrument && selectedInstrument !== "all"
-        ? [selectedInstrument]
-        : undefined,
-    part: selectedPart && selectedPart !== "all" ? [selectedPart] : undefined,
+    concert: concertSelected ? selectedConcert : undefined,
+    instrument: instrumentSelected ? [selectedInstrument] : undefined,
+    part: partSelected ? [selectedPart] : undefined,
     include_score: includeScore || undefined,
   };
+
+  const showDetailedList = instrumentSelected || partSelected;
 
   const {
     data: allSongs = [],
@@ -120,7 +121,7 @@ export function MusiciansView() {
 
           <Separator />
 
-          <section className="max-w-lg rounded-lg border p-6">
+          <section className="w-full max-w-2xl rounded-lg border p-6">
             <h2 className="text-2xl font-bold mb-4">
               {selectedConcertDetails
                 ? selectedConcertDetails.name
@@ -129,12 +130,12 @@ export function MusiciansView() {
             {selectedConcertDetails && (
               <p className="mb-2">{selectedConcertDetails.date}</p>
             )}
-            <Table>
+            <Table className="w-full">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-25">Song</TableHead>
-                  <TableHead>Parts</TableHead>
-                  <TableHead>Version</TableHead>
+                  <TableHead className="w-60">Song</TableHead>
+                  <TableHead> {showDetailedList && "Parts"} </TableHead>
+                  <TableHead className="w-24">Version</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -150,19 +151,23 @@ export function MusiciansView() {
                         <TableCell className="font-medium">
                           {song.title}
                         </TableCell>
-                        <TableCell className="italic">Missing</TableCell>
-                        <TableCell></TableCell>
+                        <TableCell className="italic"></TableCell>
+                        <TableCell className="italic">
+                          No published version
+                        </TableCell>
                       </TableRow>
                     );
                   }
 
-                  if (currentVersion.parts.length === 0) {
+                  if (currentVersion.parts.length === 0 || !showDetailedList) {
                     return (
                       <TableRow key={song.id}>
                         <TableCell className="font-medium">
                           {song.title}
                         </TableCell>
-                        <TableCell className="italic">Missing</TableCell>
+                        <TableCell className="italic">
+                          {showDetailedList && "Missing"}
+                        </TableCell>
                         <TableCell>
                           {formatDateTime(currentVersion.published_at)}
                         </TableCell>
@@ -189,7 +194,7 @@ export function MusiciansView() {
               </TableBody>
             </Table>
           </section>
-          <Button>Download Set List</Button>
+          {concertSelected && <Button>Download Set List</Button>}
           <Button>Download Sheet Music</Button>
         </section>
       </main>
