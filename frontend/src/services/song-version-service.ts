@@ -205,3 +205,30 @@ export async function deletePart(partId: string): Promise<void> {
     throw error;
   }
 }
+
+/**
+ * Publish Song Version
+ * @returns Promise<void>
+ * @throws ApiError if the request fails
+ */
+export async function publishSongVersion(
+  songId: string,
+  versionId: string,
+): Promise<void> {
+  const url = new URL(
+    `${API_BASE_URL}/songs/${songId}/versions/${versionId}/publish`,
+  );
+
+  try {
+    await apiPost<void>(url.toString());
+  } catch (error: unknown) {
+    if (error instanceof ApiError) {
+      throw new ApiError(
+        `Failed to publish song version: ${error.message}`,
+        url.toString(),
+        error.status,
+      );
+    }
+    throw error;
+  }
+}

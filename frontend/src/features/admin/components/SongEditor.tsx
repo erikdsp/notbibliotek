@@ -13,6 +13,7 @@ type SongEditorProps = {
   songId: string | null;
   instruments: Instrument[];
   onSongCreated: (songId: string) => void;
+  isAddingSong: boolean;
 };
 
 export function SongEditor({
@@ -21,6 +22,7 @@ export function SongEditor({
   songId,
   instruments,
   onSongCreated,
+  isAddingSong,
 }: SongEditorProps) {
   const { data: song, isPending, error } = useSong(songId);
 
@@ -46,6 +48,7 @@ export function SongEditor({
       instruments={instruments}
       onOpenChange={onOpenChange}
       onSongCreated={onSongCreated}
+      isAddingSong={isAddingSong}
     />
   );
 }
