@@ -107,7 +107,7 @@ export function MusiciansView() {
       <main className="container mx-auto px-6 py-6">
         <section className="flex flex-1 flex-col items-center justify-center gap-4 px-5 py-6 lg:gap-6 lg:p-0">
           <div>
-            <h1 className="text-3xl font-bold mt-6 mb-4">
+            <h1 className="font-josefin text-5xl font-bold mt-6 mb-4">
               Orchestra Sheet Music Library
             </h1>
           </div>
