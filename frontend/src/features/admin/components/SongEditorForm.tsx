@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-
+import { toast } from "@/components/ui/toast";
 import type { SongResponse, Instrument } from "@/core/types";
 import { formatSongVersion } from "@/utils/song-utils";
 import { useCreateSong, useCreateSongVersion } from "@/hooks";
@@ -604,8 +604,19 @@ export function SongEditorForm({
                             onDragOver={(event) => event.preventDefault()}
                             onDrop={(event) => {
                               event.preventDefault();
-                              const file = event.dataTransfer.files[0];
-                              if (file) addScoreFile(file);
+                              const files = event.dataTransfer.files;
+
+                              if (files.length !== 1) {
+                                toast.add({
+                                  type: "error",
+                                  description:
+                                    "Oops! You dropped several files. Only one score PDF please.",
+                                  priority: "high",
+                                });
+                                return;
+                              }
+
+                              addScoreFile(files[0]);
                             }}
                           >
                             <Upload className="size-5 text-muted-foreground" />
