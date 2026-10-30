@@ -67,6 +67,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { usePublishSongVersion } from "@/hooks/use-publish-song-version";
 
 const log = createLogger("SongEditorForm");
 
@@ -407,23 +408,35 @@ export function SongEditorForm({
     });
   }
 
+  const publishSongVersionMutation = usePublishSongVersion();
+
   async function handlePublishVersion() {
     if (song === null || versionId === null || isPublished || !isValid) {
       return;
     }
+
     try {
       if (isDirty) {
         await handleSaveDraft();
       }
 
-      log.debug("Publishing Song Version");
-      // await publishSongVersion(song.id, versionId);
+      await publishSongVersionMutation.mutateAsync({
+        songId: song.id,
+        versionId,
+      });
       await refetchSongQueries(queryClient, song.id, versionId);
 
       setConfirmPublish(false);
       onOpenChange(false);
     } catch (error) {
       log.error("Failed to publish song version", error);
+    }
+  }
+
+  function handleConfirmPublishOpenChange(open: boolean) {
+    setConfirmPublish(open);
+    if (!open) {
+      publishSongVersionMutation.reset();
     }
   }
 
@@ -837,26 +850,31 @@ export function SongEditorForm({
                     </Button>
 
                     <Button
-                      variant="outline"
+                      variant={isPublished ? "default" : "outline"}
                       disabled={
                         !isDirty || saveDraftMutation.isPending || !isValid
                       }
                       onClick={handleSaveDraft}
                     >
-                      {saveDraftMutation.isPending ? "Saving..." : "Save Draft"}
+                      {saveDraftMutation.isPending
+                        ? "Saving..."
+                        : isPublished
+                          ? "Save Changes"
+                          : "Save Draft"}
                     </Button>
 
-                    <Button
-                      disabled={
-                        versionId === null ||
-                        isPublished ||
-                        !isValid ||
-                        saveDraftMutation.isPending
-                      }
-                      onClick={() => setConfirmPublish(true)}
-                    >
-                      Publish Version
-                    </Button>
+                    {!isPublished && (
+                      <Button
+                        disabled={
+                          versionId === null ||
+                          !isValid ||
+                          saveDraftMutation.isPending
+                        }
+                        onClick={() => setConfirmPublish(true)}
+                      >
+                        Publish Version
+                      </Button>
+                    )}
                   </DialogFooter>
 
                   <AlertDialog
@@ -959,7 +977,10 @@ export function SongEditorForm({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={confirmPublish} onOpenChange={setConfirmPublish}>
+      <Dialog
+        open={confirmPublish}
+        onOpenChange={handleConfirmPublishOpenChange}
+      >
         <DialogContent
           className="flex max-h-[90vh] w-[95vw] sm:max-w-6xl flex-col overflow-hidden"
           overlayClassName="bg-black/20 supports-backdrop-filter:backdrop-blur-[0px]"
@@ -969,6 +990,11 @@ export function SongEditorForm({
             <DialogDescription>
               Review the score and parts before publishing this version.
             </DialogDescription>
+            {publishSongVersionMutation.isError && (
+              <p role="alert" className="text-sm text-destructive">
+                Failed to publish version. Please try again.
+              </p>
+            )}
           </DialogHeader>
 
           <div className="-mr-5 min-h-0 flex-1 space-y-5 overflow-y-auto py-2 pr-4">
@@ -1035,14 +1061,24 @@ export function SongEditorForm({
           </div>
 
           <DialogFooter className="shrink-0">
-            <Button variant="outline" onClick={() => setConfirmPublish(false)}>
+            <Button
+              variant="outline"
+              onClick={() => handleConfirmPublishOpenChange(false)}
+            >
               Keep Editing
             </Button>
             <Button
-              disabled={saveDraftMutation.isPending}
+              disabled={
+                saveDraftMutation.isPending ||
+                publishSongVersionMutation.isPending
+              }
               onClick={handlePublishVersion}
             >
-              {saveDraftMutation.isPending ? "Saving..." : "Publish Version"}
+              {saveDraftMutation.isPending
+                ? "Saving..."
+                : publishSongVersionMutation.isPending
+                  ? "Publishing..."
+                  : "Publish Version"}
             </Button>
           </DialogFooter>
         </DialogContent>
