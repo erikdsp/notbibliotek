@@ -91,6 +91,7 @@ type SongEditorFormProps = {
   song: SongResponse | null;
   instruments: Instrument[];
   onSongCreated: (songId: string) => void;
+  isAddingSong: boolean;
 };
 
 export function SongEditorForm({
@@ -99,9 +100,9 @@ export function SongEditorForm({
   song,
   instruments,
   onSongCreated,
+  isAddingSong,
 }: SongEditorFormProps) {
   const queryClient = useQueryClient();
-  const [isAddingSong] = useState(song === null);
   const [title, setTitle] = useState(song?.title ?? "");
   const [createdSongId, setCreatedSongId] = useState<string | null>(null);
   const [versionId, setVersionId] = useState<string | null>(() =>

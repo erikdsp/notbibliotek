@@ -20,6 +20,7 @@ const log = createLogger("SongsTab");
 export function SongsTab() {
   const [editingSongId, setEditingSongId] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [isAddingSong, setIsAddingSong] = useState(false);
 
   const {
     data: instruments,
@@ -33,6 +34,7 @@ export function SongsTab() {
   } = useSongs();
 
   function openEditor(songId: string | null) {
+    setIsAddingSong(songId === null);
     setEditingSongId(songId);
     setEditorOpen(true);
   }
@@ -47,7 +49,7 @@ export function SongsTab() {
   }
 
   if (songsError) {
-    log.error(songsError)
+    log.error(songsError);
     return <div>Failed to load songs.</div>;
   }
 
@@ -106,6 +108,7 @@ export function SongsTab() {
           songId={editingSongId}
           instruments={safeInstruments}
           onSongCreated={setEditingSongId}
+          isAddingSong={isAddingSong}
         />
       )}
     </section>
