@@ -79,6 +79,7 @@ export function InstrumentsTab() {
           open={editorOpen}
           onOpenChange={setEditorOpen}
           editingInstrument={null}
+          instruments={safeInstruments}
         />
       )}
     </section>

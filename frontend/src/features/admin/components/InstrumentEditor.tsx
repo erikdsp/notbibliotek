@@ -10,34 +10,37 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-
-type InstrumentFormData = {
-  key: string;
-  name: string;
-}
+import type { EditableInstrument } from "@/features/admin/types/instrument-editor-types";
+import type { Instrument } from "@/core/types";
 
 type InstrumentEditorProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  editingInstrument: InstrumentFormData | null;
-}
-
+  editingInstrument: EditableInstrument | null;
+  instruments: Instrument[];
+};
 
 export function InstrumentEditor({
   open,
   onOpenChange,
   editingInstrument,
+  instruments,
 }: InstrumentEditorProps) {
-  const [name, setName] = useState(editingInstrument?.name ?? "");
-  const [key, setKey] = useState(editingInstrument?.key ?? "");
-  const [keyEdited, setKeyEdited] = useState(false);
-
+  const originalName = editingInstrument?.name ?? "";
+  const originalKey = editingInstrument?.key ?? "";
   const isEditing = editingInstrument !== null;
+  const [name, setName] = useState(originalName);
+  const [key, setKey] = useState(originalKey);
+  const [keyEdited, setKeyEdited] = useState(isEditing);
 
+  const instrumentKeys = new Set(instruments.map((i) => i.key));
+  const isDirty = name !== originalName || key !== originalKey;
+  const keyIsUnique = key === originalKey || !instrumentKeys.has(key);
+  const isValid =
+    name.trim().length > 0 && key.trim().length > 0 && keyIsUnique;
 
   function nameToKey(name: string) {
-    return name.replace(/\s+/g, "")
-    .toLowerCase()
+    return name.replace(/\s+/g, "").toLowerCase();
   }
 
   function handleSetName(newName: string) {
@@ -49,21 +52,22 @@ export function InstrumentEditor({
     setKeyEdited(true);
   }
 
- useEffect(() => {
-   if (keyEdited) return;
+  useEffect(() => {
+    if (keyEdited) return;
 
-  const timeoutMs = 700;
-  const timeout = setTimeout(() => {
-    setKey(nameToKey(name));
-  }, timeoutMs);
+    const timeoutMs = 700;
+    const timeout = setTimeout(() => {
+      setKey(nameToKey(name));
+    }, timeoutMs);
 
-  return () => clearTimeout(timeout);
-}, [name, keyEdited]);
+    return () => clearTimeout(timeout);
+  }, [name, keyEdited]);
 
   const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!isDirty || !isValid) return;
 
-    console.log("Create Instrument with Name: ", name, " and Key: ", key)
+    console.log("Create Instrument with Name: ", name.trim(), " and Key: ", key.trim());
     onOpenChange(false);
   };
 
@@ -86,16 +90,24 @@ export function InstrumentEditor({
               <Input
                 id="name"
                 value={name}
+                placeholder="Instrument name"
                 onChange={(event) => handleSetName(event.target.value)}
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="name">Key</FieldLabel>
+              <FieldLabel htmlFor="key">Key</FieldLabel>
               <Input
                 id="key"
                 value={key}
+                placeholder="Unique instrument key"
                 onChange={(event) => handleSetKey(event.target.value)}
+                aria-invalid={!keyIsUnique}
               />
+              {!keyIsUnique && (
+                <p className="text-sm text-destructive">
+                  There already exists an instrument with this key.
+                </p>
+              )}
             </Field>
           </FieldGroup>
 
@@ -107,7 +119,9 @@ export function InstrumentEditor({
             >
               Cancel
             </Button>
-            <Button type="submit">{isEditing ? "Save Changes" : "Add"}</Button>
+            <Button type="submit" disabled={!isDirty || !isValid}>
+              {isEditing ? "Save Changes" : "Add"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
