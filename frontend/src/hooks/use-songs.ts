@@ -5,6 +5,5 @@ export function useSongs(filters: SongFilters = {}) {
   return useQuery({
     queryKey: ["songs", "list", filters],
     queryFn: () => fetchSongs(filters),
-    staleTime: Infinity,
   });
 }

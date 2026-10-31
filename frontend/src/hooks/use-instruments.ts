@@ -5,6 +5,5 @@ export function useInstruments() {
   return useQuery({
     queryKey: ["instruments"],
     queryFn: () => fetchInstruments(),
-    staleTime: Infinity,
   });
 }

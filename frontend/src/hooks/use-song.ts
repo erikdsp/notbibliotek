@@ -11,6 +11,5 @@ export function useSong(songId: string | null) {
       return fetchSong(songId);
     },
     enabled: songId !== null,
-    staleTime: Infinity,
   });
 }
