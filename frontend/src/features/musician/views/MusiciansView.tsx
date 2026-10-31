@@ -17,6 +17,7 @@ import { SheetMusicFilters } from "../components/SheetMusicFilters";
 import type { SongFilters } from "@/services/songs-service";
 import { createLogger } from "@/utils/logger";
 import { formatDateTime } from "@/utils/format-time";
+import { Download } from "lucide-react";
 
 const log = createLogger("MusiciansView");
 
@@ -104,7 +105,7 @@ export function MusiciansView() {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-6 py-6">
+      <main className="container mx-auto px-6 py-6 pb-16">
         <section className="flex flex-1 flex-col items-center justify-center gap-4 px-5 py-6 lg:gap-6 lg:p-0">
           <div>
             <h1 className="font-josefin text-5xl font-bold mt-6 mb-4">
@@ -131,7 +132,9 @@ export function MusiciansView() {
 
           <Separator />
 
-          <section className="w-full max-w-2xl rounded-lg border p-6">
+          <section
+            className={`w-full rounded-lg border p-6 ${showDetailedList ? "max-w-4xl" : "max-w-2xl"}`}
+          >
             <h2 className="text-2xl font-bold mb-4">
               {selectedConcertDetails
                 ? selectedConcertDetails.name
@@ -141,11 +144,21 @@ export function MusiciansView() {
               <p className="mb-2">{selectedConcertDetails.date}</p>
             )}
             <Table className="w-full">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-60">Song</TableHead>
-                  <TableHead> {showDetailedList && "Parts"} </TableHead>
-                  <TableHead className="w-24">Version</TableHead>
+              <TableHeader className="border-b-2">
+                <TableRow className=" text-base">
+                  <TableHead className="w-60 font-normal">
+                    Song
+                  </TableHead>
+                  <TableHead className="font-normal">
+                    {" "}
+                    {showDetailedList && "Parts"}{" "}
+                  </TableHead>
+                  <TableHead className="w-25 font-normal">
+                    Version
+                  </TableHead>
+                  {showDetailedList && (
+                    <TableHead className="w-14 pl-8 font-normal"></TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -198,14 +211,29 @@ export function MusiciansView() {
                           ? formatDateTime(currentVersion.published_at)
                           : null}
                       </TableCell>
+                      <TableCell className="pl-8">
+                        <Button variant="secondary">
+                          <Download /> Download PDF
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ));
                 })}
               </TableBody>
             </Table>
           </section>
-          {concertSelected && <Button>Download Set List</Button>}
-          <Button>Download Sheet Music</Button>
+          <div className="pt-6 flex flex-1 flex-col items-center gap-4">
+            {concertSelected && (
+              <Button variant="outline">
+                <Download /> Download Set List
+              </Button>
+            )}
+            {showDetailedList && (
+              <Button>
+                <Download /> Download .zip
+              </Button>
+            )}
+          </div>
         </section>
       </main>
     </div>
