@@ -15,10 +15,10 @@ export function AdminView() {
       <main className="container mx-auto px-6 py-6">
         <section className="flex flex-1 flex-col items-center justify-center gap-4 px-5 py-6 lg:gap-6 lg:p-0">
           <div className="grid w-full grid-cols-1 items-center md:grid-cols-[1fr_auto_1fr]">
-            <h1 className="text-center text-3xl font-bold my-6 md:col-start-2">
+            <h1 className="font-josefin text-4xl text-center font-bold my-6 md:col-start-2">
               Orchestra Sheet Music Library
             </h1>
-            <p className="text-center text-2xl md:col-start-3 md:justify-self-end md:mr-4">Admin</p>
+            <p className="font-josefin text-center text-2xl md:col-start-3 md:justify-self-end md:mr-4">Admin</p>
           </div>
           <Separator />
           <Tabs defaultValue="songs" className="w-full h-full flex flex-col">

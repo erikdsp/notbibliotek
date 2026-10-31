@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { formatDate } from "@/utils/format-time";
 
 type SheetMusicFilterProps = {
   concerts: ConcertResponse[];
@@ -60,7 +61,7 @@ export function SheetMusicFilters({
 }: SheetMusicFilterProps) {
   const concertItems =
     concerts?.map((concert) => ({
-      label: concert.name,
+      label: concert.name + " - " + formatDate(concert.date),
       value: concert.key,
     })) ?? [];
 
@@ -114,7 +115,7 @@ export function SheetMusicFilters({
               value={selectedConcert}
               onValueChange={onConcertChange}
             >
-              <SelectTrigger className="w-full min-w-72">
+              <SelectTrigger className="w-full min-w-80">
                 <SelectValue placeholder="Select a Concert" />
               </SelectTrigger>
               <SelectContent>
@@ -140,7 +141,7 @@ export function SheetMusicFilters({
               value={selectedInstrument}
               onValueChange={onInstrumentChange}
             >
-              <SelectTrigger className="w-72">
+              <SelectTrigger className="w-66">
                 <SelectValue placeholder="Select an instrument" />
               </SelectTrigger>
               <SelectContent>
@@ -186,7 +187,7 @@ export function SheetMusicFilters({
                 value={selectedPart}
                 onValueChange={onPartChange}
               >
-                <SelectTrigger className="w-72">
+                <SelectTrigger className="w-80">
                   <SelectValue placeholder="Select a part" />
                 </SelectTrigger>
                 <SelectContent>
