@@ -1,6 +1,7 @@
 export const defaultInstrumentMappings: Record<string, string[]> = {
   // Brass
   trumpet: ["trumpet"],
+  flugelhorn: ["trumpet"],
   trombone: ["trombone"],
   trombone2: ["trombone"],
   basstrombone: ["basstrombone"],
