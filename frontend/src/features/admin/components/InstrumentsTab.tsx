@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { InstrumentDialog } from "./InstrumentDialog";
+import { InstrumentEditor } from "./InstrumentEditor";
 import { Plus, Pencil, Trash } from "lucide-react";
 import {
   Table,
@@ -16,7 +16,7 @@ import { useInstruments } from "@/hooks";
 const log = createLogger("InstrumentsTab");
 
 export function InstrumentsTab() {
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
   const {
     data: instruments,
     isLoading: instrumentsIsLoading,
@@ -39,7 +39,7 @@ export function InstrumentsTab() {
       <Button
         variant="outline"
         className="mx-auto flex"
-        onClick={() => setDialogOpen(true)}
+        onClick={() => setEditorOpen(true)}
       >
         <Plus />
         Add Instrument
@@ -74,11 +74,13 @@ export function InstrumentsTab() {
           </TableBody>
         </Table>
       </div>
-      <InstrumentDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        editingInstrument={null}
-      />
+      {editorOpen && (
+        <InstrumentEditor
+          open={editorOpen}
+          onOpenChange={setEditorOpen}
+          editingInstrument={null}
+        />
+      )}
     </section>
   );
 }
