@@ -12,16 +12,30 @@ import {
 import { createLogger } from "@/utils/logger";
 import { Button } from "@/components/ui/button";
 import { useInstruments } from "@/hooks";
+import type { EditableInstrument } from "@/features/admin/types/instrument-editor-types";
+import type { Instrument } from "@/core/types";
 
 const log = createLogger("InstrumentsTab");
 
 export function InstrumentsTab() {
   const [editorOpen, setEditorOpen] = useState(false);
+  const [editingInstrument, setEditingInstrument] =
+    useState<EditableInstrument | null>(null);
   const {
     data: instruments,
     isLoading: instrumentsIsLoading,
     error: instrumentsError,
   } = useInstruments();
+
+  function handleEdit(instrument: Instrument) {
+    setEditingInstrument(instrument);
+    setEditorOpen(true);
+  }
+
+  function handleAdd() {
+    setEditingInstrument(null);
+    setEditorOpen(true);
+  }
 
   if (instrumentsIsLoading) {
     return <div>Loading...</div>;
@@ -39,7 +53,7 @@ export function InstrumentsTab() {
       <Button
         variant="outline"
         className="mx-auto flex"
-        onClick={() => setEditorOpen(true)}
+        onClick={handleAdd}
       >
         <Plus />
         Add Instrument
@@ -60,7 +74,11 @@ export function InstrumentsTab() {
                 <TableCell>{instrument.name}</TableCell>
                 <TableCell className="italic">{instrument.key}</TableCell>
                 <TableCell>
-                  <Button variant="ghost" className={"rounded-md"}>
+                  <Button
+                    variant="ghost"
+                    className={"rounded-md"}
+                    onClick={() => handleEdit(instrument)}
+                  >
                     <Pencil className="size-4" />
                   </Button>
                 </TableCell>
@@ -78,7 +96,7 @@ export function InstrumentsTab() {
         <InstrumentEditor
           open={editorOpen}
           onOpenChange={setEditorOpen}
-          editingInstrument={null}
+          editingInstrument={editingInstrument}
           instruments={safeInstruments}
         />
       )}
