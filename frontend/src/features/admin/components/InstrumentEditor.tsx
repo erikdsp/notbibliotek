@@ -12,6 +12,10 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import type { EditableInstrument } from "@/features/admin/types/instrument-editor-types";
 import type { Instrument } from "@/core/types";
+import { useCreateInstrument, useUpdateInstrument } from "@/hooks";
+import { createLogger } from "@/utils/logger";
+
+const log = createLogger("InstrumentEditor");
 
 type InstrumentEditorProps = {
   open: boolean;
@@ -34,8 +38,9 @@ export function InstrumentEditor({
   const [keyEdited, setKeyEdited] = useState(isEditing);
 
   const instrumentKeys = new Set(instruments.map((i) => i.key));
-  const isDirty = name !== originalName || key !== originalKey;
-  const keyIsUnique = key === originalKey || !instrumentKeys.has(key);
+  const isDirty = name.trim() !== originalName || key.trim() !== originalKey;
+  const keyIsUnique =
+    key.trim() === originalKey || !instrumentKeys.has(key.trim());
   const isValid =
     name.trim().length > 0 && key.trim().length > 0 && keyIsUnique;
 
@@ -63,13 +68,42 @@ export function InstrumentEditor({
     return () => clearTimeout(timeout);
   }, [name, keyEdited]);
 
-  const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
+  const createInstrumentMutation = useCreateInstrument();
+  const updateInstrumentMutation = useUpdateInstrument();
+
+  async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!isDirty || !isValid) return;
 
-    console.log("Create Instrument with Name: ", name.trim(), " and Key: ", key.trim());
+    if (!isEditing) {
+      try {
+        await createInstrumentMutation.mutateAsync({
+          name: name.trim(),
+          key: key.trim(),
+        });
+      } catch (error) {
+        log.error("Failed to create instrument:", error);
+        return;
+      }
+    } else {
+      if (editingInstrument.id === null) return;
+      const newName =
+        name.trim() !== editingInstrument.name ? name.trim() : undefined;
+      const newKey =
+        key.trim() !== editingInstrument.key ? key.trim() : undefined;
+      try {
+        await updateInstrumentMutation.mutateAsync({
+          instrumentId: editingInstrument.id,
+          name: newName,
+          key: newKey,
+        });
+      } catch (error) {
+        log.error("Failed to update instrument:", error);
+        return;
+      }
+    }
     onOpenChange(false);
-  };
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -111,6 +145,13 @@ export function InstrumentEditor({
             </Field>
           </FieldGroup>
 
+          {(createInstrumentMutation.isError ||
+            updateInstrumentMutation.isError) && (
+            <p role="alert" className="text-sm text-destructive pb-4">
+              Failed to save instrument. Please try again.
+            </p>
+          )}
+
           <DialogFooter>
             <Button
               type="button"
@@ -119,7 +160,15 @@ export function InstrumentEditor({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={!isDirty || !isValid}>
+            <Button
+              type="submit"
+              disabled={
+                !isDirty ||
+                !isValid ||
+                createInstrumentMutation.isPending ||
+                updateInstrumentMutation.isPending
+              }
+            >
               {isEditing ? "Save Changes" : "Add"}
             </Button>
           </DialogFooter>
