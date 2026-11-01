@@ -11,9 +11,19 @@ import {
 } from "@/components/ui/table";
 import { createLogger } from "@/utils/logger";
 import { Button } from "@/components/ui/button";
-import { useInstruments } from "@/hooks";
+import { useDeleteInstrument, useInstruments } from "@/hooks";
 import type { EditableInstrument } from "@/features/admin/types/instrument-editor-types";
 import type { Instrument } from "@/core/types";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const log = createLogger("InstrumentsTab");
 
@@ -21,6 +31,8 @@ export function InstrumentsTab() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingInstrument, setEditingInstrument] =
     useState<EditableInstrument | null>(null);
+  const [deletingInstrument, setDeletingInstrument] =
+    useState<Instrument | null>(null);
   const {
     data: instruments,
     isLoading: instrumentsIsLoading,
@@ -37,6 +49,26 @@ export function InstrumentsTab() {
     setEditorOpen(true);
   }
 
+  const deleteInstrumentMutation = useDeleteInstrument();
+
+  function handleDelete(instrument: Instrument) {
+    deleteInstrumentMutation.reset();
+    setDeletingInstrument(instrument);
+  }
+
+  async function confirmDelete() {
+    if (deletingInstrument === null) return;
+
+    try {
+      await deleteInstrumentMutation.mutateAsync({
+        instrumentId: deletingInstrument.id,
+      });
+      setDeletingInstrument(null);
+    } catch (error) {
+      log.error("Failed to delete instrument:", error);
+    }
+  }
+
   if (instrumentsIsLoading) {
     return <div>Loading...</div>;
   }
@@ -50,11 +82,7 @@ export function InstrumentsTab() {
 
   return (
     <section className="mx-auto max-w-xl rounded-lg">
-      <Button
-        variant="outline"
-        className="mx-auto flex"
-        onClick={handleAdd}
-      >
+      <Button variant="outline" className="mx-auto flex" onClick={handleAdd}>
         <Plus />
         Add Instrument
       </Button>
@@ -83,7 +111,11 @@ export function InstrumentsTab() {
                   </Button>
                 </TableCell>
                 <TableCell>
-                  <Button variant="ghost" className={"rounded-md"}>
+                  <Button
+                    variant="ghost"
+                    className="rounded-md"
+                    onClick={() => handleDelete(instrument)}
+                  >
                     <Trash className="size-4" />
                   </Button>
                 </TableCell>
@@ -100,6 +132,48 @@ export function InstrumentsTab() {
           instruments={safeInstruments}
         />
       )}
+
+      <AlertDialog
+        open={deletingInstrument !== null}
+        onOpenChange={(open) => {
+          if (!open && !deleteInstrumentMutation.isPending) {
+            setDeletingInstrument(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Instrument?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete{" "}
+              <strong>{deletingInstrument?.name}</strong>? This action cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {deleteInstrumentMutation.isError && (
+            <p role="alert" className="text-sm text-destructive">
+              Failed to delete instrument. Please try again.
+            </p>
+          )}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteInstrumentMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={deleteInstrumentMutation.isPending}
+              onClick={(event) => {
+                event.preventDefault();
+                void confirmDelete();
+              }}
+            >
+              {deleteInstrumentMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }
