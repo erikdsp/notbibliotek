@@ -8,7 +8,7 @@ import (
 	"github.com/erikdsp/notbibliotek/backend/internal/application"
 	httpHandler "github.com/erikdsp/notbibliotek/backend/internal/http"
 
-	"github.com/erikdsp/notbibliotek/backend/internal/infrastructure/drivefilestorage"
+	"github.com/erikdsp/notbibliotek/backend/internal/infrastructure/localfilestorage"
 	"github.com/erikdsp/notbibliotek/backend/internal/infrastructure/postgres"
 	"github.com/joho/godotenv"
 )
@@ -29,6 +29,11 @@ func main() {
 		log.Fatal("CORS_ALLOWED_ORIGIN is not set")
 	}
 
+	storagePath := os.Getenv("LOCAL_FILE_STORAGE_PATH")
+	if storagePath == "" {
+		log.Fatal("LOCAL_FILE_STORAGE_PATH is not set")
+	}
+
 	db, err := postgres.Open(dsn)
 	if err != nil {
 		log.Fatal(err)
@@ -47,14 +52,7 @@ func main() {
 	concertRepository := postgres.NewPostgresConcertRepository(db)
 	concertSongRepository := postgres.NewPostgresConcertSongRepository(db)
 
-	credentialsPath := os.Getenv("GOOGLE_DRIVE_CREDENTIALS_PATH")
-	tokenPath := os.Getenv("GOOGLE_DRIVE_TOKEN_PATH")
-	folderID := os.Getenv("GOOGLE_DRIVE_FOLDER_ID")
-	driveRepository := drivefilestorage.NewPostgresDriveRepository(db)
-	fileStorage, err := drivefilestorage.NewDriveFileStorage(credentialsPath, tokenPath, folderID, driveRepository)
-	if err != nil {
-		log.Fatal(err)
-	}
+	fileStorage := localfilestorage.NewLocalFileStorage(storagePath)
 
 	songService := application.NewSongService(songRepository, songQueryRepository)
 	songVersionService := application.NewSongVersionService(songVersionRepository,
