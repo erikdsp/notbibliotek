@@ -22,6 +22,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useCreateConcert, useUpdateConcert } from "@/hooks";
+import {
+  createConcertSongConnection,
+  deleteConcertSongConnection,
+} from "@/services/concert-songs-service";
+import { useQueryClient } from "@tanstack/react-query";
 
 const log = createLogger("ConcertEditor");
 
@@ -75,7 +81,8 @@ export function ConcertEditor({
     songsChanged;
 
   const isValid =
-    editedConcert.name.trim().length > 0 && editedConcert.date.trim().length > 0;
+    editedConcert.name.trim().length > 0 &&
+    editedConcert.date.trim().length > 0;
 
   function updateConcert(update: Partial<EditableConcert>) {
     setEditedConcert((current) => ({
@@ -92,6 +99,30 @@ export function ConcertEditor({
     updateConcert({ song_ids: songIds });
   }
 
+  const queryClient = useQueryClient();
+  const createConcertMutation = useCreateConcert();
+  const updateConcertMutation = useUpdateConcert();
+
+  async function saveSongConnections(
+    concertId: string,
+    originalSongIds: string[],
+  ) {
+    const originalIds = new Set(originalSongIds);
+    const editedIds = new Set(editedConcert.song_ids);
+
+    const addedIds = [...editedIds].filter((id) => !originalIds.has(id));
+    const removedIds = [...originalIds].filter((id) => !editedIds.has(id));
+
+    await Promise.all([
+      ...addedIds.map((songId) =>
+        createConcertSongConnection(concertId, songId),
+      ),
+      ...removedIds.map((songId) =>
+        deleteConcertSongConnection(concertId, songId),
+      ),
+    ]);
+  }
+
   async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -99,16 +130,50 @@ export function ConcertEditor({
 
     if (!isEditing) {
       try {
-        log.debug("Create concert")
+        const createdConcert = await createConcertMutation.mutateAsync({
+          name: editedConcert.name.trim(),
+          date: editedConcert.date,
+          key: nameToKey(
+            editedConcert.name.trim(),
+            editedConcert.date,
+            concertKeys,
+          ),
+        });
+
+        await saveSongConnections(createdConcert.id, []);
+        await queryClient.invalidateQueries({ queryKey: ["concerts"] });
       } catch (error) {
         log.error("Failed to create concert:", error);
         return;
       }
     } else {
-      if (editingConcert.id === null) return;
+      const newName =
+        editedConcert.name.trim() !== editingConcert.name
+          ? editedConcert.name.trim()
+          : undefined;
+
+      const newDate =
+        editedConcert.date !== editingConcert.date
+          ? editedConcert.date
+          : undefined;
 
       try {
-        log.debug("Update concert")
+        if (newName !== undefined || newDate !== undefined) {
+          await updateConcertMutation.mutateAsync({
+            concertId: editingConcert.id,
+            name: newName,
+            date: newDate,
+          });
+        }
+
+        if (songsChanged) {
+          await saveSongConnections(
+            editingConcert.id,
+            editingConcert.songs.map((song) => song.id),
+          );
+        }
+
+        await queryClient.invalidateQueries({ queryKey: ["concerts"] });
       } catch (error) {
         log.error("Failed to update concert:", error);
         return;
@@ -213,12 +278,11 @@ export function ConcertEditor({
             </Field>
           </FieldGroup>
 
-          {/* {(createConcertMutation.isError ||
-            updateConcertMutation.isError) && (
+          {(createConcertMutation.isError || updateConcertMutation.isError) && (
             <p role="alert" className="text-sm text-destructive pb-4">
               Failed to save concert. Please try again.
             </p>
-          )} */}
+          )}
 
           <DialogFooter>
             <Button
@@ -228,7 +292,15 @@ export function ConcertEditor({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={!isDirty || !isValid} >
+            <Button
+              type="submit"
+              disabled={
+                !isDirty ||
+                !isValid ||
+                createConcertMutation.isPending ||
+                updateConcertMutation.isPending
+              }
+            >
               {isEditing ? "Save Changes" : "Add"}
             </Button>
           </DialogFooter>

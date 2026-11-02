@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   createConcert,
   deleteConcert,
@@ -30,37 +30,22 @@ export function useConcerts() {
 }
 
 export function useCreateConcert() {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ name, key, date }: CreateConcertParams) =>
       createConcert(name, key, date),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["concerts"] });
-    },
   });
 }
 
 export function useUpdateConcert() {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ concertId, name, date }: UpdateConcertParams) =>
       updateConcert(concertId, name, date),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["concerts"] });
-    },
   });
 }
 
 export function useDeleteConcert() {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ concertId }: DeleteConcertParams) =>
       deleteConcert(concertId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["concerts"] });
-    },
   });
 }

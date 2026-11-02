@@ -1,3 +1,13 @@
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -9,8 +19,9 @@ import {
 } from "@/components/ui/table";
 import type { ConcertDetailedResponse } from "@/core/types";
 import { ConcertEditor } from "@/features/admin/components/ConcertEditor";
-import { useConcerts, useSongs } from "@/hooks";
+import { useConcerts, useDeleteConcert, useSongs } from "@/hooks";
 import { createLogger } from "@/utils/logger";
+import { useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, Pencil, Plus, Trash } from "lucide-react";
 import { useState } from "react";
 
@@ -18,9 +29,10 @@ const log = createLogger("ConcertsTab");
 
 export function ConcertsTab() {
   const [editorOpen, setEditorOpen] = useState(false);
-  const [editingConcert, setEditingConcert] = useState<ConcertDetailedResponse | null>(
-    null,
-  );
+  const [editingConcert, setEditingConcert] =
+    useState<ConcertDetailedResponse | null>(null);
+  const [deletingConcert, setDeletingConcert] =
+    useState<ConcertDetailedResponse | null>(null);
   const {
     data: concerts,
     isLoading: concertsIsLoading,
@@ -43,6 +55,28 @@ export function ConcertsTab() {
     setEditorOpen(true);
   }
 
+   const queryClient = useQueryClient();
+  const deleteConcertMutation = useDeleteConcert();
+
+  function handleDelete(concert: ConcertDetailedResponse) {
+    deleteConcertMutation.reset();
+    setDeletingConcert(concert);
+  }
+
+  async function confirmDelete() {
+    if (deletingConcert === null) return;
+
+    try {
+      await deleteConcertMutation.mutateAsync({
+        concertId: deletingConcert.id,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["concerts"] });
+      setDeletingConcert(null);
+    } catch (error) {
+      log.error("Failed to delete concert:", error);
+    }
+  }
+
   if (concertsIsLoading || songsIsLoading) {
     return <div>Loading...</div>;
   }
@@ -59,8 +93,7 @@ export function ConcertsTab() {
 
   const safeConcerts = concerts ?? [];
   const safeSongs = songs ?? [];
-
-  log.debug("Concerts Tab");
+  const deletingSongCount = deletingConcert?.songs.length ?? 0;
 
   return (
     <section className="mx-auto max-w-4xl rounded-lg">
@@ -102,7 +135,7 @@ export function ConcertsTab() {
                   <Button
                     variant="ghost"
                     className="rounded-md"
-                    // onClick={() => handleDelete(concert)}
+                    onClick={() => handleDelete(concert)}
                   >
                     <Trash className="size-4" />
                   </Button>
@@ -121,6 +154,67 @@ export function ConcertsTab() {
           songs={safeSongs}
         />
       )}
+
+      <AlertDialog
+        open={deletingConcert !== null}
+        onOpenChange={(open) => {
+          if (!open && !deleteConcertMutation.isPending) {
+            setDeletingConcert(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Concert?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <span className="block">
+                Are you sure you want to delete this concert?
+              </span>
+
+              <span className="block rounded-md border p-3">
+                <strong className="block text-foreground">
+                  {deletingConcert?.name}
+                </strong>
+                <span className="block text-sm">{deletingConcert?.date}</span>
+              </span>
+
+              <span className="block">
+                The concert and its setlist with {deletingSongCount} song
+                {deletingSongCount !== 1 && "s"} will be deleted <br/> (All songs will remain in the library)
+              </span>
+
+              <span className="block">
+
+              </span>
+              <strong className="block text-destructive">
+                This action cannot be undone
+              </strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {deleteConcertMutation.isError && (
+            <p role="alert" className="text-sm text-destructive">
+              Failed to delete concert. Please hope for the best and try again.
+            </p>
+          )}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteConcertMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={deleteConcertMutation.isPending}
+              onClick={(event) => {
+                event.preventDefault();
+                void confirmDelete();
+              }}
+            >
+              {deleteConcertMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }
