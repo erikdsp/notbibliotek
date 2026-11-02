@@ -1,3 +1,4 @@
+import { nameToKey } from "@/features/admin/lib/name-to-key";
 import type { EditablePart, EditableScore } from "@/features/admin/types";
 import {
   createPartInstrumentConnection,
@@ -65,20 +66,28 @@ export async function saveSongDraft({
   if (partsAreDirty) {
     if (parts === null || originalParts === null) return;
 
+    const existingKeys = new Set(originalParts.map((part) => part.key));
+
     const originalPartsById = new Map(
       originalParts.map((part) => [part.id, part]),
     );
 
     for (const part of parts) {
       if (part.id === null && part.file !== null) {
+
+        const name = part.name.trim();
+        const key = nameToKey(name, existingKeys);
+
         log.debug("Posting part: ", part);
         const createdPart = await uploadPart(
           songId,
           versionId,
-          part.key,
-          part.name,
+          key,
+          name,
           part.file,
         );
+
+        existingKeys.add(key);
 
         for (const id of part.instrument_ids) {
           log.debug("Create connections for partId: ", createdPart.id ," instrumentId: ", id);
@@ -92,15 +101,13 @@ export async function saveSongDraft({
       if (part.id === null) continue;
 
       const name = part.name !== original.name ? part.name : undefined;
-      const key = part.key !== original.key ? part.key : undefined;
       const file = part.file != null ? part.file : undefined;
 
-      if (name !== undefined || key !== undefined || file !== undefined) {
+      if (name !== undefined || file !== undefined) {
         log.debug("Updating part: ", part);
         await updatePart({
           partId: part.id,
           name,
-          key,
           file,
         });
       }

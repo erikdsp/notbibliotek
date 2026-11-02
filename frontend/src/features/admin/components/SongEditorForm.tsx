@@ -44,7 +44,7 @@ import {
   makeEditableParts,
   makeEditableScore,
 } from "@/features/admin/mappers/make-editable";
-import { suggestPartMetadata } from "@/features/admin/lib/suggest-part-metadata";
+import { suggestPartName } from "@/features/admin/lib/suggest-part-name";
 import { initialVersionId } from "@/features/admin/lib/initial-version-id";
 import {
   AlertDialog,
@@ -68,6 +68,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { usePublishSongVersion } from "@/hooks/use-publish-song-version";
+import { nameToKey } from "@/features/admin/lib/name-to-key";
 
 const log = createLogger("SongEditorForm");
 
@@ -151,7 +152,6 @@ export function SongEditorForm({
     }
 
     return (
-      part.key !== original.key ||
       part.name !== original.name ||
       part.file_id !== original.file_id ||
       part.file != null ||
@@ -271,7 +271,8 @@ export function SongEditorForm({
     const newParts = Array.from(files)
       .filter((file) => file.type === "application/pdf")
       .map((file): EditablePart => {
-        const { key, name } = suggestPartMetadata(file.name);
+        const name = suggestPartName(file.name);
+        const key = nameToKey(name, new Set());
         const instrumentKeys = defaultInstrumentMappings[key] ?? [];
         const instrumentIds = instruments
           .filter((instrument) => instrumentKeys.includes(instrument.key))
@@ -733,7 +734,7 @@ export function SongEditorForm({
                                     )}
                                   </div>
 
-                                  <div className="grid gap-3 sm:grid-cols-3">
+                                  <div className="grid gap-3 sm:grid-cols-2">
                                     <div className="space-y-2">
                                       <Label>Part Name</Label>
                                       <Input
@@ -749,25 +750,6 @@ export function SongEditorForm({
                                       {partErrors?.name && (
                                         <p className="text-sm text-destructive">
                                           {partErrors.name}
-                                        </p>
-                                      )}
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label>Part Key</Label>
-                                      <Input
-                                        value={part.key}
-                                        disabled={isPublished}
-                                        onChange={(event) =>
-                                          updatePart(part.local_id, {
-                                            key: event.target.value,
-                                          })
-                                        }
-                                        aria-invalid={!!partErrors?.key}
-                                        placeholder="e.g. violin1"
-                                      />
-                                      {partErrors?.key && (
-                                        <p className="text-sm text-destructive">
-                                          {partErrors.key}
                                         </p>
                                       )}
                                     </div>
@@ -995,7 +977,7 @@ export function SongEditorForm({
         onOpenChange={handleConfirmPublishOpenChange}
       >
         <DialogContent
-          className="flex max-h-[90vh] w-[95vw] sm:max-w-6xl flex-col overflow-hidden"
+          className="flex max-h-[90vh] w-[95vw] sm:max-w-5xl flex-col overflow-hidden"
           overlayClassName="bg-black/20 supports-backdrop-filter:backdrop-blur-[0px]"
         >
           <DialogHeader>
@@ -1030,7 +1012,6 @@ export function SongEditorForm({
                   <thead className="bg-muted/50">
                     <tr className="border-b">
                       <th className="px-3 py-2 font-medium">Name</th>
-                      <th className="px-3 py-2 font-medium">Key</th>
                       <th className="px-3 py-2 font-medium">Instruments</th>
                       <th className="px-3 py-2 font-medium">File</th>
                     </tr>
@@ -1043,9 +1024,6 @@ export function SongEditorForm({
                         className="border-b last:border-0"
                       >
                         <td className="px-3 py-2">{part.name}</td>
-                        <td className="px-3 py-2 font-mono text-xs">
-                          {part.key}
-                        </td>
                         <td className="px-3 py-2">
                           {part.instrument_ids.length > 0 ? (
                             part.instrument_ids
