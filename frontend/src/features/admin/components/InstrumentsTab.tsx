@@ -81,7 +81,7 @@ export function InstrumentsTab() {
   const safeInstruments = instruments ?? [];
 
   return (
-    <section className="mx-auto max-w-xl rounded-lg">
+    <section className="mx-auto max-w-md rounded-lg">
       <Button variant="outline" className="mx-auto flex" onClick={handleAdd}>
         <Plus />
         Add Instrument
@@ -91,7 +91,6 @@ export function InstrumentsTab() {
           <TableHeader className="border-b-2">
             <TableRow className="text-base">
               <TableHead className="font-normal">Name</TableHead>
-              <TableHead className="font-normal">Key</TableHead>
               <TableHead className="font-normal w-2"></TableHead>
               <TableHead className="font-normal w-2"></TableHead>
             </TableRow>
@@ -100,7 +99,6 @@ export function InstrumentsTab() {
             {safeInstruments.map((instrument) => (
               <TableRow key={instrument.id}>
                 <TableCell>{instrument.name}</TableCell>
-                <TableCell className="italic">{instrument.key}</TableCell>
                 <TableCell>
                   <Button
                     variant="ghost"

@@ -69,11 +69,11 @@ export function SongsTab() {
 
       <div className="mt-4 rounded-lg border p-1">
         <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Current Version</TableHead>
-              <TableHead className="w-20 text-right">Edit</TableHead>
+          <TableHeader className="border-b-2">
+            <TableRow className="text-base">
+              <TableHead className="font-normal">Title</TableHead>
+              <TableHead className="font-normal">Current Version</TableHead>
+              <TableHead className="font-normal w-20 text-right">Edit</TableHead>
             </TableRow>
           </TableHeader>
 

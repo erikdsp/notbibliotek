@@ -28,22 +28,9 @@ import {
   deleteConcertSongConnection,
 } from "@/services/concert-songs-service";
 import { useQueryClient } from "@tanstack/react-query";
+import { nameToKey } from "@/features/admin/lib/name-to-key";
 
 const log = createLogger("ConcertEditor");
-
-function nameToKey(name: string, date: string, concertKeys: Set<string>) {
-  const year = date.slice(0, 4);
-  const baseKey = name.replace(/\s+/g, "").toLowerCase() + year;
-
-  let key = baseKey;
-  let number = 2;
-
-  while (concertKeys.has(key)) {
-    key = `${baseKey}-${number++}`;
-  }
-
-  return key;
-}
 
 type ConcertEditorProps = {
   open: boolean;
@@ -128,16 +115,15 @@ export function ConcertEditor({
 
     if (!isDirty || !isValid) return;
 
+    const name = editedConcert.name.trim();
+    const date = editedConcert.date;
+
     if (!isEditing) {
       try {
         const createdConcert = await createConcertMutation.mutateAsync({
-          name: editedConcert.name.trim(),
-          date: editedConcert.date,
-          key: nameToKey(
-            editedConcert.name.trim(),
-            editedConcert.date,
-            concertKeys,
-          ),
+          name,
+          date,
+          key: nameToKey(`${name}${date.slice(0, 4)}`, concertKeys),
         });
 
         await saveSongConnections(createdConcert.id, []);
@@ -147,15 +133,9 @@ export function ConcertEditor({
         return;
       }
     } else {
-      const newName =
-        editedConcert.name.trim() !== editingConcert.name
-          ? editedConcert.name.trim()
-          : undefined;
+      const newName = name !== editingConcert.name ? name : undefined;
 
-      const newDate =
-        editedConcert.date !== editingConcert.date
-          ? editedConcert.date
-          : undefined;
+      const newDate = date !== editingConcert.date ? date : undefined;
 
       try {
         if (newName !== undefined || newDate !== undefined) {

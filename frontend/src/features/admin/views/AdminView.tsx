@@ -24,13 +24,13 @@ export function AdminView() {
           <Tabs defaultValue="songs" className="w-full h-full flex flex-col">
             <TabsList className="mb-6 mx-auto h-auto shrink-0 gap-6 rounded-none bg-transparent p-0">
               <TabsTrigger value="songs" 
-              className="rounded-none border-0 border-b-2 border-transparent bg-transparent px-5 py-3 shadow-none data-active:border-foreground"
+              className="text-base rounded-none border-0 border-b-2 border-transparent bg-transparent px-5 py-3 shadow-none data-active:border-foreground"
               >Songs</TabsTrigger>
               <TabsTrigger value="concerts" 
-              className="rounded-none border-0 border-b-2 border-transparent bg-transparent px-5 py-3 shadow-none data-active:border-foreground"
+              className="text-base rounded-none border-0 border-b-2 border-transparent bg-transparent px-5 py-3 shadow-none data-active:border-foreground"
               >Concerts</TabsTrigger>
               <TabsTrigger value="instruments" 
-               className="rounded-none border-0 border-b-2 border-transparent bg-transparent px-5 py-3 shadow-none data-active:border-foreground"
+               className="text-base rounded-none border-0 border-b-2 border-transparent bg-transparent px-5 py-3 shadow-none data-active:border-foreground"
               >Instruments</TabsTrigger>
             </TabsList>
             <TabsContent value="songs">
