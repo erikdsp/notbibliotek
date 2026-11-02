@@ -1,4 +1,4 @@
-import type { ConcertResponse, Instrument, SongResponse } from "@/core/types";
+import type { ConcertDetailedResponse, Instrument, SongResponse } from "@/core/types";
 import {
   Select,
   SelectContent,
@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { formatDate } from "@/utils/format-time";
 
 type SheetMusicFilterProps = {
-  concerts: ConcertResponse[];
+  concerts: ConcertDetailedResponse[];
   instruments: Instrument[];
   songs: SongResponse[];
 
