@@ -5,6 +5,5 @@ export function useConcerts() {
   return useQuery({
     queryKey: ["concerts"],
     queryFn: () => fetchConcerts(),
-    staleTime: Infinity,
   });
 }

@@ -37,6 +37,7 @@ export function suggestPartMetadata(filename: string): partMetaData {
       patterns: [
         /\bcontrabass\b/,
         /\bdouble[\s_.-]*bass\b/,
+        /\bupright[\s_.-]*bass\b/,
         /\bkontrabas\b/,
         /\bkb\b/,
         /\bbass?\b/,
@@ -140,6 +141,11 @@ export function suggestPartMetadata(filename: string): partMetaData {
       key: "trumpet",
       name: "Trumpet",
       patterns: [/\btrumpet\b/, /\btrp\b/, /\btp\b/],
+    },
+    {
+      key: "flugelhorn",
+      name: "Flugelhorn",
+      patterns: [/\bflugelhorn\b/, /\bflug\b/],
     },
     {
       key: "clarinet",
