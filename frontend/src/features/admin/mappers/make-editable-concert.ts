@@ -1,8 +1,8 @@
-import type { ConcertResponse } from "@/core/types";
+import type { ConcertDetailedResponse } from "@/core/types";
 import type { EditableConcert } from "@/features/admin/types/concert-editor-types";
 
 export function makeEditableConcert(
-  concert: ConcertResponse | null,
+  concert: ConcertDetailedResponse | null,
 ): EditableConcert {
   if (concert === null) {
     return {

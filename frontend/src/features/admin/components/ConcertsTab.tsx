@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { ConcertResponse } from "@/core/types";
+import type { ConcertDetailedResponse } from "@/core/types";
 import { ConcertEditor } from "@/features/admin/components/ConcertEditor";
 import { useConcerts, useSongs } from "@/hooks";
 import { createLogger } from "@/utils/logger";
@@ -18,7 +18,7 @@ const log = createLogger("ConcertsTab");
 
 export function ConcertsTab() {
   const [editorOpen, setEditorOpen] = useState(false);
-  const [editingConcert, setEditingConcert] = useState<ConcertResponse | null>(
+  const [editingConcert, setEditingConcert] = useState<ConcertDetailedResponse | null>(
     null,
   );
   const {
@@ -38,7 +38,7 @@ export function ConcertsTab() {
     setEditorOpen(true);
   }
 
-  function handleEdit(concert: ConcertResponse) {
+  function handleEdit(concert: ConcertDetailedResponse) {
     setEditingConcert(concert);
     setEditorOpen(true);
   }

@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import type { ConcertResponse, Song } from "@/core/types";
+import type { ConcertDetailedResponse, Song } from "@/core/types";
 import { createLogger } from "@/utils/logger";
 import type { EditableConcert } from "@/features/admin/types/concert-editor-types";
 import { makeEditableConcert } from "@/features/admin/mappers/make-editable-concert";
@@ -42,9 +42,9 @@ function nameToKey(name: string, date: string, concertKeys: Set<string>) {
 type ConcertEditorProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  editingConcert: ConcertResponse | null;
+  editingConcert: ConcertDetailedResponse | null;
   songs: Song[];
-  concerts: ConcertResponse[];
+  concerts: ConcertDetailedResponse[];
 };
 
 export function ConcertEditor({

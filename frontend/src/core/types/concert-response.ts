@@ -3,6 +3,13 @@ export type ConcertResponse = {
   key: string;
   name: string;
   date: string;
+};  
+
+export type ConcertDetailedResponse = {
+  id: string;
+  key: string;
+  name: string;
+  date: string;
   songs: ConcertSong[];
 };
 
