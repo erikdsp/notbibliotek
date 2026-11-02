@@ -153,7 +153,7 @@ export function InstrumentsTab() {
 
           {deleteInstrumentMutation.isError && (
             <p role="alert" className="text-sm text-destructive">
-              Failed to delete instrument. Please try again.
+              Failed to delete instrument. Tip: Remove any connections to this instrument in parts before trying again.
             </p>
           )}
 
