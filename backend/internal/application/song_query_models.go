@@ -43,17 +43,19 @@ type PartDetails struct {
 
 // type for handling query parameters for multiple songs
 type SongQuery struct {
-	Archived     bool
-	Search       string
-	Concerts     []string
-	Parts        []string
-	Instruments  []string
-	IncludeScore bool
+	Archived                bool
+	Search                  string
+	Concerts                []string
+	Parts                   []string
+	Instruments             []string
+	IncludeUnconnectedParts bool
+	IncludeScore            bool
 }
 
 // type for handling query parameters for a single song
 type SongByIDQuery struct {
-	Parts        []string
-	Instruments  []string
-	IncludeScore bool
+	Parts                   []string
+	Instruments             []string
+	IncludeUnconnectedParts bool
+	IncludeScore            bool
 }

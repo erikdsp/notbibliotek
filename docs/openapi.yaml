@@ -44,6 +44,7 @@ paths:
         - $ref: "#/components/parameters/concertQuery"
         - $ref: "#/components/parameters/partQuery"
         - $ref: "#/components/parameters/instrumentQuery"
+        - $ref: "#/components/parameters/includeUnconnectedPartsQuery"
         - $ref: "#/components/parameters/includeScoreQuery"
       security:
         - libraryAccess: []
@@ -104,6 +105,7 @@ paths:
             $ref: "#/components/schemas/ULID"
         - $ref: "#/components/parameters/partQuery"
         - $ref: "#/components/parameters/instrumentQuery"
+        - $ref: "#/components/parameters/includeUnconnectedPartsQuery"
         - $ref: "#/components/parameters/includeScoreQuery"
       security:
         - libraryAccess: []
@@ -1300,6 +1302,17 @@ components:
         type: array
         items: 
           type: string
+    includeUnconnectedPartsQuery:
+      name: include_unconnected_parts
+      in: query
+      required: false
+      description: >
+        Includes parts without instrument connections. 
+        When used alone, only parts with no instrument connections are returned.
+        It can be combined with the instrument or part queries.
+      schema:
+        type: boolean
+        default: false
     concertQuery:
       name: concert
       in: query
