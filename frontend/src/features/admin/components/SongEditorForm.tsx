@@ -7,6 +7,7 @@ import {
   X,
   CopyPlus,
   AlertTriangle,
+  FileUp,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -173,8 +174,9 @@ export function SongEditorForm({
 
   const isValid =
     validationErrors.title === undefined &&
-    score !== null &&
     Object.keys(validationErrors.parts).length === 0;
+
+  const hasScore = score !== null
 
   function requestClose() {
     if (song !== null && isDirty) {
@@ -313,6 +315,33 @@ export function SongEditorForm({
     }));
   }
 
+  function handleReplaceFileClick(localId: string) {
+  document.getElementById(`replace-file-${localId}`)?.click();
+}
+
+  function handleReplacePartFileChange(
+    event: React.ChangeEvent<HTMLInputElement>,
+    localId: string,
+  ) {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+
+    if (file) {
+      replacePartFile(localId, file);
+    }
+
+    input.value = "";
+  }
+
+  function replacePartFile(localId: string, file: File) {
+    if (file.type !== "application/pdf") return;
+
+    updatePart(localId, {
+      file,
+      file_name: file.name,
+    });
+  }
+
   function toggleInstrument(part: EditablePart, instrumentId: string) {
     const selected = part.instrument_ids.includes(instrumentId);
 
@@ -414,7 +443,7 @@ export function SongEditorForm({
   const publishSongVersionMutation = usePublishSongVersion();
 
   async function handlePublishVersion() {
-    if (song === null || versionId === null || isPublished || !isValid) {
+    if (song === null || versionId === null || isPublished || !isValid || !hasScore) {
       return;
     }
 
@@ -704,7 +733,7 @@ export function SongEditorForm({
                                   <div className="flex items-center gap-2">
                                     <FileText className="size-4 shrink-0 text-muted-foreground" />
 
-                                    <span className="min-w-0 truncate text-sm">
+                                    <span className="min-w-0 truncate text-sm mr-1">
                                       {part.file_name ?? part.name}
                                     </span>
 
@@ -721,16 +750,39 @@ export function SongEditorForm({
                                     <div className="flex-1" />
 
                                     {!isPublished && (
-                                      <Button
-                                        variant="ghost"
-                                        size="icon-sm"
-                                        aria-label={`Remove ${part.name}`}
-                                        onClick={() =>
-                                          handleRemovePart(part.local_id)
-                                        }
-                                      >
-                                        <X className="size-4" />
-                                      </Button>
+                                      <>
+                                        <Button
+                                          variant="secondary"
+                                          size="sm"
+                                          className="h-7 mr-4"
+                                          onClick={() => handleReplaceFileClick(part.local_id)}
+                                        >
+                                          <FileUp /> Replace file
+                                        </Button>
+                                        <input
+                                          type="file"
+                                          accept="application/pdf,.pdf"
+                                          className="hidden"
+                                          id={`replace-file-${part.local_id}`}
+                                          onChange={(event) =>
+                                            handleReplacePartFileChange(
+                                              event,
+                                              part.local_id,
+                                            )
+                                          }
+                                        />
+
+                                        <Button
+                                          variant="ghost"
+                                          size="icon-sm"
+                                          aria-label={`Remove ${part.name}`}
+                                          onClick={() =>
+                                            handleRemovePart(part.local_id)
+                                          }
+                                        >
+                                          <X className="size-4" />
+                                        </Button>
+                                      </>
                                     )}
                                   </div>
 
@@ -863,6 +915,7 @@ export function SongEditorForm({
                         disabled={
                           versionId === null ||
                           !isValid ||
+                          !hasScore ||
                           saveDraftMutation.isPending
                         }
                         onClick={() => setConfirmPublish(true)}
