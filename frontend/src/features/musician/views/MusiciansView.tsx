@@ -18,6 +18,10 @@ import type { SongFilters } from "@/services/songs-service";
 import { createLogger } from "@/utils/logger";
 import { formatDateTime } from "@/utils/format-time";
 import { Download } from "lucide-react";
+import {
+  allItemsValue,
+  oddPartsValue,
+} from "@/features/musician/constants/select-options";
 
 const log = createLogger("MusiciansView");
 
@@ -26,23 +30,25 @@ export function MusiciansView() {
   const [selectedInstrument, setSelectedInstrument] = useState<string | null>(
     null,
   );
-  const [selectedPart, setSelectedPart] = useState<string | null>(null);
   const [includeScore, setIncludeScore] = useState(false);
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
 
-  const concertSelected = selectedConcert !== null && selectedConcert !== "all";
+  const concertSelected =
+    selectedConcert !== null && selectedConcert !== allItemsValue;
   const instrumentSelected =
-    selectedInstrument !== null && selectedInstrument !== "all";
-  const partSelected = selectedPart !== null && selectedPart !== "all";
+    selectedInstrument !== null &&
+    selectedInstrument !== allItemsValue &&
+    selectedInstrument !== oddPartsValue;
+  const includeUnconnectedParts = selectedInstrument === oddPartsValue;
 
   const filters: SongFilters = {
     concert: concertSelected ? selectedConcert : undefined,
     instrument: instrumentSelected ? [selectedInstrument] : undefined,
-    part: partSelected ? [selectedPart] : undefined,
+    include_unconnected_parts: includeUnconnectedParts || undefined,
     include_score: includeScore || undefined,
   };
 
-  const showDetailedList = instrumentSelected || partSelected;
+  const showDetailedList = instrumentSelected || includeUnconnectedParts;
 
   const {
     data: allSongs = [],
@@ -72,12 +78,6 @@ export function MusiciansView() {
 
   function handleSelectInstrument(instrumentId: string | null) {
     setSelectedInstrument(instrumentId);
-    setSelectedPart(null);
-  }
-
-  function handleSelectPart(partId: string | null) {
-    setSelectedPart(partId);
-    setSelectedInstrument(null);
   }
 
   if (
@@ -122,8 +122,6 @@ export function MusiciansView() {
             onConcertChange={setSelectedConcert}
             selectedInstrument={selectedInstrument}
             onInstrumentChange={handleSelectInstrument}
-            selectedPart={selectedPart}
-            onPartChange={handleSelectPart}
             includeScore={includeScore}
             onIncludeScoreChange={setIncludeScore}
             moreOptionsOpen={moreOptionsOpen}
@@ -146,16 +144,12 @@ export function MusiciansView() {
             <Table className="w-full">
               <TableHeader className="border-b-2">
                 <TableRow className=" text-base">
-                  <TableHead className="w-60 font-normal">
-                    Song
-                  </TableHead>
+                  <TableHead className="w-60 font-normal">Song</TableHead>
                   <TableHead className="font-normal">
                     {" "}
                     {showDetailedList && "Parts"}{" "}
                   </TableHead>
-                  <TableHead className="w-25 font-normal">
-                    Version
-                  </TableHead>
+                  <TableHead className="w-25 font-normal">Version</TableHead>
                   {showDetailedList && (
                     <TableHead className="w-14 pl-8 font-normal"></TableHead>
                   )}
@@ -189,7 +183,7 @@ export function MusiciansView() {
                           {song.title}
                         </TableCell>
                         <TableCell className="italic">
-                          {showDetailedList && "Missing"}
+                          {instrumentSelected && "Missing"}
                         </TableCell>
                         <TableCell>
                           {formatDateTime(currentVersion.published_at)}

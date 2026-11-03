@@ -1,4 +1,8 @@
-import type { ConcertDetailedResponse, Instrument, SongResponse } from "@/core/types";
+import type {
+  ConcertDetailedResponse,
+  Instrument,
+  SongResponse,
+} from "@/core/types";
 import {
   Select,
   SelectContent,
@@ -13,15 +17,14 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ChevronDown, Info } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { ChevronDown } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/utils/format-time";
+import { createLogger } from "@/utils/logger";
+import { allItemsValue, oddPartsValue } from "@/features/musician/constants/select-options";
+
+const log = createLogger("SheetMusicFilters");
 
 type SheetMusicFilterProps = {
   concerts: ConcertDetailedResponse[];
@@ -33,9 +36,6 @@ type SheetMusicFilterProps = {
 
   selectedInstrument: string | null;
   onInstrumentChange: (value: string | null) => void;
-
-  selectedPart: string | null;
-  onPartChange: (value: string | null) => void;
 
   includeScore: boolean;
   onIncludeScoreChange: (checked: boolean) => void;
@@ -52,8 +52,6 @@ export function SheetMusicFilters({
   onConcertChange,
   selectedInstrument,
   onInstrumentChange,
-  selectedPart,
-  onPartChange,
   includeScore,
   onIncludeScoreChange,
   moreOptionsOpen,
@@ -66,7 +64,7 @@ export function SheetMusicFilters({
     })) ?? [];
 
   const concertSelectItems = [
-    { label: "All concerts", value: "all" },
+    { label: "All concerts", value: allItemsValue },
     ...concertItems,
   ];
 
@@ -77,32 +75,12 @@ export function SheetMusicFilters({
     })) ?? [];
 
   const instrumentSelectItems = [
-    { label: "All instruments", value: "all" },
+    { label: "All instruments", value: allItemsValue},
     ...instrumentItems,
+    { label: "Odd Parts", value: oddPartsValue },
   ];
 
-  // Collect unique parts from the current version of each song.
-  // Parts with the same key are considered the same; the first name found is used.
-  const partsByKey = new Map<string, { label: string; value: string }>();
-
-  songs?.forEach((song) => {
-    const currentVersion = song.versions.find(
-      (version) => version.song_version_id === song.current_version_id,
-    );
-
-    currentVersion?.parts.forEach((part) => {
-      if (!partsByKey.has(part.key)) {
-        partsByKey.set(part.key, {
-          label: part.name,
-          value: part.key,
-        });
-      }
-    });
-  });
-
-  const partItems = Array.from(partsByKey.values());
-
-  const partSelectItems = [{ label: "All parts", value: "all" }, ...partItems];
+  log.debug("Songs: ", songs);
 
   return (
     <Collapsible open={moreOptionsOpen} onOpenChange={onMoreOptionsOpenChange}>
@@ -146,13 +124,15 @@ export function SheetMusicFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectItem value="all">All instruments</SelectItem>
+                  <SelectItem value={allItemsValue}>All instruments</SelectItem>
                   <Separator className="my-1" />
                   {instrumentItems.map((item) => (
                     <SelectItem key={item.value} value={item.value}>
                       {item.label}
                     </SelectItem>
                   ))}
+                  <Separator className="my-1" />
+                  <SelectItem value={oddPartsValue}>Odd Parts</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
@@ -179,61 +159,15 @@ export function SheetMusicFilters({
 
       <CollapsibleContent>
         <div className="flex flex-col gap-4 mt-4 md:flex-row md:gap-15">
-          <div className="flex flex-1 flex-col gap-2">
-            <div>Part</div>
-            <div>
-              <Select
-                items={partSelectItems}
-                value={selectedPart}
-                onValueChange={onPartChange}
-              >
-                <SelectTrigger className="w-80">
-                  <SelectValue placeholder="Select a part" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="all">All parts</SelectItem>
-                    <Separator className="my-1" />
-                    {partItems.map((item) => (
-                      <SelectItem key={item.value} value={item.value}>
-                        {item.label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-
-              <div className="flex items-center gap-1 mt-2 text-sm text-muted-foreground">
-                <span>Part vs Instrument?</span>
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label="Part vs Instrument"
-                      />
-                    }
-                  >
-                    <Info />
-                  </TooltipTrigger>
-
-                  <TooltipContent className="max-w-64">
-                    Parts vary between songs. Use Part if you can't find what
-                    you're looking for with the Instrument selection.
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            </div>
-          </div>
-
           <div className="flex shrink-0 flex-col gap-2">
-            <div>Include Score</div>
-            <div className="flex h-9 items-center">
-              <Checkbox
-                checked={includeScore}
-                onCheckedChange={onIncludeScoreChange}
-              />
+            <div className="flex items-center text-sm text-muted-foreground gap-1 mt-2">
+              <div>Include Score</div>
+              <div className="flex h-9 pl-3 items-center">
+                <Checkbox
+                  checked={includeScore}
+                  onCheckedChange={onIncludeScoreChange}
+                />
+              </div>
             </div>
           </div>
         </div>

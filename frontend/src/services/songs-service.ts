@@ -12,6 +12,7 @@ export interface SongFilters {
   concert?: string;
   part?: string[];
   instrument?: string[];
+  include_unconnected_parts?: boolean
   include_score?: boolean;
 }
 
@@ -44,6 +45,10 @@ export async function fetchSongs(
   filters.instrument?.forEach((instrument) => {
     url.searchParams.append("instrument", instrument);
   });
+
+  if (filters.include_unconnected_parts !== undefined) {
+    url.searchParams.set("include_unconnected_parts", String(filters.include_unconnected_parts));
+  }
 
   if (filters.include_score !== undefined) {
     url.searchParams.set("include_score", String(filters.include_score));
