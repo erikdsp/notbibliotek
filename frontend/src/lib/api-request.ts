@@ -5,10 +5,11 @@ const log = createLogger("apiRequest");
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
-interface ApiRequestOptions {
+interface ApiRequestOptions<T> {
   method?: HttpMethod;
   body?: unknown;
   headers?: HeadersInit;
+  parseResponse?: (response: Response) => Promise<T>;
 }
 
 /**
@@ -26,9 +27,9 @@ interface ApiRequestOptions {
  */
 export async function apiRequest<T>(
   url: string,
-  options: ApiRequestOptions = {},
+  options: ApiRequestOptions<T> = {},
 ): Promise<T> {
-  const { method = "GET", body, headers = {} } = options;
+  const { method = "GET", body, headers = {}, parseResponse } = options;
 
   const isFormData = body instanceof FormData;
 
@@ -58,6 +59,10 @@ export async function apiRequest<T>(
         url,
         response.status,
       );
+    }
+
+    if (parseResponse) {
+      return parseResponse(response);
     }
 
     const rawText = await response.text();

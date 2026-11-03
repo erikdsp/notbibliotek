@@ -22,6 +22,8 @@ import {
   allItemsValue,
   oddPartsValue,
 } from "@/features/musician/constants/select-options";
+import { useDownloadFile } from "@/hooks/use-download-file";
+import type { FileMetadata } from "@/core/types/file";
 
 const log = createLogger("MusiciansView");
 
@@ -78,6 +80,15 @@ export function MusiciansView() {
 
   function handleSelectInstrument(instrumentId: string | null) {
     setSelectedInstrument(instrumentId);
+  }
+
+  const downloadFile = useDownloadFile();
+
+  function handleDownload(file: FileMetadata) {
+    downloadFile.mutate({
+      fileId: file.id,
+      fileName: file.name,
+    });
   }
 
   if (
@@ -206,7 +217,11 @@ export function MusiciansView() {
                           : null}
                       </TableCell>
                       <TableCell className="pl-8">
-                        <Button variant="secondary">
+                        <Button
+                          variant="secondary"
+                          disabled={downloadFile.isPending}
+                          onClick={() => handleDownload(part.file)}
+                        >
                           <Download /> Download PDF
                         </Button>
                       </TableCell>

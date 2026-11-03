@@ -1,3 +1,5 @@
+import type { FileMetadata } from "@/core/types/file";
+
 export type SongResponse = {
   id: string;
   title: string;
@@ -15,18 +17,12 @@ export type Version = {
 
 export type VersionScore = {
   id: string;
-  file: {
-    id: string;
-    name: string;
-  };
+  file: FileMetadata
 };
 
 export type VersionPart = {
   id: string;
   key: string;
   name: string;
-  file: {
-    id: string;
-    name: string;
-  };
+  file: FileMetadata
 };
