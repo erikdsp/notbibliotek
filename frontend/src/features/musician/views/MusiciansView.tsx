@@ -233,13 +233,13 @@ export function MusiciansView() {
           </section>
           <div className="pt-6 flex flex-1 flex-col items-center gap-4">
             {concertSelected && (
-              <Button variant="outline">
+              <Button variant="outline" disabled>
                 <Download /> Download Set List
               </Button>
             )}
             {showDetailedList && (
-              <Button>
-                <Download /> Download .zip
+              <Button disabled>
+                <Download /> Download Sheet Music {concertSelected && "and Set List"} (.zip)
               </Button>
             )}
           </div>
