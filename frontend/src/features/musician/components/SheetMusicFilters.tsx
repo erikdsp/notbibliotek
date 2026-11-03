@@ -22,8 +22,9 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/utils/format-time";
 import { createLogger } from "@/utils/logger";
+import { allItemsValue, oddPartsValue } from "@/features/musician/constants/select-options";
 
-const log = createLogger("SheetMusicFilters")
+const log = createLogger("SheetMusicFilters");
 
 type SheetMusicFilterProps = {
   concerts: ConcertDetailedResponse[];
@@ -35,9 +36,6 @@ type SheetMusicFilterProps = {
 
   selectedInstrument: string | null;
   onInstrumentChange: (value: string | null) => void;
-
-  selectedPart: string | null;
-  onPartChange: (value: string | null) => void;
 
   includeScore: boolean;
   onIncludeScoreChange: (checked: boolean) => void;
@@ -66,7 +64,7 @@ export function SheetMusicFilters({
     })) ?? [];
 
   const concertSelectItems = [
-    { label: "All concerts", value: "all" },
+    { label: "All concerts", value: allItemsValue },
     ...concertItems,
   ];
 
@@ -77,11 +75,12 @@ export function SheetMusicFilters({
     })) ?? [];
 
   const instrumentSelectItems = [
-    { label: "All instruments", value: "all" },
+    { label: "All instruments", value: allItemsValue},
     ...instrumentItems,
+    { label: "Odd Parts", value: oddPartsValue },
   ];
 
-  log.debug("Songs: ", songs)
+  log.debug("Songs: ", songs);
 
   return (
     <Collapsible open={moreOptionsOpen} onOpenChange={onMoreOptionsOpenChange}>
@@ -125,13 +124,15 @@ export function SheetMusicFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectItem value="all">All instruments</SelectItem>
+                  <SelectItem value={allItemsValue}>All instruments</SelectItem>
                   <Separator className="my-1" />
                   {instrumentItems.map((item) => (
                     <SelectItem key={item.value} value={item.value}>
                       {item.label}
                     </SelectItem>
                   ))}
+                  <Separator className="my-1" />
+                  <SelectItem value={oddPartsValue}>Odd Parts</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
@@ -158,7 +159,6 @@ export function SheetMusicFilters({
 
       <CollapsibleContent>
         <div className="flex flex-col gap-4 mt-4 md:flex-row md:gap-15">
-
           <div className="flex shrink-0 flex-col gap-2">
             <div className="flex items-center text-sm text-muted-foreground gap-1 mt-2">
               <div>Include Score</div>
