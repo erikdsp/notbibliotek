@@ -22,7 +22,10 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/utils/format-time";
 import { createLogger } from "@/utils/logger";
-import { allItemsValue, oddPartsValue } from "@/features/musician/constants/select-options";
+import {
+  allItemsValue,
+  oddPartsValue,
+} from "@/features/musician/constants/select-options";
 
 const log = createLogger("SheetMusicFilters");
 
@@ -64,7 +67,7 @@ export function SheetMusicFilters({
     })) ?? [];
 
   const concertSelectItems = [
-    { label: "All concerts", value: allItemsValue },
+    { label: "All songs in the library", value: allItemsValue },
     ...concertItems,
   ];
 
@@ -75,7 +78,7 @@ export function SheetMusicFilters({
     })) ?? [];
 
   const instrumentSelectItems = [
-    { label: "All instruments", value: allItemsValue},
+    { label: "All instruments", value: allItemsValue },
     ...instrumentItems,
     { label: "Odd Parts", value: oddPartsValue },
   ];
@@ -85,31 +88,6 @@ export function SheetMusicFilters({
   return (
     <Collapsible open={moreOptionsOpen} onOpenChange={onMoreOptionsOpenChange}>
       <div className="flex flex-col mb-2 gap-4 md:flex-row md:gap-15">
-        <div className="flex flex-1 flex-col gap-2">
-          <div>Concert</div>
-          <div>
-            <Select
-              items={concertSelectItems}
-              value={selectedConcert}
-              onValueChange={onConcertChange}
-            >
-              <SelectTrigger className="w-full min-w-80">
-                <SelectValue placeholder="Select a Concert" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value="all">All concerts</SelectItem>
-                  <Separator className="my-1" />
-                  {concertItems.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
 
         <div className="flex flex-1 flex-col gap-2">
           <div>Instrument</div>
@@ -138,6 +116,33 @@ export function SheetMusicFilters({
             </Select>
           </div>
         </div>
+
+        <div className="flex flex-1 flex-col gap-2">
+          <div>Set List / Concert</div>
+          <div>
+            <Select
+              items={concertSelectItems}
+              value={selectedConcert}
+              onValueChange={onConcertChange}
+            >
+              <SelectTrigger className="w-full min-w-80">
+                <SelectValue placeholder="Select a Set List / Concert" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="all">All songs in the library</SelectItem>
+                  <Separator className="my-1" />
+                  {concertItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        
         <div className="flex shrink-0 flex-col gap-2">
           <div>More options</div>
           <div className="flex h-9 items-center">
