@@ -4,7 +4,10 @@ import { apiRequest } from "./api-request";
  * Send a GET request and return the JSON response.
  * @template T - Expected response type
  */
-export const apiGet = <T>(url: string) => apiRequest<T>(url);
+export const apiGet = <T>(
+  url: string,
+  parseResponse?: (response: Response) => Promise<T>,
+) => apiRequest<T>(url, { parseResponse });
 
 /**
  * Send a POST request with an optional JSON payload.
