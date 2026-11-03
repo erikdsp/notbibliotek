@@ -398,7 +398,7 @@ func Test_WhenPartsAreProvidedThenAddJoinPartsFiltersJoinedParts(t *testing.T) {
 	}
 
 	sqlBuilder := psql.Select("Test")
-	sqlBuilder = addJoinParts(sqlBuilder, query.Parts, query.Instruments)
+	sqlBuilder = addJoinParts(sqlBuilder, query.Parts, query.Instruments, query.IncludeUnconnectedParts)
 	sql, args, err := sqlBuilder.ToSql()
 
 	if err != nil {
@@ -424,7 +424,7 @@ func Test_WhenPartsAreNotProvidedThenAddJoinPartsIncludesAllParts(t *testing.T) 
 	query := application.SongQuery{}
 
 	sqlBuilder := psql.Select("Test")
-	sqlBuilder = addJoinParts(sqlBuilder, query.Parts, query.Instruments)
+	sqlBuilder = addJoinParts(sqlBuilder, query.Parts, query.Instruments, query.IncludeUnconnectedParts)
 	sql, args, err := sqlBuilder.ToSql()
 
 	if err != nil {
@@ -452,7 +452,7 @@ func Test_WhenInstrumentsAreProvidedThenAddJoinPartsAddsExistsClause(t *testing.
 	}
 
 	sqlBuilder := psql.Select("Test")
-	sqlBuilder = addJoinParts(sqlBuilder, query.Parts, query.Instruments)
+	sqlBuilder = addJoinParts(sqlBuilder, query.Parts, query.Instruments, query.IncludeUnconnectedParts)
 	sql, args, err := sqlBuilder.ToSql()
 
 	if err != nil {
@@ -488,6 +488,70 @@ func Test_WhenInstrumentsAreProvidedThenAddJoinPartsAddsExistsClause(t *testing.
 		t.Errorf("unexpected args: %v", args)
 	}
 
+}
+
+func Test_WhenIncludeUnconnectedPartsIsTrueThenAddJoinPartsAddsNotExistsClause(t *testing.T) {
+
+	query := application.SongQuery{
+		IncludeUnconnectedParts: true,
+	}
+
+	sqlBuilder := psql.Select("Test")
+	sqlBuilder = addJoinParts(sqlBuilder, query.Parts, query.Instruments, query.IncludeUnconnectedParts)
+	sql, args, err := sqlBuilder.ToSql()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedPattern :=
+		`LEFT JOIN parts part ON part\.song_version_id = sv\.id AND` +
+			`(?s:.*?)` +
+			`NOT EXISTS \(` +
+			`(?s:.*?)` +
+			`SELECT 1` +
+			`(?s:.*?)` +
+			`FROM part_instruments pi` +
+			`(?s:.*?)` +
+			`WHERE pi\.part_id = part\.id` +
+			`(?s:.*?)` +
+			`\)`
+
+	if !regexp.MustCompile(expectedPattern).MatchString(sql) {
+		t.Errorf("expected query to filter for parts without instrument connections, got: %s", sql)
+	}
+
+	if len(args) != 0 {
+		t.Errorf("expected no args, got %v", args)
+	}
+}
+
+func Test_WhenInstrumentsAndUnconnectedPartsAreBothProvidedThenConditionsAreCombinedWithOr(t *testing.T) {
+	query := application.SongQuery{
+		Instruments:             []string{"violin1"},
+		IncludeUnconnectedParts: true,
+	}
+
+	sqlBuilder := addJoinParts(
+		psql.Select("Test"),
+		query.Parts,
+		query.Instruments,
+		query.IncludeUnconnectedParts,
+	)
+
+	sql, args, err := sqlBuilder.ToSql()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedPattern := `(?s)EXISTS \(.*?AND i\.key IN \(\$1\).*?\)\s+OR\s+NOT EXISTS \(`
+	if !regexp.MustCompile(expectedPattern).MatchString(sql) {
+		t.Errorf("expected EXISTS and NOT EXISTS combined with OR, got: %s", sql)
+	}
+
+	if len(args) != 1 || args[0] != "violin1" {
+		t.Errorf("unexpected args: %v", args)
+	}
 }
 
 func Test_WhenConcertsAreProvidedThenbuildSongDetailsQueryAddsExistsClause(t *testing.T) {

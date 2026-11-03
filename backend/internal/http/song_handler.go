@@ -56,6 +56,14 @@ func parseGetAllQuery(rawQuery string) (application.SongQuery, error) {
 		query.IncludeScore = true
 	}
 
+	if includeUnconnectedParts := queryValues.Get("include_unconnected_parts"); includeUnconnectedParts != "" {
+		queryValue, err := strconv.ParseBool(includeUnconnectedParts)
+		if err != nil {
+			return application.SongQuery{}, fmt.Errorf("invalid include_unconnected_parts: %w", err)
+		}
+		query.IncludeUnconnectedParts = queryValue
+	}
+
 	return query, nil
 }
 
@@ -101,6 +109,14 @@ func parseGetByIDQuery(rawQuery string) (application.SongByIDQuery, error) {
 		query.IncludeScore = queryValue
 	} else {
 		query.IncludeScore = true
+	}
+
+	if includeUnconnectedParts := queryValues.Get("include_unconnected_parts"); includeUnconnectedParts != "" {
+		queryValue, err := strconv.ParseBool(includeUnconnectedParts)
+		if err != nil {
+			return application.SongByIDQuery{}, fmt.Errorf("invalid include_unconnected_parts: %w", err)
+		}
+		query.IncludeUnconnectedParts = queryValue
 	}
 
 	return query, nil

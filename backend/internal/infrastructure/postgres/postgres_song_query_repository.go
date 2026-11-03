@@ -333,7 +333,7 @@ func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
 			"part_file.name",
 		)
 
-	sql = addJoinParts(sql, query.Parts, query.Instruments)
+	sql = addJoinParts(sql, query.Parts, query.Instruments, query.IncludeUnconnectedParts)
 
 	if query.Archived {
 		sql = sql.Where("s.archived_at IS NOT NULL")
@@ -383,7 +383,7 @@ func buildSongByIDQuery(id ulid.ULID, query application.SongByIDQuery) sq.Select
 			"part_file.name",
 		)
 
-	sql = addJoinParts(sql, query.Parts, query.Instruments)
+	sql = addJoinParts(sql, query.Parts, query.Instruments, query.IncludeUnconnectedParts)
 
 	sql = sql.Where(sq.Eq{"s.id": id})
 
@@ -417,7 +417,7 @@ func addScoreColumns(sql sq.SelectBuilder, includeScore bool) sq.SelectBuilder {
 
 // adds left join for parts and conditional filtering by part key(s) and instrument key(s).
 // When both filters are provided, parts matching either filter are included.
-func addJoinParts(sql sq.SelectBuilder, parts []string, instruments []string) sq.SelectBuilder {
+func addJoinParts(sql sq.SelectBuilder, parts []string, instruments []string, includeUnassignedParts bool) sq.SelectBuilder {
 
 	conditions := sq.Or{}
 
@@ -427,6 +427,10 @@ func addJoinParts(sql sq.SelectBuilder, parts []string, instruments []string) sq
 
 	if len(instruments) > 0 {
 		conditions = append(conditions, partMatchesInstrumentCondition(instruments))
+	}
+
+	if includeUnassignedParts {
+		conditions = append(conditions, noInstrumentCondition())
 	}
 
 	if len(conditions) == 0 {
@@ -455,6 +459,18 @@ func partMatchesInstrumentCondition(instruments []string) sq.Sqlizer {
 			  AND ?
 		)
 	`, sq.Eq{"i.key": instruments})
+}
+
+// noInstrumentCondition returns a NOT EXISTS condition that checks
+// whether a part has no instrument connections.
+func noInstrumentCondition() sq.Sqlizer {
+	return sq.Expr(`
+            NOT EXISTS (
+                SELECT 1
+                FROM part_instruments pi
+                WHERE pi.part_id = part.id
+            )
+        `)
 }
 
 // songMatchesConcertCondition returns an EXISTS condition that checks
