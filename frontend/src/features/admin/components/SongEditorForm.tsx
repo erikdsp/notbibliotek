@@ -174,8 +174,9 @@ export function SongEditorForm({
 
   const isValid =
     validationErrors.title === undefined &&
-    score !== null &&
     Object.keys(validationErrors.parts).length === 0;
+
+  const hasScore = score !== null
 
   function requestClose() {
     if (song !== null && isDirty) {
@@ -442,7 +443,7 @@ export function SongEditorForm({
   const publishSongVersionMutation = usePublishSongVersion();
 
   async function handlePublishVersion() {
-    if (song === null || versionId === null || isPublished || !isValid) {
+    if (song === null || versionId === null || isPublished || !isValid || !hasScore) {
       return;
     }
 
@@ -914,6 +915,7 @@ export function SongEditorForm({
                         disabled={
                           versionId === null ||
                           !isValid ||
+                          !hasScore ||
                           saveDraftMutation.isPending
                         }
                         onClick={() => setConfirmPublish(true)}
