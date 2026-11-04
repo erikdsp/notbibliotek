@@ -61,7 +61,7 @@ import {
 import { usePublishSongVersion } from "@/hooks/use-publish-song-version";
 import { nameToKey } from "@/features/admin/lib/name-to-key";
 import { PartUploadDuplicatesDialog } from "@/features/admin/components/songs/PartUploadDuplicatesDialog";
-import { PartEditor } from "@/features/admin/components/songs/PartEditor";
+import { PartsSection } from "@/features/admin/components/songs/PartsSection";
 
 const log = createLogger("SongEditorForm");
 
@@ -198,7 +198,6 @@ export function SongEditorForm({
   }
 
   const scoreInputRef = useRef<HTMLInputElement>(null);
-  const partsInputRef = useRef<HTMLInputElement>(null);
 
   const createSongMutation = useCreateSong();
   const createSongVersionMutation = useCreateSongVersion();
@@ -753,71 +752,18 @@ export function SongEditorForm({
                         )}
                       </section>
 
-                      {/* Parts */}
-                      <section className="space-y-3">
-                        <h3 className="font-semibold">Parts</h3>
-
-                        {!isPublished && (
-                          <div
-                            className="flex min-h-28 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-4 text-center"
-                            onDragOver={(event) => event.preventDefault()}
-                            onDrop={(event) => {
-                              event.preventDefault();
-                              addPartFiles(event.dataTransfer.files);
-                            }}
-                          >
-                            <Upload className="size-5 text-muted-foreground" />
-
-                            <p className="text-sm text-muted-foreground">
-                              Drop Part PDFs here
-                            </p>
-
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => partsInputRef.current?.click()}
-                            >
-                              Select Parts
-                            </Button>
-
-                            <input
-                              ref={partsInputRef}
-                              type="file"
-                              accept="application/pdf,.pdf"
-                              multiple
-                              className="hidden"
-                              onChange={(event) => {
-                                if (event.target.files) {
-                                  addPartFiles(event.target.files);
-                                }
-                                event.target.value = "";
-                              }}
-                            />
-                          </div>
-                        )}
-
-                        <div className="space-y-3">
-                          {parts !== null &&
-                            parts.map((part) => {
-                              const partErrors =
-                                validationErrors.parts[part.local_id];
-                              return (
-                                <PartEditor
-                                  key={part.local_id}
-                                  part={part}
-                                  instruments={instruments}
-                                  partErrors={partErrors}
-                                  isPublished={isPublished}
-                                  onUpdatePart={updatePart}
-                                  onRemovePart={handleRemovePart}
-                                  onToggleInstrument={toggleInstrument}
-                                  onReplaceFile={replacePartFile}
-                                  onPreviewFile={previewFile}
-                                />
-                              );
-                            })}
-                        </div>
-                      </section>
+                      <PartsSection
+                        parts={parts}
+                        instruments={instruments}
+                        partErrors={validationErrors.parts}
+                        isPublished={isPublished}
+                        onAddPartFiles={addPartFiles}
+                        onUpdatePart={updatePart}
+                        onRemovePart={handleRemovePart}
+                        onReplaceFile={replacePartFile}
+                        onToggleInstrument={toggleInstrument}
+                        onPreviewFile={previewFile}
+                      />
                     </>
                   )}
 
