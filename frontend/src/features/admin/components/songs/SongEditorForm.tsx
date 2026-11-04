@@ -70,7 +70,7 @@ import {
 } from "@/components/ui/tooltip";
 import { usePublishSongVersion } from "@/hooks/use-publish-song-version";
 import { nameToKey } from "@/features/admin/lib/name-to-key";
-import { PartUploadDuplicatesDialog } from "@/features/admin/components/PartUploadDuplicatesDialog";
+import { PartUploadDuplicatesDialog } from "@/features/admin/components/songs/PartUploadDuplicatesDialog";
 
 const log = createLogger("SongEditorForm");
 

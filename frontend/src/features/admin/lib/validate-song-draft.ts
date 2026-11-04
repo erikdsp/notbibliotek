@@ -1,13 +1,13 @@
 import type { EditablePart } from "@/features/admin/types";
 
-type partErrors = {
+export type PartErrors = {
   name?: string;
   key?: string;
 };
 
-type SongDraftErrors = {
+export type SongDraftErrors = {
   title?: string;
-  parts: Record<string, partErrors>;
+  parts: Record<string, PartErrors>;
 };
 
 export function validateSongDraft(
@@ -30,7 +30,7 @@ export function validateSongDraft(
   }
 
   for (const part of parts) {
-    const partErrors: partErrors = {};
+    const partErrors: PartErrors = {};
     const partKeyCount = keyCounts.get(part.key) ?? 0;
 
     if (!part.name.trim()) {

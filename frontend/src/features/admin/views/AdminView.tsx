@@ -1,9 +1,9 @@
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ConcertsTab } from "@/features/admin/components/ConcertsTab";
+import { InstrumentsTab } from "@/features/admin/components/InstrumentsTab";
+import { SongsTab } from "@/features/admin/components/songs/SongsTab";
 import { createLogger } from "@/utils/logger";
-import { SongsTab } from "@/features/admin/components/SongsTab";
-import { ConcertsTab } from "../components/ConcertsTab";
-import { InstrumentsTab } from "../components/InstrumentsTab";
 
 const log = createLogger("AdminView");
 
