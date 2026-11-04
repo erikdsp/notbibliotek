@@ -1,13 +1,5 @@
-import { useRef, useState } from "react";
-import {
-  Eye,
-  FileText,
-  Plus,
-  Upload,
-  X,
-  CopyPlus,
-  AlertTriangle,
-} from "lucide-react";
+import { useState } from "react";
+import { Plus, CopyPlus, AlertTriangle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "@/components/ui/toast";
+// import { toast } from "@/components/ui/toast";
 import type { SongResponse, Instrument } from "@/core/types";
 import { formatSongVersion } from "@/utils/song-utils";
 import { useCreateSong, useCreateSongVersion } from "@/hooks";
@@ -62,6 +54,7 @@ import { usePublishSongVersion } from "@/hooks/use-publish-song-version";
 import { nameToKey } from "@/features/admin/lib/name-to-key";
 import { PartUploadDuplicatesDialog } from "@/features/admin/components/songs/PartUploadDuplicatesDialog";
 import { PartsSection } from "@/features/admin/components/songs/PartsSection";
+import { ScoreSection } from "@/features/admin/components/songs/ScoreSection";
 
 const log = createLogger("SongEditorForm");
 
@@ -196,8 +189,6 @@ export function SongEditorForm({
       requestClose();
     }
   }
-
-  const scoreInputRef = useRef<HTMLInputElement>(null);
 
   const createSongMutation = useCreateSong();
   const createSongVersionMutation = useCreateSongVersion();
@@ -666,91 +657,13 @@ export function SongEditorForm({
                     <p>Failed to load instruments.</p>
                   ) : (
                     <>
-                      {/* Score */}
-                      <section className="space-y-3">
-                        <h3 className="font-semibold">Score</h3>
-
-                        {score && (
-                          <div className="flex items-center gap-2 rounded-md border px-3 py-2">
-                            <FileText className="size-4 shrink-0 text-muted-foreground" />
-
-                            <span className="min-w-0 truncate text-sm">
-                              {score.file_name}
-                            </span>
-
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              aria-label="Preview score"
-                              disabled={!score.file}
-                              onClick={() => previewFile(score.file)}
-                            >
-                              <Eye className="size-4" />
-                            </Button>
-
-                            <div className="flex-1" />
-
-                            {!isPublished && (
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                aria-label="Remove score"
-                                onClick={handleRemoveScore}
-                              >
-                                <X className="size-4" />
-                              </Button>
-                            )}
-                          </div>
-                        )}
-
-                        {!isPublished && (
-                          <div
-                            className="flex min-h-28 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-4 text-center"
-                            onDragOver={(event) => event.preventDefault()}
-                            onDrop={(event) => {
-                              event.preventDefault();
-                              const files = event.dataTransfer.files;
-
-                              if (files.length !== 1) {
-                                toast.add({
-                                  type: "error",
-                                  description:
-                                    "Oops! You dropped several files. Only one score PDF please.",
-                                  priority: "high",
-                                });
-                                return;
-                              }
-
-                              addScoreFile(files[0]);
-                            }}
-                          >
-                            <Upload className="size-5 text-muted-foreground" />
-                            <p className="text-sm text-muted-foreground">
-                              Drop a Score PDF here
-                            </p>
-
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => scoreInputRef.current?.click()}
-                            >
-                              Select Score
-                            </Button>
-
-                            <input
-                              ref={scoreInputRef}
-                              type="file"
-                              accept="application/pdf,.pdf"
-                              className="hidden"
-                              onChange={(event) => {
-                                const file = event.target.files?.[0];
-                                if (file) addScoreFile(file);
-                                event.target.value = "";
-                              }}
-                            />
-                          </div>
-                        )}
-                      </section>
+                      <ScoreSection
+                        score={score}
+                        isPublished={isPublished}
+                        onAddScoreFile={addScoreFile}
+                        onRemoveScore={handleRemoveScore}
+                        onPreviewFile={previewFile}
+                      />
 
                       <PartsSection
                         parts={parts}
