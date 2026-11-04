@@ -7,7 +7,6 @@ import {
   X,
   CopyPlus,
   AlertTriangle,
-  FileUp,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -28,13 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/toast";
 import type { SongResponse, Instrument } from "@/core/types";
 import { formatSongVersion } from "@/utils/song-utils";
@@ -71,6 +63,7 @@ import {
 import { usePublishSongVersion } from "@/hooks/use-publish-song-version";
 import { nameToKey } from "@/features/admin/lib/name-to-key";
 import { PartUploadDuplicatesDialog } from "@/features/admin/components/songs/PartUploadDuplicatesDialog";
+import { PartEditor } from "@/features/admin/components/songs/PartEditor";
 
 const log = createLogger("SongEditorForm");
 
@@ -356,47 +349,47 @@ export function SongEditorForm({
     resolvePartConflicts(action, pendingPartUpload.conflicts);
   }
 
-function resolvePartConflicts(
-  action: "skip" | "replace",
-  conflictsToResolve: FileConflict[],
-) {
-  if (pendingPartUpload === null || versionId === null || parts === null) return;
-  if (pendingPartUpload.versionId !== versionId) return;
+  function resolvePartConflicts(
+    action: "skip" | "replace",
+    conflictsToResolve: FileConflict[],
+  ) {
+    if (pendingPartUpload === null || versionId === null || parts === null)
+      return;
+    if (pendingPartUpload.versionId !== versionId) return;
 
-  const replacements =
-    action === "replace" ? conflictsToResolve : [];
+    const replacements = action === "replace" ? conflictsToResolve : [];
 
-  const updatedParts = parts.map((part) => {
-    const replacement = replacements.find(
-      (conflict) => conflict.existingPartLocalId === part.local_id,
+    const updatedParts = parts.map((part) => {
+      const replacement = replacements.find(
+        (conflict) => conflict.existingPartLocalId === part.local_id,
+      );
+
+      if (!replacement) return part;
+
+      return {
+        ...part,
+        file: replacement.file,
+        file_name: replacement.file.name,
+      };
+    });
+
+    const remainingConflicts = pendingPartUpload.conflicts.filter(
+      (conflict) => !conflictsToResolve.includes(conflict),
     );
 
-    if (!replacement) return part;
+    if (replacements.length > 0) {
+      setEditedParts({
+        versionId,
+        parts: updatedParts,
+      });
+    }
 
-    return {
-      ...part,
-      file: replacement.file,
-      file_name: replacement.file.name,
-    };
-  });
-
-  const remainingConflicts = pendingPartUpload.conflicts.filter(
-    (conflict) => !conflictsToResolve.includes(conflict),
-  );
-
-  if (replacements.length > 0) {
-    setEditedParts({
-      versionId,
-      parts: updatedParts,
-    });
+    setPendingPartUpload(
+      remainingConflicts.length > 0
+        ? { versionId, conflicts: remainingConflicts }
+        : null,
+    );
   }
-
-  setPendingPartUpload(
-    remainingConflicts.length > 0
-      ? { versionId, conflicts: remainingConflicts }
-      : null,
-  );
-}
 
   function updatePart(localId: string, update: Partial<EditablePart>) {
     if (versionId === null || originalParts === null) return;
@@ -410,24 +403,6 @@ function resolvePartConflicts(
         part.local_id === localId ? { ...part, ...update } : part,
       ),
     }));
-  }
-
-  function handleReplaceFileClick(localId: string) {
-    document.getElementById(`replace-file-${localId}`)?.click();
-  }
-
-  function handleReplacePartFileChange(
-    event: React.ChangeEvent<HTMLInputElement>,
-    localId: string,
-  ) {
-    const input = event.currentTarget;
-    const file = input.files?.[0];
-
-    if (file) {
-      replacePartFile(localId, file);
-    }
-
-    input.value = "";
   }
 
   function replacePartFile(localId: string, file: File) {
@@ -829,167 +804,18 @@ function resolvePartConflicts(
                               const partErrors =
                                 validationErrors.parts[part.local_id];
                               return (
-                                <div
+                                <PartEditor
                                   key={part.local_id}
-                                  className="space-y-3 rounded-lg border p-3"
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <FileText className="size-4 shrink-0 text-muted-foreground" />
-
-                                    <span className="min-w-0 truncate text-sm mr-1">
-                                      {part.file_name ?? part.name}
-                                    </span>
-
-                                    <Button
-                                      variant="ghost"
-                                      size="icon-sm"
-                                      aria-label={`Preview ${part.name}`}
-                                      disabled={!part.file}
-                                      onClick={() => previewFile(part.file)}
-                                    >
-                                      <Eye className="size-4" />
-                                    </Button>
-
-                                    <div className="flex-1" />
-
-                                    {!isPublished && (
-                                      <>
-                                        <Button
-                                          variant="secondary"
-                                          size="sm"
-                                          className="h-7 mr-4"
-                                          onClick={() =>
-                                            handleReplaceFileClick(
-                                              part.local_id,
-                                            )
-                                          }
-                                        >
-                                          <FileUp /> Replace file
-                                        </Button>
-                                        <input
-                                          type="file"
-                                          accept="application/pdf,.pdf"
-                                          className="hidden"
-                                          id={`replace-file-${part.local_id}`}
-                                          onChange={(event) =>
-                                            handleReplacePartFileChange(
-                                              event,
-                                              part.local_id,
-                                            )
-                                          }
-                                        />
-
-                                        <Button
-                                          variant="ghost"
-                                          size="icon-sm"
-                                          aria-label={`Remove ${part.name}`}
-                                          onClick={() =>
-                                            handleRemovePart(part.local_id)
-                                          }
-                                        >
-                                          <X className="size-4" />
-                                        </Button>
-                                      </>
-                                    )}
-                                  </div>
-
-                                  <div className="grid gap-3 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                      <Label>Part Name</Label>
-                                      <Input
-                                        value={part.name}
-                                        disabled={isPublished}
-                                        onChange={(event) =>
-                                          updatePart(part.local_id, {
-                                            name: event.target.value,
-                                          })
-                                        }
-                                        aria-invalid={!!partErrors?.name}
-                                      />
-                                      {partErrors?.name && (
-                                        <p className="text-sm text-destructive">
-                                          {partErrors.name}
-                                        </p>
-                                      )}
-                                    </div>
-
-                                    <div className="space-y-2">
-                                      <Label>Instruments</Label>
-
-                                      <div className="flex min-h-9 flex-wrap items-center gap-1 rounded-md border px-2 py-1">
-                                        {part.instrument_ids.map((id) => {
-                                          const instrument = instruments.find(
-                                            (instrument) =>
-                                              instrument.id === id,
-                                          );
-
-                                          if (!instrument) return null;
-
-                                          return (
-                                            <Badge
-                                              key={id}
-                                              variant="secondary"
-                                              className="gap-1"
-                                            >
-                                              {instrument.name}
-
-                                              <button
-                                                type="button"
-                                                aria-label={`Remove ${instrument.name}`}
-                                                onClick={() =>
-                                                  toggleInstrument(part, id)
-                                                }
-                                              >
-                                                <X className="size-3" />
-                                              </button>
-                                            </Badge>
-                                          );
-                                        })}
-
-                                        <Popover>
-                                          <PopoverTrigger
-                                            render={
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-7"
-                                              />
-                                            }
-                                          >
-                                            <Plus className="size-3" />
-                                            Add instrument
-                                          </PopoverTrigger>
-
-                                          <PopoverContent
-                                            align="start"
-                                            className="w-56 space-y-2"
-                                          >
-                                            {instruments.map((instrument) => (
-                                              <label
-                                                key={instrument.id}
-                                                className="flex cursor-pointer items-center gap-2 text-sm"
-                                              >
-                                                <Checkbox
-                                                  checked={part.instrument_ids.includes(
-                                                    instrument.id,
-                                                  )}
-                                                  onCheckedChange={() =>
-                                                    toggleInstrument(
-                                                      part,
-                                                      instrument.id,
-                                                    )
-                                                  }
-                                                />
-
-                                                {instrument.name}
-                                              </label>
-                                            ))}
-                                          </PopoverContent>
-                                        </Popover>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
+                                  part={part}
+                                  instruments={instruments}
+                                  partErrors={partErrors}
+                                  isPublished={isPublished}
+                                  onUpdatePart={updatePart}
+                                  onRemovePart={handleRemovePart}
+                                  onToggleInstrument={toggleInstrument}
+                                  onReplaceFile={replacePartFile}
+                                  onPreviewFile={previewFile}
+                                />
                               );
                             })}
                         </div>
