@@ -592,93 +592,99 @@ export function SongEditorForm({
                 </DialogFooter>
               ) : (
                 <>
-                  {/* Version selector */}
+                  <section aria-label="Song version" className="space-y-6">
+                    {/* Version selector */}
 
-                  <div className="space-y-2">
-                    <Label>Version</Label>
+                    <div className="space-y-2">
+                      <Label>Version</Label>
 
-                    <div className="flex items-center gap-3">
-                      <Select value={versionId} onValueChange={selectVersion}>
-                        <SelectTrigger className="w-2/3">
-                          <SelectValue placeholder="Select version">
-                            {selectedVersionLabel}
-                          </SelectValue>
-                        </SelectTrigger>
+                      <div className="flex items-center gap-3">
+                        <Select value={versionId} onValueChange={selectVersion}>
+                          <SelectTrigger className="w-2/3">
+                            <SelectValue placeholder="Select version">
+                              {selectedVersionLabel}
+                            </SelectValue>
+                          </SelectTrigger>
 
-                        <SelectContent>
-                          {versionOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                          <SelectContent>
+                            {versionOptions.map((option) => (
+                              <SelectItem
+                                key={option.value}
+                                value={option.value}
+                              >
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
 
-                      <Button variant="outline" disabled className="ml-auto">
-                        <CopyPlus />
-                        New Duplicate Draft
-                      </Button>
+                        <Button variant="outline" disabled className="ml-auto">
+                          <CopyPlus />
+                          New Duplicate Draft
+                        </Button>
 
-                      <Tooltip>
-                        <TooltipTrigger render={<span />}>
-                          <Button
-                            variant="outline"
-                            disabled={
-                              isDirty || createSongVersionMutation.isPending
-                            }
-                            onClick={handleCreateEmptyDraft}
-                          >
-                            <Plus />
-                            New Empty Draft
-                          </Button>
-                        </TooltipTrigger>
+                        <Tooltip>
+                          <TooltipTrigger render={<span />}>
+                            <Button
+                              variant="outline"
+                              disabled={
+                                isDirty || createSongVersionMutation.isPending
+                              }
+                              onClick={handleCreateEmptyDraft}
+                            >
+                              <Plus />
+                              New Empty Draft
+                            </Button>
+                          </TooltipTrigger>
 
-                        {isDirty && (
-                          <TooltipContent>
-                            Save or discard changes before creating a new draft.
-                          </TooltipContent>
-                        )}
-                      </Tooltip>
+                          {isDirty && (
+                            <TooltipContent>
+                              Save or discard changes before creating a new
+                              draft.
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </div>
                     </div>
-                  </div>
 
-                  {isPublished && (
-                    <p className="text-sm text-muted-foreground">
-                      Published version. PDFs are read-only.
-                    </p>
-                  )}
+                    {isPublished && (
+                      <p className="text-sm text-muted-foreground">
+                        Published version. PDFs are read-only.
+                      </p>
+                    )}
 
-                  {/* Version Editing */}
-                  {versionId === null ? (
-                    <p>This song has no version.</p>
-                  ) : instrumentsPending ? (
-                    <p>Loading instruments...</p>
-                  ) : instrumentsError ? (
-                    <p>Failed to load instruments.</p>
-                  ) : (
-                    <>
-                      <ScoreSection
-                        score={score}
-                        isPublished={isPublished}
-                        onAddScoreFile={addScoreFile}
-                        onRemoveScore={handleRemoveScore}
-                        onPreviewFile={previewFile}
-                      />
+                    {/* Version Editing */}
+                    {versionId === null ? (
+                      <p>This song has no version.</p>
+                    ) : instrumentsPending ? (
+                      <p>Loading instruments...</p>
+                    ) : instrumentsError ? (
+                      <p>Failed to load instruments.</p>
+                    ) : (
+                      <>
+                        <ScoreSection
+                          score={score}
+                          isPublished={isPublished}
+                          onAddScoreFile={addScoreFile}
+                          onRemoveScore={handleRemoveScore}
+                          onPreviewFile={previewFile}
+                        />
 
-                      <PartsSection
-                        parts={parts}
-                        instruments={instruments}
-                        partErrors={validationErrors.parts}
-                        isPublished={isPublished}
-                        onAddPartFiles={addPartFiles}
-                        onUpdatePart={updatePart}
-                        onRemovePart={handleRemovePart}
-                        onReplaceFile={replacePartFile}
-                        onToggleInstrument={toggleInstrument}
-                        onPreviewFile={previewFile}
-                      />
-                    </>
-                  )}
+                        <PartsSection
+                          parts={parts}
+                          instruments={instruments}
+                          partErrors={validationErrors.parts}
+                          isPublished={isPublished}
+                          onAddPartFiles={addPartFiles}
+                          onUpdatePart={updatePart}
+                          onRemovePart={handleRemovePart}
+                          onReplaceFile={replacePartFile}
+                          onToggleInstrument={toggleInstrument}
+                          onPreviewFile={previewFile}
+                        />
+                      </>
+                    )}
+                  </section>
 
                   {/* Dialog Footer Actions */}
                   <DialogFooter>
@@ -714,106 +720,95 @@ export function SongEditorForm({
                       </Button>
                     )}
                   </DialogFooter>
-
-                  <AlertDialog
-                    open={pendingVersionId !== null}
-                    onOpenChange={(open) => {
-                      if (!open) setPendingVersionId(null);
-                    }}
-                  >
-                    <AlertDialogContent overlayClassName="bg-black/40 supports-backdrop-filter:backdrop-blur-[1px]">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          Discard unsaved changes?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Your unsaved changes to Score and Parts will be lost.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-
-                        <AlertDialogAction
-                          onClick={() => {
-                            if (pendingVersionId === null) return;
-
-                            switchVersion(pendingVersionId);
-                            setPendingVersionId(null);
-                          }}
-                        >
-                          Discard & Switch
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-
-                  <AlertDialog
-                    open={confirmClose}
-                    onOpenChange={setConfirmClose}
-                  >
-                    <AlertDialogContent overlayClassName="bg-black/40 supports-backdrop-filter:backdrop-blur-[0.5px]">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          Discard unsaved changes?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Your unsaved changes will be lost.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Keep Editing</AlertDialogCancel>
-
-                        <AlertDialogAction
-                          onClick={() => {
-                            setConfirmClose(false);
-                            onOpenChange(false);
-                          }}
-                        >
-                          Discard Changes
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-
-                  <AlertDialog
-                    open={saveErrorOpen}
-                    onOpenChange={setSaveErrorOpen}
-                  >
-                    <AlertDialogContent overlayClassName="bg-black/40 supports-backdrop-filter:backdrop-blur-[0.5px]">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Save Draft failed</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Some changes may have been saved successfully. You can
-                          close the editor and reload the saved data, or keep
-                          editing. Retrying Save Draft may fail because some
-                          changes have already been saved.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Keep Editing</AlertDialogCancel>
-
-                        <AlertDialogAction
-                          onClick={() => {
-                            setEditedScore(null);
-                            setEditedParts(null);
-                            setSaveErrorOpen(false);
-                            onOpenChange(false);
-                          }}
-                        >
-                          Close and Reload (Recommended)
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
                 </>
               )}
             </div>
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={pendingVersionId !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingVersionId(null);
+        }}
+      >
+        <AlertDialogContent overlayClassName="bg-black/40 supports-backdrop-filter:backdrop-blur-[1px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your unsaved changes to Score and Parts will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingVersionId === null) return;
+
+                switchVersion(pendingVersionId);
+                setPendingVersionId(null);
+              }}
+            >
+              Discard & Switch
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmClose} onOpenChange={setConfirmClose}>
+        <AlertDialogContent overlayClassName="bg-black/40 supports-backdrop-filter:backdrop-blur-[0.5px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your unsaved changes will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Editing</AlertDialogCancel>
+
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmClose(false);
+                onOpenChange(false);
+              }}
+            >
+              Discard Changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={saveErrorOpen} onOpenChange={setSaveErrorOpen}>
+        <AlertDialogContent overlayClassName="bg-black/40 supports-backdrop-filter:backdrop-blur-[0.5px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save Draft failed</AlertDialogTitle>
+            <AlertDialogDescription>
+              Some changes may have been saved successfully. You can close the
+              editor and reload the saved data, or keep editing. Retrying Save
+              Draft may fail because some changes have already been saved.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Editing</AlertDialogCancel>
+
+            <AlertDialogAction
+              onClick={() => {
+                setEditedScore(null);
+                setEditedParts(null);
+                setSaveErrorOpen(false);
+                onOpenChange(false);
+              }}
+            >
+              Close and Reload (Recommended)
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog
         open={confirmPublish}
