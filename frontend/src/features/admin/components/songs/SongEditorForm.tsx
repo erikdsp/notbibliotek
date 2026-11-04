@@ -55,6 +55,7 @@ import { PartsSection } from "@/features/admin/components/songs/PartsSection";
 import { ScoreSection } from "@/features/admin/components/songs/ScoreSection";
 import { SongTitleInput } from "@/features/admin/components/songs/SongTitleInput";
 import { AddSongFooter } from "@/features/admin/components/songs/AddSongFooter";
+import { EditSongFooter } from "@/features/admin/components/songs/EditSongFooter";
 
 const log = createLogger("SongEditorForm");
 
@@ -670,40 +671,23 @@ export function SongEditorForm({
                     )}
                   </section>
 
-                  {/* Dialog Footer Actions */}
-                  <DialogFooter>
-                    <Button variant="outline" onClick={requestClose}>
-                      Close
-                    </Button>
+                  <EditSongFooter
+                    isPublished={isPublished}
+                    isSaving={saveDraftMutation.isPending}
+                    saveDisabled={
+                      !isDirty || saveDraftMutation.isPending || !isValid
+                    }
+                    publishDisabled={
+                      versionId === null ||
+                      !isValid ||
+                      !hasScore ||
+                      saveDraftMutation.isPending
+                    }
+                    onClose={requestClose}
+                    onSave={handleSaveDraft}
+                    onPublish={() => setConfirmPublish(true)}
+                  />
 
-                    <Button
-                      variant={isPublished ? "default" : "outline"}
-                      disabled={
-                        !isDirty || saveDraftMutation.isPending || !isValid
-                      }
-                      onClick={handleSaveDraft}
-                    >
-                      {saveDraftMutation.isPending
-                        ? "Saving..."
-                        : isPublished
-                          ? "Save Changes"
-                          : "Save Draft"}
-                    </Button>
-
-                    {!isPublished && (
-                      <Button
-                        disabled={
-                          versionId === null ||
-                          !isValid ||
-                          !hasScore ||
-                          saveDraftMutation.isPending
-                        }
-                        onClick={() => setConfirmPublish(true)}
-                      >
-                        Publish Version
-                      </Button>
-                    )}
-                  </DialogFooter>
                 </>
               )}
             </div>
