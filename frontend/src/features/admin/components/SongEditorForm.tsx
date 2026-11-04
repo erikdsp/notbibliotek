@@ -70,6 +70,7 @@ import {
 } from "@/components/ui/tooltip";
 import { usePublishSongVersion } from "@/hooks/use-publish-song-version";
 import { nameToKey } from "@/features/admin/lib/name-to-key";
+import { PartUploadDuplicatesDialog } from "@/features/admin/components/PartUploadDuplicatesDialog";
 
 const log = createLogger("SongEditorForm");
 
@@ -85,6 +86,17 @@ type ScoreEdits = {
 type PartsEdits = {
   versionId: string;
   parts: EditablePart[];
+};
+
+export type FileConflict = {
+  file: File;
+  existingPartLocalId: string;
+  existingPartName: string;
+};
+
+type PendingPartUpload = {
+  versionId: string;
+  conflicts: FileConflict[];
 };
 
 type SongEditorFormProps = {
@@ -118,6 +130,8 @@ export function SongEditorForm({
 
   const [editedScore, setEditedScore] = useState<ScoreEdits | null>(null);
   const [editedParts, setEditedParts] = useState<PartsEdits | null>(null);
+  const [pendingPartUpload, setPendingPartUpload] =
+    useState<PendingPartUpload | null>(null);
   const [pendingVersionId, setPendingVersionId] = useState<string | null>(null);
   const [confirmClose, setConfirmClose] = useState(false);
   const [saveErrorOpen, setSaveErrorOpen] = useState(false);
@@ -176,7 +190,7 @@ export function SongEditorForm({
     validationErrors.title === undefined &&
     Object.keys(validationErrors.parts).length === 0;
 
-  const hasScore = score !== null
+  const hasScore = score !== null;
 
   function requestClose() {
     if (song !== null && isDirty) {
@@ -268,38 +282,121 @@ export function SongEditorForm({
   }
 
   function addPartFiles(files: FileList | File[]) {
-    if (versionId === null || originalParts === null) return;
+    if (versionId === null || originalParts === null || parts === null) return;
 
-    const newParts = Array.from(files)
-      .filter((file) => file.type === "application/pdf")
-      .map((file): EditablePart => {
-        const name = suggestPartName(file.name);
-        const key = nameToKey(name, new Set());
-        const instrumentKeys = defaultInstrumentMappings[key] ?? [];
-        const instrumentIds = instruments
-          .filter((instrument) => instrumentKeys.includes(instrument.key))
-          .map((instrument) => instrument.id);
+    const pdfFiles = Array.from(files).filter(
+      (file) => file.type === "application/pdf",
+    );
 
-        return {
-          local_id: createLocalId(),
-          id: null,
-          key,
-          name,
-          file_id: null,
-          file_name: file.name,
+    const conflicts: FileConflict[] = [];
+    const filesToAdd: File[] = [];
+
+    for (const file of pdfFiles) {
+      const existingPart = parts.find((part) => part.file_name === file.name);
+
+      if (existingPart) {
+        conflicts.push({
           file,
-          instrument_ids: instrumentIds,
-        };
-      });
+          existingPartLocalId: existingPart.local_id,
+          existingPartName: existingPart.name,
+        });
+      } else {
+        filesToAdd.push(file);
+      }
+    }
 
-    setEditedParts((current) => ({
-      versionId,
-      parts: [
-        ...(current?.versionId === versionId ? current.parts : originalParts),
-        ...newParts,
-      ],
-    }));
+    const newParts = filesToAdd.map((file): EditablePart => {
+      const name = suggestPartName(file.name);
+      const key = nameToKey(name, new Set());
+      const instrumentKeys = defaultInstrumentMappings[key] ?? [];
+      const instrumentIds = instruments
+        .filter((instrument) => instrumentKeys.includes(instrument.key))
+        .map((instrument) => instrument.id);
+
+      return {
+        local_id: createLocalId(),
+        id: null,
+        key,
+        name,
+        file_id: null,
+        file_name: file.name,
+        file,
+        instrument_ids: instrumentIds,
+      };
+    });
+
+    if (newParts.length > 0) {
+      setEditedParts({
+        versionId,
+        parts: [...parts, ...newParts],
+      });
+    }
+
+    if (conflicts.length > 0) {
+      setPendingPartUpload({
+        versionId,
+        conflicts,
+      });
+    }
   }
+
+  function resolveSinglePartConflict(
+    index: number,
+    action: "skip" | "replace",
+  ) {
+    if (pendingPartUpload === null) return;
+
+    const conflict = pendingPartUpload.conflicts[index];
+    resolvePartConflicts(action, [conflict]);
+  }
+
+  function resolveAllPartConflicts(action: "skip" | "replace") {
+    if (pendingPartUpload === null) return;
+
+    resolvePartConflicts(action, pendingPartUpload.conflicts);
+  }
+
+function resolvePartConflicts(
+  action: "skip" | "replace",
+  conflictsToResolve: FileConflict[],
+) {
+  if (pendingPartUpload === null || versionId === null || parts === null) return;
+  if (pendingPartUpload.versionId !== versionId) return;
+
+  const replacements =
+    action === "replace" ? conflictsToResolve : [];
+
+  const updatedParts = parts.map((part) => {
+    const replacement = replacements.find(
+      (conflict) => conflict.existingPartLocalId === part.local_id,
+    );
+
+    if (!replacement) return part;
+
+    return {
+      ...part,
+      file: replacement.file,
+      file_name: replacement.file.name,
+    };
+  });
+
+  const remainingConflicts = pendingPartUpload.conflicts.filter(
+    (conflict) => !conflictsToResolve.includes(conflict),
+  );
+
+  if (replacements.length > 0) {
+    setEditedParts({
+      versionId,
+      parts: updatedParts,
+    });
+  }
+
+  setPendingPartUpload(
+    remainingConflicts.length > 0
+      ? { versionId, conflicts: remainingConflicts }
+      : null,
+  );
+}
 
   function updatePart(localId: string, update: Partial<EditablePart>) {
     if (versionId === null || originalParts === null) return;
@@ -316,8 +413,8 @@ export function SongEditorForm({
   }
 
   function handleReplaceFileClick(localId: string) {
-  document.getElementById(`replace-file-${localId}`)?.click();
-}
+    document.getElementById(`replace-file-${localId}`)?.click();
+  }
 
   function handleReplacePartFileChange(
     event: React.ChangeEvent<HTMLInputElement>,
@@ -443,7 +540,13 @@ export function SongEditorForm({
   const publishSongVersionMutation = usePublishSongVersion();
 
   async function handlePublishVersion() {
-    if (song === null || versionId === null || isPublished || !isValid || !hasScore) {
+    if (
+      song === null ||
+      versionId === null ||
+      isPublished ||
+      !isValid ||
+      !hasScore
+    ) {
       return;
     }
 
@@ -755,7 +858,11 @@ export function SongEditorForm({
                                           variant="secondary"
                                           size="sm"
                                           className="h-7 mr-4"
-                                          onClick={() => handleReplaceFileClick(part.local_id)}
+                                          onClick={() =>
+                                            handleReplaceFileClick(
+                                              part.local_id,
+                                            )
+                                          }
                                         >
                                           <FileUp /> Replace file
                                         </Button>
@@ -1127,6 +1234,14 @@ export function SongEditorForm({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {pendingPartUpload !== null && (
+        <PartUploadDuplicatesDialog
+          conflicts={pendingPartUpload.conflicts}
+          onActionChange={resolveSinglePartConflict}
+          onAllActionChange={resolveAllPartConflicts}
+        />
+      )}
     </>
   );
 }
