@@ -54,6 +54,7 @@ import { PartUploadDuplicatesDialog } from "@/features/admin/components/songs/Pa
 import { PartsSection } from "@/features/admin/components/songs/PartsSection";
 import { ScoreSection } from "@/features/admin/components/songs/ScoreSection";
 import { SongTitleInput } from "@/features/admin/components/songs/SongTitleInput";
+import { AddSongFooter } from "@/features/admin/components/songs/AddSongFooter";
 
 const log = createLogger("SongEditorForm");
 
@@ -564,22 +565,15 @@ export function SongEditorForm({
               />
 
               {song === null ? (
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => onOpenChange(false)}>
-                    Cancel
-                  </Button>
-
-                  <Button
-                    disabled={
-                      !title.trim() ||
-                      createSongMutation.isPending ||
-                      createSongVersionMutation.isPending
-                    }
-                    onClick={handleCreateSong}
-                  >
-                    Create & Continue
-                  </Button>
-                </DialogFooter>
+                <AddSongFooter
+                  disabled={
+                    !title.trim() ||
+                    createSongMutation.isPending ||
+                    createSongVersionMutation.isPending
+                  }
+                  onCancel={() => onOpenChange(false)}
+                  onCreateSong={handleCreateSong}
+                />
               ) : (
                 <>
                   <section aria-label="Song version" className="space-y-6">
