@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Plus, CopyPlus, AlertTriangle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -19,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-// import { toast } from "@/components/ui/toast";
 import type { SongResponse, Instrument } from "@/core/types";
 import { formatSongVersion } from "@/utils/song-utils";
 import { useCreateSong, useCreateSongVersion } from "@/hooks";
@@ -55,6 +53,7 @@ import { nameToKey } from "@/features/admin/lib/name-to-key";
 import { PartUploadDuplicatesDialog } from "@/features/admin/components/songs/PartUploadDuplicatesDialog";
 import { PartsSection } from "@/features/admin/components/songs/PartsSection";
 import { ScoreSection } from "@/features/admin/components/songs/ScoreSection";
+import { SongTitleInput } from "@/features/admin/components/songs/SongTitleInput";
 
 const log = createLogger("SongEditorForm");
 
@@ -557,21 +556,12 @@ export function SongEditorForm({
             </DialogHeader>
 
             <div className="space-y-6 py-2">
-              {/* Song title */}
-              <div className="space-y-2">
-                <Label htmlFor="song-title">Song Title</Label>
-                <Input
-                  id="song-title"
-                  value={title}
-                  onChange={(event) => setTitle(event.target.value)}
-                  placeholder="Song title"
-                  className={song === null ? "w-full" : "w-[66%]"}
-                />
-
-                {validationErrors.title && (
-                  <p className="text-sm text-muted-foreground">(required)</p>
-                )}
-              </div>
+              <SongTitleInput
+                title={title}
+                onSetTitle={setTitle}
+                hasSong={song !== null}
+                titleError={validationErrors.title}
+              />
 
               {song === null ? (
                 <DialogFooter>
