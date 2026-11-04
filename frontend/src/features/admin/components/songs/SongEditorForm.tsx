@@ -33,10 +33,8 @@ import { formatSongVersion } from "@/utils/song-utils";
 import { useCreateSong, useCreateSongVersion } from "@/hooks";
 import { createLogger } from "@/utils/logger";
 import type { EditablePart, EditableScore } from "@/features/admin/types";
-import {
-  makeEditableParts,
-  makeEditableScore,
-} from "@/features/admin/mappers/make-editable";
+import { makeEditableParts } from "@/features/admin/mappers/make-editable-parts";
+import { makeEditableScore } from "@/features/admin/mappers/make-editable-score";
 import { suggestPartName } from "@/features/admin/lib/suggest-part-name";
 import { initialVersionId } from "@/features/admin/lib/initial-version-id";
 import {
