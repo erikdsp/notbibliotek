@@ -60,7 +60,7 @@ export function PartEditor({
         <FileText className="size-4 shrink-0 text-muted-foreground" />
 
         <span className="min-w-0 truncate text-sm mr-1">
-          {part.file_name ?? part.name}
+          {part.file_name}
         </span>
 
         <Button
