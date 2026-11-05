@@ -6,7 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import type { FileConflict } from "./SongEditorForm";
+import type { FileConflict } from "@/features/admin/components/songs/SongEditorForm";
 
 type ConflictAction = "skip" | "replace";
 

@@ -1,6 +1,6 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { Instrument } from "@/core/types";
-import { SongEditorForm } from "@/features/admin/components/SongEditorForm";
+import { SongEditorForm } from "@/features/admin/components/songs/SongEditorForm";
 
 import { useSong } from "@/hooks";
 import { createLogger } from "@/utils/logger";

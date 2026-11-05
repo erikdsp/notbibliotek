@@ -4,7 +4,7 @@ import { useConcerts } from "@/hooks/use-concerts";
 import { useInstruments } from "@/hooks/use-instruments";
 
 import { useState } from "react";
-import { SheetMusicFilters } from "../components/SheetMusicFilters";
+import { SheetMusicFilters } from "@/features/musician/components/SheetMusicFilters";
 import type { SongFilters } from "@/services/songs-service";
 import { createLogger } from "@/utils/logger";
 import {

@@ -4,7 +4,7 @@ export type EditablePart = {
   key: string;
   name: string;
   file_id: string | null;
-  file_name: string | null;
+  file_name: string;
   file: File | null;
   instrument_ids: string[];
 };
