@@ -22,7 +22,7 @@ export function MusiciansView() {
   const [selectedInstrument, setSelectedInstrument] = useState<string | null>(
     null,
   );
-  const [selectedSong, setSelectedSong] = useState<string | null>(null);
+  const [selectedSongId, setSelectedSongId] = useState<string | null>(null);
   const [includeScore, setIncludeScore] = useState(false);
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
 
@@ -68,16 +68,16 @@ export function MusiciansView() {
 
   function handleSelectInstrument(instrumentId: string | null) {
     setSelectedInstrument(instrumentId !== allItemsValue ? instrumentId : null);
-    setSelectedSong(null);
+    setSelectedSongId(null);
   }
 
   function handleSelectConcert(concertId: string | null) {
     setSelectedConcert(concertId !== allItemsValue ? concertId : null);
-    setSelectedSong(null);
+    setSelectedSongId(null);
   }
 
-  function handleSelectSong(selectedSong: string | null) {
-    setSelectedSong(selectedSong !== allItemsValue ? selectedSong : null);
+  function handleSelectSong(selectedSongId: string | null) {
+    setSelectedSongId(selectedSongId !== allItemsValue ? selectedSongId : null);
     setSelectedInstrument(null);
     setSelectedConcert(null);
   }
@@ -133,7 +133,7 @@ export function MusiciansView() {
             onConcertChange={handleSelectConcert}
             selectedInstrument={selectedInstrument}
             onInstrumentChange={handleSelectInstrument}
-            selectedSong={selectedSong}
+            selectedSongId={selectedSongId}
             onSongChange={handleSelectSong}
             includeScore={includeScore}
             onIncludeScoreChange={setIncludeScore}
@@ -149,7 +149,7 @@ export function MusiciansView() {
             showDetailedList={showDetailedList}
             concertSelected={concertSelected}
             instrumentSelected={instrumentSelected}
-            selectedSong={selectedSong}
+            selectedSongId={selectedSongId}
             isDownloading={downloadFile.isPending}
             onDownload={handleDownload}
           />

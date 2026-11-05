@@ -40,7 +40,7 @@ type SheetMusicFilterProps = {
   selectedInstrument: string | null;
   onInstrumentChange: (value: string | null) => void;
 
-  selectedSong: string | null;
+  selectedSongId: string | null;
   onSongChange: (value: string | null) => void;
 
   includeScore: boolean;
@@ -58,7 +58,7 @@ export function SheetMusicFilters({
   onConcertChange,
   selectedInstrument,
   onInstrumentChange,
-  selectedSong,
+  selectedSongId,
   onSongChange,
   includeScore,
   onIncludeScoreChange,
@@ -213,7 +213,7 @@ export function SheetMusicFilters({
             <div>
               <Select
                 items={songSelectItems}
-                value={selectedSong}
+                value={selectedSongId}
                 onValueChange={onSongChange}
               >
                 <SelectTrigger className="w-80">
@@ -221,7 +221,7 @@ export function SheetMusicFilters({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    {selectedSong && (
+                    {selectedSongId && (
                       <>
                         <SelectItem value={resetSongItem.value}>
                           {resetSongItem.label}

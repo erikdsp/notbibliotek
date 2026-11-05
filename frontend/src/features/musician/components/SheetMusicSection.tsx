@@ -2,10 +2,8 @@ import { Button } from "@/components/ui/button";
 import type { ConcertDetailedResponse, SongResponse } from "@/core/types";
 import type { FileMetadata } from "@/core/types/file";
 import { SheetMusicTable } from "@/features/musician/components/SheetMusicTable";
-import { createLogger } from "@/utils/logger";
+import { formatDateTime } from "@/utils/format-time";
 import { Download } from "lucide-react";
-
-const log = createLogger("SheetMusicSection");
 
 type SheetMusicSectionProps = {
   songs: SongResponse[];
@@ -13,7 +11,7 @@ type SheetMusicSectionProps = {
   showDetailedList: boolean;
   concertSelected: boolean;
   instrumentSelected: boolean;
-  selectedSong: string | null;
+  selectedSongId: string | null;
   isDownloading: boolean;
   onDownload: (file: FileMetadata) => void;
 };
@@ -24,11 +22,12 @@ export function SheetMusicSection({
   showDetailedList,
   concertSelected,
   instrumentSelected,
-  selectedSong,
+  selectedSongId,
   isDownloading,
   onDownload,
 }: SheetMusicSectionProps) {
-  log.debug("Selected Song: ", selectedSong);
+const selectedSong = songs.find((song) => song.id === selectedSongId);
+const currentVersion = selectedSong?.versions.find(version => version.song_version_id === selectedSong.current_version_id)
 
   return (
     <section
@@ -36,18 +35,23 @@ export function SheetMusicSection({
     >
       <div className={`w-full rounded-lg border p-6`}>
         <h2 className="text-2xl font-bold mb-4">
-          {selectedConcertDetails
+          {selectedSong ? `${selectedSong.title}`:  
+          selectedConcertDetails
             ? selectedConcertDetails.name
-            : "All Songs in the Library"}{" "}
+            : "All Songs in the Library"}
         </h2>
         {selectedConcertDetails && (
           <p className="mb-2">{selectedConcertDetails.date}</p>
+        )}
+        {selectedSong && (
+          <p className="mb-2 italic">{currentVersion ? `Current version: ${formatDateTime(currentVersion.published_at)}` : "No published version"}</p>
         )}
 
         <SheetMusicTable
           songs={songs}
           showDetailedList={showDetailedList}
           instrumentSelected={instrumentSelected}
+          selectedSongId={selectedSongId}
           isDownloading={isDownloading}
           onDownload={onDownload}
         />
@@ -59,8 +63,8 @@ export function SheetMusicSection({
             <Download /> Download Set List
           </Button>
         )}
-        {showDetailedList && (
-          <Button disabled>
+        {(showDetailedList || currentVersion) && (
+          <Button>
             <Download /> Download Sheet Music{" "}
             {concertSelected && "and Set List"} (.zip)
           </Button>
