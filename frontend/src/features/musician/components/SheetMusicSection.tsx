@@ -2,7 +2,10 @@ import { Button } from "@/components/ui/button";
 import type { ConcertDetailedResponse, SongResponse } from "@/core/types";
 import type { FileMetadata } from "@/core/types/file";
 import { SheetMusicTable } from "@/features/musician/components/SheetMusicTable";
+import { createLogger } from "@/utils/logger";
 import { Download } from "lucide-react";
+
+const log = createLogger("SheetMusicSection");
 
 type SheetMusicSectionProps = {
   songs: SongResponse[];
@@ -10,6 +13,7 @@ type SheetMusicSectionProps = {
   showDetailedList: boolean;
   concertSelected: boolean;
   instrumentSelected: boolean;
+  selectedSong: string | null;
   isDownloading: boolean;
   onDownload: (file: FileMetadata) => void;
 };
@@ -20,9 +24,12 @@ export function SheetMusicSection({
   showDetailedList,
   concertSelected,
   instrumentSelected,
+  selectedSong,
   isDownloading,
   onDownload,
 }: SheetMusicSectionProps) {
+  log.debug("Selected Song: ", selectedSong);
+
   return (
     <section
       className={`flex flex-col items-center w-full ${showDetailedList ? "max-w-4xl" : "max-w-2xl"}`}

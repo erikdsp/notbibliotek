@@ -22,15 +22,13 @@ export function MusiciansView() {
   const [selectedInstrument, setSelectedInstrument] = useState<string | null>(
     null,
   );
+  const [selectedSong, setSelectedSong] = useState<string | null>(null);
   const [includeScore, setIncludeScore] = useState(false);
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
 
-  const concertSelected =
-    selectedConcert !== null && selectedConcert !== allItemsValue;
+  const concertSelected = selectedConcert !== null;
   const instrumentSelected =
-    selectedInstrument !== null &&
-    selectedInstrument !== allItemsValue &&
-    selectedInstrument !== oddPartsValue;
+    selectedInstrument !== null && selectedInstrument !== oddPartsValue;
   const includeUnconnectedParts = selectedInstrument === oddPartsValue;
 
   const filters: SongFilters = {
@@ -69,7 +67,19 @@ export function MusiciansView() {
   } = useInstruments();
 
   function handleSelectInstrument(instrumentId: string | null) {
-    setSelectedInstrument(instrumentId);
+    setSelectedInstrument(instrumentId !== allItemsValue ? instrumentId : null);
+    setSelectedSong(null);
+  }
+
+  function handleSelectConcert(concertId: string | null) {
+    setSelectedConcert(concertId !== allItemsValue ? concertId : null);
+    setSelectedSong(null);
+  }
+
+  function handleSelectSong(selectedSong: string | null) {
+    setSelectedSong(selectedSong !== allItemsValue ? selectedSong : null);
+    setSelectedInstrument(null);
+    setSelectedConcert(null);
   }
 
   const downloadFile = useDownloadFile();
@@ -120,9 +130,11 @@ export function MusiciansView() {
             instruments={instruments}
             songs={allSongs}
             selectedConcert={selectedConcert}
-            onConcertChange={setSelectedConcert}
+            onConcertChange={handleSelectConcert}
             selectedInstrument={selectedInstrument}
             onInstrumentChange={handleSelectInstrument}
+            selectedSong={selectedSong}
+            onSongChange={handleSelectSong}
             includeScore={includeScore}
             onIncludeScoreChange={setIncludeScore}
             moreOptionsOpen={moreOptionsOpen}
@@ -137,10 +149,10 @@ export function MusiciansView() {
             showDetailedList={showDetailedList}
             concertSelected={concertSelected}
             instrumentSelected={instrumentSelected}
+            selectedSong={selectedSong}
             isDownloading={downloadFile.isPending}
             onDownload={handleDownload}
           />
-
         </section>
       </main>
     </div>
