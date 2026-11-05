@@ -17,7 +17,12 @@ export function suggestPartName(filename: string): string {
     },
     {
       name: "Bass Trombone",
-      patterns: [/\bbass[\s_.-]*trombone\b/, /\bbastb\b/],
+      patterns: [
+        /\bbass[\s_.-]*trombone\b/,
+        /\bbastb\b/,
+        /\bbastrb\b/,
+        /\bbastrombon\b/,
+      ],
     },
     {
       name: "Electric Bass",
@@ -45,33 +50,32 @@ export function suggestPartName(filename: string): string {
     },
     {
       name: "Flute 1",
-      patterns: [/\bflute[\s_.-]*(?:1|i)\b/, /\bfl[\s_.-]*(?:1|i)\b/],
+      patterns: [/\bflute[\s_.-]*(?:1|i)\b/, /\bflu?[\s_.-]*(?:1|i)\b/],
     },
     {
       name: "Flute 2",
-      patterns: [/\bflute[\s_.-]*(?:2|ii)\b/, /\bfl[\s_.-]*(?:2|ii)\b/],
+      patterns: [/\bflute[\s_.-]*(?:2|ii)\b/, /\bflu?[\s_.-]*(?:2|ii)\b/],
     },
     {
       name: "Flute",
-      patterns: [/\bflute\b/, /\bfl\b/, /\btvaerfloejt\b/],
+      patterns: [
+        /\bflute\b/,
+        /\bflu?\b/,
+        /\btvaerfloejt\b/,
+        /\b(tvar)?flojt\b/,
+      ],
     },
     {
       name: "Violin 1",
-      patterns: [
-        /\bviolin[\s_-]*(?:1|i)(?=$|[\s_.-])/,
-        /\bvl[\s_-]*1(?=$|[\s_.-])/,
-      ],
+      patterns: [/\bviolin[\s_-]*(?:1|i)\b/, /\bvln?[\s_-]*1\b/],
     },
     {
       name: "Violin 2",
-      patterns: [
-        /\bviolin[\s_-]*(?:2|ii)(?=$|[\s_.-])/,
-        /\bvl[\s_-]*2(?=$|[\s_.-])/,
-      ],
+      patterns: [/\bviolin[\s_-]*(?:2|ii)\b/, /\bvln?[\s_-]*2\b/],
     },
     {
       name: "Violin",
-      patterns: [/\bviolin\b/],
+      patterns: [/\bviolin\b/, /\bvln?\b/],
     },
     {
       name: "Viola",
@@ -189,7 +193,7 @@ export function suggestPartName(filename: string): string {
     },
     {
       name: "Percussion",
-      patterns: [/\bpercussion\b/],
+      patterns: [/\bpercussion\b/, /\bperc\b/],
     },
     {
       name: "Drums",
@@ -217,7 +221,7 @@ export function suggestPartName(filename: string): string {
     },
     {
       name: "Bouzouki",
-      patterns: [/\bbouzouki\b/],
+      patterns: [/\bbouzouki\b/, /\bboz\b/],
     },
     {
       name: "Oud",
@@ -229,5 +233,5 @@ export function suggestPartName(filename: string): string {
     patterns.some((pattern) => pattern.test(name)),
   );
 
-  return match?.name ?? filename.replace(/\.pdf$/i, "")
+  return match?.name ?? filename.replace(/\.pdf$/i, "");
 }
