@@ -1,13 +1,9 @@
-import {
-  Table,
-  TableBody,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableHeader } from "@/components/ui/table";
 import type { SongResponse } from "@/core/types";
 import type { FileMetadata } from "@/core/types/file";
+import { SetlistTableHeadRow } from "@/features/musician/components/SetlistTableHeadRow";
 import { SetlistTableRows } from "@/features/musician/components/SetlistTableRows";
+import { SongTableHeadRow } from "@/features/musician/components/SongTableHeadRow";
 import { SongTableRows } from "@/features/musician/components/SongTableRows";
 
 type SheetMusicTableProps = {
@@ -27,40 +23,30 @@ export function SheetMusicTable({
   isDownloading,
   onDownload,
 }: SheetMusicTableProps) {
+  const isSongMode = selectedSongId !== null;
   const selectedSong = songs.find((song) => song.id === selectedSongId);
   const currentVersion = selectedSong?.versions.find(
     (version) => version.song_version_id === selectedSong.current_version_id,
   );
 
-  if (selectedSong && !currentVersion) {
+  if (isSongMode && !currentVersion) {
     return null;
   }
 
   return (
     <Table className="w-full">
       <TableHeader className="border-b-2">
-        <TableRow className=" text-base">
-          <TableHead className={`font-normal ${!selectedSong && "w-60"}`}>
-            {" "}
-            {!selectedSong && "Song"}{" "}
-          </TableHead>
-          <TableHead className="font-normal">
-            {showDetailedList && "Parts"}
-          </TableHead>
-          <TableHead className={`font-normal ${!selectedSong && "w-25"}`}>
-            {" "}
-            {!selectedSong && "Version"}{" "}
-          </TableHead>
-          {showDetailedList && (
-            <TableHead className="w-14 pl-8 font-normal"></TableHead>
-          )}
-        </TableRow>
+        {isSongMode ? (
+          <SongTableHeadRow />
+        ) : (
+          <SetlistTableHeadRow showDetailedList={showDetailedList} />
+        )}
       </TableHeader>
 
       <TableBody>
-        {selectedSong ? (
+        {isSongMode ? (
           <SongTableRows
-            song={selectedSong}
+            currentVersion={currentVersion}
             isDownloading={isDownloading}
             onDownload={onDownload}
           />

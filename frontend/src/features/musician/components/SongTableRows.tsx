@@ -1,26 +1,22 @@
-import type { SongResponse } from "@/core/types";
+import type { Version } from "@/core/types";
 import type { FileMetadata } from "@/core/types/file";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 
 type SongTableRowsProps = {
-  song: SongResponse;
+  currentVersion: Version | undefined;
   isDownloading: boolean;
   onDownload: (file: FileMetadata) => void;
 };
 
 export function SongTableRows({
-  song,
+  currentVersion,
   isDownloading,
   onDownload,
 }: SongTableRowsProps) {
-  const currentVersion = song.versions.find(
-    (version) => version.song_version_id === song.current_version_id,
-  );
-
   if (!currentVersion) {
-    return;
+    return null;
   }
 
   if (!currentVersion.score) {
