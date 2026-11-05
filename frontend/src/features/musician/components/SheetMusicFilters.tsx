@@ -40,6 +40,9 @@ type SheetMusicFilterProps = {
   selectedInstrument: string | null;
   onInstrumentChange: (value: string | null) => void;
 
+  selectedSongId: string | null;
+  onSongChange: (value: string | null) => void;
+
   includeScore: boolean;
   onIncludeScoreChange: (checked: boolean) => void;
 
@@ -55,6 +58,8 @@ export function SheetMusicFilters({
   onConcertChange,
   selectedInstrument,
   onInstrumentChange,
+  selectedSongId,
+  onSongChange,
   includeScore,
   onIncludeScoreChange,
   moreOptionsOpen,
@@ -66,10 +71,8 @@ export function SheetMusicFilters({
       value: concert.key,
     })) ?? [];
 
-  const concertSelectItems = [
-    { label: "All songs in the library", value: allItemsValue },
-    ...concertItems,
-  ];
+  const resetConcertItem = { label: "Reset setlist / concert selection", value: allItemsValue };
+  const concertSelectItems = [resetConcertItem, ...concertItems];
 
   const instrumentItems =
     instruments?.map((instrument) => ({
@@ -77,18 +80,31 @@ export function SheetMusicFilters({
       value: instrument.key,
     })) ?? [];
 
+  const resetInstrumentItem = {
+    label: "Reset instrument selection",
+    value: allItemsValue,
+  };
+  const oddPartsItem = { label: "Odd Parts", value: oddPartsValue };
+
   const instrumentSelectItems = [
-    { label: "All instruments", value: allItemsValue },
+    resetInstrumentItem,
     ...instrumentItems,
-    { label: "Odd Parts", value: oddPartsValue },
+    oddPartsItem,
   ];
+
+  const songItems = songs.map((song) => ({
+    label: song.title,
+    value: song.id,
+  }));
+
+  const resetSongItem = { label: "Reset song selection", value: allItemsValue };
+  const songSelectItems = [resetSongItem, ...songItems];
 
   log.debug("Songs: ", songs);
 
   return (
     <Collapsible open={moreOptionsOpen} onOpenChange={onMoreOptionsOpenChange}>
       <div className="flex flex-col mb-2 gap-4 md:flex-row md:gap-15">
-
         <div className="flex flex-1 flex-col gap-2">
           <div>Instrument</div>
           <div>
@@ -102,15 +118,23 @@ export function SheetMusicFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectItem value={allItemsValue}>All instruments</SelectItem>
-                  <Separator className="my-1" />
+                  {selectedInstrument && (
+                    <>
+                      <SelectItem value={resetInstrumentItem.value}>
+                        {resetInstrumentItem.label}
+                      </SelectItem>
+                      <Separator className="my-1" />
+                    </>
+                  )}
                   {instrumentItems.map((item) => (
                     <SelectItem key={item.value} value={item.value}>
                       {item.label}
                     </SelectItem>
                   ))}
                   <Separator className="my-1" />
-                  <SelectItem value={oddPartsValue}>Odd Parts</SelectItem>
+                  <SelectItem value={oddPartsItem.value}>
+                    {oddPartsItem.label}
+                  </SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
@@ -126,12 +150,18 @@ export function SheetMusicFilters({
               onValueChange={onConcertChange}
             >
               <SelectTrigger className="w-full min-w-80">
-                <SelectValue placeholder="Select a Set List / Concert" />
+                <SelectValue placeholder="Select a set list / concert" />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectItem value="all">All songs in the library</SelectItem>
-                  <Separator className="my-1" />
+                  {selectedConcert && (
+                    <>
+                      <SelectItem value={resetConcertItem.value}>
+                        {resetConcertItem.label}
+                      </SelectItem>
+                      <Separator className="my-1" />
+                    </>
+                  )}
                   {concertItems.map((item) => (
                     <SelectItem key={item.value} value={item.value}>
                       {item.label}
@@ -142,7 +172,7 @@ export function SheetMusicFilters({
             </Select>
           </div>
         </div>
-        
+
         <div className="flex shrink-0 flex-col gap-2">
           <div>More options</div>
           <div className="flex h-9 items-center">
@@ -165,14 +195,48 @@ export function SheetMusicFilters({
       <CollapsibleContent>
         <div className="flex flex-col gap-4 mt-4 md:flex-row md:gap-15">
           <div className="flex shrink-0 flex-col gap-2">
-            <div className="flex items-center text-sm text-muted-foreground gap-1 mt-2">
-              <div>Include Score</div>
+            <div className="flex items-center text-sm text-muted-foreground gap-1 mt-2 w-66">
+              <div>Include score</div>
               <div className="flex h-9 pl-3 items-center">
                 <Checkbox
                   checked={includeScore}
                   onCheckedChange={onIncludeScoreChange}
                 />
               </div>
+            </div>
+          </div>
+
+          <div className="flex flex-1 flex-col gap-2">
+            <div>
+              Song <span className="text-sm">(score and all parts)</span>
+            </div>
+            <div>
+              <Select
+                items={songSelectItems}
+                value={selectedSongId}
+                onValueChange={onSongChange}
+              >
+                <SelectTrigger className="w-80">
+                  <SelectValue placeholder="Select a song" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {selectedSongId && (
+                      <>
+                        <SelectItem value={resetSongItem.value}>
+                          {resetSongItem.label}
+                        </SelectItem>
+                        <Separator className="my-1" />
+                      </>
+                    )}
+                    {songItems.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
