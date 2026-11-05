@@ -2,18 +2,24 @@ import type { Version } from "@/core/types";
 import type { FileMetadata } from "@/core/types/file";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, Eye } from "lucide-react";
+import {
+  previewTitleFromPart,
+  previewTitleFromScore,
+} from "@/utils/preview-title";
 
 type SongTableRowsProps = {
   currentVersion: Version | undefined;
   isDownloading: boolean;
   onDownload: (file: FileMetadata) => void;
+  onPreview: (file: FileMetadata, title: string) => void;
 };
 
 export function SongTableRows({
   currentVersion,
   isDownloading,
   onDownload,
+  onPreview,
 }: SongTableRowsProps) {
   if (!currentVersion) {
     return null;
@@ -34,13 +40,25 @@ export function SongTableRows({
 
         <TableCell></TableCell>
         <TableCell className="pl-8">
-          <Button
-            variant="secondary"
-            disabled={isDownloading}
-            onClick={() => onDownload(score.file)}
-          >
-            <Download /> Download PDF
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={`Preview score`}
+              onClick={() =>
+                onPreview(score.file, previewTitleFromScore(score))
+              }
+            >
+              <Eye />
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={isDownloading}
+              onClick={() => onDownload(score.file)}
+            >
+              <Download /> Download PDF
+            </Button>
+          </div>
         </TableCell>
       </TableRow>
       {currentVersion.parts.map((part) => {
@@ -52,13 +70,25 @@ export function SongTableRows({
 
             <TableCell></TableCell>
             <TableCell className="pl-8">
-              <Button
-                variant="secondary"
-                disabled={isDownloading}
-                onClick={() => onDownload(part.file)}
-              >
-                <Download /> Download PDF
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={`Preview ${part.name}`}
+                  onClick={() =>
+                    onPreview(part.file, previewTitleFromPart(part))
+                  }
+                >
+                  <Eye />
+                </Button>
+                <Button
+                  variant="secondary"
+                  disabled={isDownloading}
+                  onClick={() => onDownload(part.file)}
+                >
+                  <Download /> Download PDF
+                </Button>
+              </div>
             </TableCell>
           </TableRow>
         );

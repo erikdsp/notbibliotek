@@ -14,6 +14,8 @@ import {
 import { useDownloadFile } from "@/hooks/use-download-file";
 import type { FileMetadata } from "@/core/types/file";
 import { SheetMusicSection } from "@/features/musician/components/SheetMusicSection";
+import { usePdfPreview } from "@/hooks/use-pdf-preview";
+import { PdfPreviewDialog } from "@/components/pdf-preview/PdfPreviewDialog";
 
 const log = createLogger("MusiciansView");
 
@@ -25,6 +27,10 @@ export function MusiciansView() {
   const [selectedSongId, setSelectedSongId] = useState<string | null>(null);
   const [includeScore, setIncludeScore] = useState(false);
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
+  const [preview, setPreview] = useState<{
+    file: FileMetadata;
+    title: string;
+  } | null>(null);
 
   const concertSelected = selectedConcert !== null;
   const instrumentSelected =
@@ -65,6 +71,16 @@ export function MusiciansView() {
     isLoading: instrumentsIsLoading,
     isError: instrumentsIsError,
   } = useInstruments();
+
+  const {
+    data: previewBlob,
+    isPending: previewIsPending,
+    error: previewError,
+  } = usePdfPreview(preview?.file.id ?? null);
+
+  function handlePreview(file: FileMetadata, title: string) {
+    setPreview({ file, title });
+  }
 
   function handleSelectInstrument(instrumentId: string | null) {
     setSelectedInstrument(instrumentId !== allItemsValue ? instrumentId : null);
@@ -152,6 +168,18 @@ export function MusiciansView() {
             selectedSongId={selectedSongId}
             isDownloading={downloadFile.isPending}
             onDownload={handleDownload}
+            onPreview={handlePreview}
+          />
+
+          <PdfPreviewDialog
+            open={preview !== null}
+            onOpenChange={(open) => {
+              if (!open) setPreview(null);
+            }}
+            file={previewBlob ?? null}
+            title={preview?.title}
+            isLoading={previewIsPending}
+            error={previewError}
           />
         </section>
       </main>
