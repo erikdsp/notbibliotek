@@ -27,7 +27,10 @@ export function MusiciansView() {
   const [selectedSongId, setSelectedSongId] = useState<string | null>(null);
   const [includeScore, setIncludeScore] = useState(false);
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
-  const [previewFile, setPreviewFile] = useState<FileMetadata | null>(null);
+  const [preview, setPreview] = useState<{
+    file: FileMetadata;
+    title: string;
+  } | null>(null);
 
   const concertSelected = selectedConcert !== null;
   const instrumentSelected =
@@ -69,14 +72,14 @@ export function MusiciansView() {
     isError: instrumentsIsError,
   } = useInstruments();
 
-  const { data: previewBlob, 
-isPending: previewIsPending,
-  error: previewError,
+  const {
+    data: previewBlob,
+    isPending: previewIsPending,
+    error: previewError,
+  } = usePdfPreview(preview?.file.id ?? null);
 
-  } = usePdfPreview(previewFile?.id ?? null);
-
-  function handlePreview(file: FileMetadata) {
-    setPreviewFile(file);
+  function handlePreview(file: FileMetadata, title: string) {
+    setPreview({ file, title });
   }
 
   function handleSelectInstrument(instrumentId: string | null) {
@@ -169,11 +172,12 @@ isPending: previewIsPending,
           />
 
           <PdfPreviewDialog
-            open={previewFile !== null}
+            open={preview !== null}
             onOpenChange={(open) => {
-              if (!open) setPreviewFile(null);
+              if (!open) setPreview(null);
             }}
             file={previewBlob ?? null}
+            title={preview?.title}
             isLoading={previewIsPending}
             error={previewError}
           />

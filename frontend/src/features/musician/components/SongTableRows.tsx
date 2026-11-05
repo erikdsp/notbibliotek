@@ -3,12 +3,16 @@ import type { FileMetadata } from "@/core/types/file";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Download, Eye } from "lucide-react";
+import {
+  previewTitleFromPart,
+  previewTitleFromScore,
+} from "@/utils/preview-title";
 
 type SongTableRowsProps = {
   currentVersion: Version | undefined;
   isDownloading: boolean;
   onDownload: (file: FileMetadata) => void;
-  onPreview: (file: FileMetadata) => void;
+  onPreview: (file: FileMetadata, title: string) => void;
 };
 
 export function SongTableRows({
@@ -41,7 +45,9 @@ export function SongTableRows({
               variant="ghost"
               size="icon-sm"
               aria-label={`Preview score`}
-              onClick={() => onPreview(score.file)}
+              onClick={() =>
+                onPreview(score.file, previewTitleFromScore(score))
+              }
             >
               <Eye />
             </Button>
@@ -69,7 +75,9 @@ export function SongTableRows({
                   variant="ghost"
                   size="icon-sm"
                   aria-label={`Preview ${part.name}`}
-                  onClick={() => onPreview(part.file)}
+                  onClick={() =>
+                    onPreview(part.file, previewTitleFromPart(part))
+                  }
                 >
                   <Eye />
                 </Button>

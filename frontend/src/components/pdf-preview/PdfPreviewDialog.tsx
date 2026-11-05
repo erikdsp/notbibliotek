@@ -10,6 +10,7 @@ type PdfPreviewDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   file: Blob | null;
+  title?: string;
   isLoading: boolean;
   error: Error | null;
 };
@@ -18,6 +19,7 @@ export function PdfPreviewDialog({
   open,
   onOpenChange,
   file,
+  title,
   isLoading,
   error,
 }: PdfPreviewDialogProps) {
@@ -25,7 +27,7 @@ export function PdfPreviewDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex h-[95vh] w-[95vw] sm:max-w-none flex-col">
         <DialogHeader>
-          <DialogTitle>PDF Preview</DialogTitle>
+          <DialogTitle>{title ?? "PDF Preview"}</DialogTitle>
         </DialogHeader>
 
         {isLoading ? (

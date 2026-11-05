@@ -4,6 +4,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { formatDateTime } from "@/utils/format-time";
 import { Download, Eye } from "lucide-react";
+import { previewTitleFromPart } from "@/utils/preview-title";
 
 type SetlistTableRowsProps = {
   songs: SongResponse[];
@@ -11,7 +12,7 @@ type SetlistTableRowsProps = {
   instrumentSelected: boolean;
   isDownloading: boolean;
   onDownload: (file: FileMetadata) => void;
-  onPreview: (file: FileMetadata) => void;
+  onPreview: (file: FileMetadata, title: string) => void;
 };
 
 export function SetlistTableRows({
@@ -75,7 +76,9 @@ export function SetlistTableRows({
                     variant="ghost"
                     size="icon-sm"
                     aria-label={`Preview ${part.name}`}
-                    onClick={() => onPreview(part.file)}
+                    onClick={() =>
+                      onPreview(part.file, previewTitleFromPart(part))
+                    }
                   >
                     <Eye />
                   </Button>

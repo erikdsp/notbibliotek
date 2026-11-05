@@ -13,7 +13,7 @@ type SheetMusicTableProps = {
   selectedSongId: string | null;
   isDownloading: boolean;
   onDownload: (file: FileMetadata) => void;
-  onPreview: (file: FileMetadata) => void;
+  onPreview: (file: FileMetadata, title: string) => void;
 };
 
 export function SheetMusicTable({
