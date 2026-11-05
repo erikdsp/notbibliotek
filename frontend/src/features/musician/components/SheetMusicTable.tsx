@@ -13,6 +13,7 @@ type SheetMusicTableProps = {
   selectedSongId: string | null;
   isDownloading: boolean;
   onDownload: (file: FileMetadata) => void;
+  onPreview: (file: FileMetadata) => void;
 };
 
 export function SheetMusicTable({
@@ -22,6 +23,7 @@ export function SheetMusicTable({
   selectedSongId,
   isDownloading,
   onDownload,
+  onPreview,
 }: SheetMusicTableProps) {
   const isSongMode = selectedSongId !== null;
   const selectedSong = songs.find((song) => song.id === selectedSongId);
@@ -49,6 +51,7 @@ export function SheetMusicTable({
             currentVersion={currentVersion}
             isDownloading={isDownloading}
             onDownload={onDownload}
+            onPreview={onPreview}
           />
         ) : (
           <SetlistTableRows
@@ -57,6 +60,7 @@ export function SheetMusicTable({
             instrumentSelected={instrumentSelected}
             isDownloading={isDownloading}
             onDownload={onDownload}
+            onPreview={onPreview}
           />
         )}
       </TableBody>

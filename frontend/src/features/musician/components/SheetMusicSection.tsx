@@ -14,6 +14,7 @@ type SheetMusicSectionProps = {
   selectedSongId: string | null;
   isDownloading: boolean;
   onDownload: (file: FileMetadata) => void;
+  onPreview: (file: FileMetadata) => void;
 };
 
 export function SheetMusicSection({
@@ -25,6 +26,7 @@ export function SheetMusicSection({
   selectedSongId,
   isDownloading,
   onDownload,
+  onPreview,
 }: SheetMusicSectionProps) {
 const selectedSong = songs.find((song) => song.id === selectedSongId);
 const currentVersion = selectedSong?.versions.find(version => version.song_version_id === selectedSong.current_version_id)
@@ -54,6 +56,7 @@ const currentVersion = selectedSong?.versions.find(version => version.song_versi
           selectedSongId={selectedSongId}
           isDownloading={isDownloading}
           onDownload={onDownload}
+          onPreview={onPreview}
         />
       </div>
 

@@ -3,7 +3,7 @@ import type { FileMetadata } from "@/core/types/file";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { formatDateTime } from "@/utils/format-time";
-import { Download } from "lucide-react";
+import { Download, Eye } from "lucide-react";
 
 type SetlistTableRowsProps = {
   songs: SongResponse[];
@@ -11,6 +11,7 @@ type SetlistTableRowsProps = {
   instrumentSelected: boolean;
   isDownloading: boolean;
   onDownload: (file: FileMetadata) => void;
+  onPreview: (file: FileMetadata) => void;
 };
 
 export function SetlistTableRows({
@@ -19,6 +20,7 @@ export function SetlistTableRows({
   instrumentSelected,
   isDownloading,
   onDownload,
+  onPreview,
 }: SetlistTableRowsProps) {
   return (
     <>
@@ -68,13 +70,23 @@ export function SetlistTableRows({
                   : null}
               </TableCell>
               <TableCell className="pl-8">
-                <Button
-                  variant="secondary"
-                  disabled={isDownloading}
-                  onClick={() => onDownload(part.file)}
-                >
-                  <Download /> Download PDF
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={`Preview ${part.name}`}
+                    onClick={() => onPreview(part.file)}
+                  >
+                    <Eye />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    disabled={isDownloading}
+                    onClick={() => onDownload(part.file)}
+                  >
+                    <Download /> Download PDF
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           );
