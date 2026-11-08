@@ -1,8 +1,4 @@
 import { useState } from "react";
-import { Plus, CopyPlus } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -10,13 +6,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import type { SongResponse, Instrument } from "@/core/types";
 import { formatSongVersion } from "@/utils/song-utils";
 import { useCreateSong, useCreateSongVersion } from "@/hooks";
@@ -32,11 +21,6 @@ import { saveSongDraft } from "@/features/admin/services/save-song-draft";
 import { refetchSongQueries } from "@/features/admin/lib/refetch-song-queries";
 import { validateSongDraft } from "@/features/admin/lib/validate-song-draft";
 import { defaultInstrumentMappings } from "@/features/admin/lib/default-instrument-mappings";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { usePublishSongVersion } from "@/hooks/use-publish-song-version";
 import { nameToKey } from "@/features/admin/lib/name-to-key";
 import { PartUploadDuplicatesDialog } from "@/features/admin/components/songs/PartUploadDuplicatesDialog";
@@ -49,6 +33,7 @@ import { UnsavedChangesOnCloseDialog } from "@/features/admin/components/songs/U
 import { UnsavedChangesOnVersionSwitchDialog } from "@/features/admin/components/songs/UnsavedChangesOnVersionSwitchDialog";
 import { SaveDraftErrorDialog } from "@/features/admin/components/songs/SaveDraftErrorDialog";
 import { ConfirmPublishDialog } from "@/features/admin/components/songs/ConfirmPublishDialog";
+import { VersionControls } from "@/features/admin/components/songs/VersionControls";
 
 const log = createLogger("SongEditorForm");
 
@@ -430,10 +415,6 @@ export function SongEditorForm({
       };
     }) ?? [];
 
-  const selectedVersionLabel = versionOptions.find(
-    (option) => option.value === versionId,
-  )?.label;
-
   function handleRemoveScore() {
     if (versionId === null) return;
 
@@ -571,59 +552,14 @@ export function SongEditorForm({
               ) : (
                 <>
                   <section aria-label="Song version" className="space-y-6">
-                    {/* Version selector */}
-
-                    <div className="space-y-2">
-                      <Label>Version</Label>
-
-                      <div className="flex items-center gap-3">
-                        <Select value={versionId} onValueChange={selectVersion}>
-                          <SelectTrigger className="w-2/3">
-                            <SelectValue placeholder="Select version">
-                              {selectedVersionLabel}
-                            </SelectValue>
-                          </SelectTrigger>
-
-                          <SelectContent>
-                            {versionOptions.map((option) => (
-                              <SelectItem
-                                key={option.value}
-                                value={option.value}
-                              >
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-
-                        <Button variant="outline" disabled className="ml-auto">
-                          <CopyPlus />
-                          New Duplicate Draft
-                        </Button>
-
-                        <Tooltip>
-                          <TooltipTrigger render={<span />}>
-                            <Button
-                              variant="outline"
-                              disabled={
-                                isDirty || createSongVersionMutation.isPending
-                              }
-                              onClick={handleCreateEmptyDraft}
-                            >
-                              <Plus />
-                              New Empty Draft
-                            </Button>
-                          </TooltipTrigger>
-
-                          {isDirty && (
-                            <TooltipContent>
-                              Save or discard changes before creating a new
-                              draft.
-                            </TooltipContent>
-                          )}
-                        </Tooltip>
-                      </div>
-                    </div>
+                    <VersionControls
+                      versionId={versionId}
+                      versionOptions={versionOptions}
+                      onSelectVersion={selectVersion}
+                      onCreateEmptyDraft={handleCreateEmptyDraft}
+                      isDirty={isDirty}
+                      isCreatingVersion={createSongVersionMutation.isPending}
+                    />
 
                     {isPublished && (
                       <p className="text-sm text-muted-foreground">
