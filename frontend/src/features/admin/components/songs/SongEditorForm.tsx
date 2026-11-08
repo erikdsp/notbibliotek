@@ -27,16 +27,6 @@ import { makeEditableParts } from "@/features/admin/mappers/make-editable-parts"
 import { makeEditableScore } from "@/features/admin/mappers/make-editable-score";
 import { suggestPartName } from "@/features/admin/lib/suggest-part-name";
 import { initialVersionId } from "@/features/admin/lib/initial-version-id";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { usePartInstruments } from "@/hooks/use-part-instruments";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { saveSongDraft } from "@/features/admin/services/save-song-draft";
@@ -56,6 +46,9 @@ import { ScoreSection } from "@/features/admin/components/songs/ScoreSection";
 import { SongTitleInput } from "@/features/admin/components/songs/SongTitleInput";
 import { AddSongFooter } from "@/features/admin/components/songs/AddSongFooter";
 import { EditSongFooter } from "@/features/admin/components/songs/EditSongFooter";
+import { UnsavedChangesOnCloseDialog } from "@/features/admin/components/songs/UnsavedChangesOnCloseDialog";
+import { UnsavedChangesOnVersionSwitchDialog } from "@/features/admin/components/songs/UnsavedChangesOnVersionSwitchDialog";
+import { SaveDraftErrorDialog } from "@/features/admin/components/songs/SaveDraftErrorDialog";
 
 const log = createLogger("SongEditorForm");
 
@@ -687,7 +680,6 @@ export function SongEditorForm({
                     onSave={handleSaveDraft}
                     onPublish={() => setConfirmPublish(true)}
                   />
-
                 </>
               )}
             </div>
@@ -695,88 +687,38 @@ export function SongEditorForm({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog
+      <UnsavedChangesOnVersionSwitchDialog
         open={pendingVersionId !== null}
         onOpenChange={(open) => {
           if (!open) setPendingVersionId(null);
         }}
-      >
-        <AlertDialogContent overlayClassName="bg-black/40 supports-backdrop-filter:backdrop-blur-[1px]">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Your unsaved changes to Score and Parts will be lost.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+        onDiscardAndSwitch={() => {
+          if (pendingVersionId === null) return;
 
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+          switchVersion(pendingVersionId);
+          setPendingVersionId(null);
+        }}
+      />
 
-            <AlertDialogAction
-              onClick={() => {
-                if (pendingVersionId === null) return;
+      <UnsavedChangesOnCloseDialog
+        open={confirmClose}
+        onOpenChange={setConfirmClose}
+        onDiscardAndClose={() => {
+          setConfirmClose(false);
+          onOpenChange(false);
+        }}
+      />
 
-                switchVersion(pendingVersionId);
-                setPendingVersionId(null);
-              }}
-            >
-              Discard & Switch
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={confirmClose} onOpenChange={setConfirmClose}>
-        <AlertDialogContent overlayClassName="bg-black/40 supports-backdrop-filter:backdrop-blur-[0.5px]">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Your unsaved changes will be lost.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep Editing</AlertDialogCancel>
-
-            <AlertDialogAction
-              onClick={() => {
-                setConfirmClose(false);
-                onOpenChange(false);
-              }}
-            >
-              Discard Changes
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={saveErrorOpen} onOpenChange={setSaveErrorOpen}>
-        <AlertDialogContent overlayClassName="bg-black/40 supports-backdrop-filter:backdrop-blur-[0.5px]">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Save Draft failed</AlertDialogTitle>
-            <AlertDialogDescription>
-              Some changes may have been saved successfully. You can close the
-              editor and reload the saved data, or keep editing. Retrying Save
-              Draft may fail because some changes have already been saved.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep Editing</AlertDialogCancel>
-
-            <AlertDialogAction
-              onClick={() => {
-                setEditedScore(null);
-                setEditedParts(null);
-                setSaveErrorOpen(false);
-                onOpenChange(false);
-              }}
-            >
-              Close and Reload (Recommended)
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <SaveDraftErrorDialog
+        open={saveErrorOpen}
+        onOpenChange={setSaveErrorOpen}
+        onCloseAndReload={() => {
+          setEditedScore(null);
+          setEditedParts(null);
+          setSaveErrorOpen(false);
+          onOpenChange(false);
+        }}
+      />
 
       <Dialog
         open={confirmPublish}
