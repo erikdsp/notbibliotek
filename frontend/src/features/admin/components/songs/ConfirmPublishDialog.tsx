@@ -1,4 +1,3 @@
-import { AlertTriangle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +9,8 @@ import {
 import { Button } from "@/components/ui/button";
 import type { Instrument } from "@/core/types";
 import type { EditablePart, EditableScore } from "@/features/admin/types";
+import { PublishScoreSummary } from "@/features/admin/components/songs/PublishScoreSummary";
+import { PublishPartsSummary } from "@/features/admin/components/songs/PublishPartsSummary";
 
 type ConfirmPublishDialogProps = {
   open: boolean;
@@ -34,6 +35,8 @@ export function ConfirmPublishDialog({
   isPublishing,
   publishError,
 }: ConfirmPublishDialogProps) {
+
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -53,62 +56,8 @@ export function ConfirmPublishDialog({
         </DialogHeader>
 
         <div className="-mr-5 min-h-0 flex-1 space-y-5 overflow-y-auto py-2 pr-4">
-          {/* Score */}
-          <section className="space-y-2">
-            <h3 className="px-3 text-sm font-semibold">Score</h3>
-            <div className="rounded-md px-3 py-2 text-sm">
-              {score?.file_name ?? "No score"}
-            </div>
-          </section>
-
-          {/* Parts */}
-          <section className="space-y-2">
-            <h3 className="px-3 text-sm font-semibold">
-              Parts ({parts?.length ?? 0})
-            </h3>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-muted/50">
-                  <tr className="border-b">
-                    <th className="px-3 py-2 font-medium">Name</th>
-                    <th className="px-3 py-2 font-medium">Instruments</th>
-                    <th className="px-3 py-2 font-medium">File</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {parts?.map((part) => (
-                    <tr
-                      key={part.local_id}
-                      className="border-b last:border-0"
-                    >
-                      <td className="px-3 py-2">{part.name}</td>
-                      <td className="px-3 py-2">
-                        {part.instrument_ids.length > 0 ? (
-                          part.instrument_ids
-                            .map(
-                              (id) =>
-                                instruments.find((i) => i.id === id)?.name,
-                            )
-                            .filter(Boolean)
-                            .join(", ")
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5">
-                            <AlertTriangle className="size-4 text-amber-600" />
-                            None
-                          </span>
-                        )}
-                      </td>
-                      <td className="max-w-48 truncate px-3 py-2">
-                        {part.file_name ?? "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
+          <PublishScoreSummary score={score} />
+          <PublishPartsSummary parts={parts} instruments={instruments} />
         </div>
 
         <DialogFooter className="shrink-0">
