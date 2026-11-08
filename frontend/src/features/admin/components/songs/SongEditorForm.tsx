@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, CopyPlus, AlertTriangle } from "lucide-react";
+import { Plus, CopyPlus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -7,7 +7,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -49,6 +48,7 @@ import { EditSongFooter } from "@/features/admin/components/songs/EditSongFooter
 import { UnsavedChangesOnCloseDialog } from "@/features/admin/components/songs/UnsavedChangesOnCloseDialog";
 import { UnsavedChangesOnVersionSwitchDialog } from "@/features/admin/components/songs/UnsavedChangesOnVersionSwitchDialog";
 import { SaveDraftErrorDialog } from "@/features/admin/components/songs/SaveDraftErrorDialog";
+import { ConfirmPublishDialog } from "@/features/admin/components/songs/ConfirmPublishDialog";
 
 const log = createLogger("SongEditorForm");
 
@@ -720,108 +720,17 @@ export function SongEditorForm({
         }}
       />
 
-      <Dialog
+      <ConfirmPublishDialog
         open={confirmPublish}
         onOpenChange={handleConfirmPublishOpenChange}
-      >
-        <DialogContent
-          className="flex max-h-[90vh] w-[95vw] sm:max-w-5xl flex-col overflow-hidden"
-          overlayClassName="bg-black/20 supports-backdrop-filter:backdrop-blur-[0px]"
-        >
-          <DialogHeader>
-            <DialogTitle>Publish Version?</DialogTitle>
-            <DialogDescription>
-              Review the score and parts before publishing this version.
-            </DialogDescription>
-            {publishSongVersionMutation.isError && (
-              <p role="alert" className="text-sm text-destructive">
-                Failed to publish version. Please try again.
-              </p>
-            )}
-          </DialogHeader>
-
-          <div className="-mr-5 min-h-0 flex-1 space-y-5 overflow-y-auto py-2 pr-4">
-            {/* Score */}
-            <section className="space-y-2">
-              <h3 className="px-3 text-sm font-semibold">Score</h3>
-              <div className="rounded-md px-3 py-2 text-sm">
-                {score?.file_name ?? "No score"}
-              </div>
-            </section>
-
-            {/* Parts */}
-            <section className="space-y-2">
-              <h3 className="px-3 text-sm font-semibold">
-                Parts ({parts?.length ?? 0})
-              </h3>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-muted/50">
-                    <tr className="border-b">
-                      <th className="px-3 py-2 font-medium">Name</th>
-                      <th className="px-3 py-2 font-medium">Instruments</th>
-                      <th className="px-3 py-2 font-medium">File</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {parts?.map((part) => (
-                      <tr
-                        key={part.local_id}
-                        className="border-b last:border-0"
-                      >
-                        <td className="px-3 py-2">{part.name}</td>
-                        <td className="px-3 py-2">
-                          {part.instrument_ids.length > 0 ? (
-                            part.instrument_ids
-                              .map(
-                                (id) =>
-                                  instruments.find((i) => i.id === id)?.name,
-                              )
-                              .filter(Boolean)
-                              .join(", ")
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5">
-                              <AlertTriangle className="size-4 text-amber-600" />
-                              None
-                            </span>
-                          )}
-                        </td>
-                        <td className="max-w-48 truncate px-3 py-2">
-                          {part.file_name ?? "—"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          </div>
-
-          <DialogFooter className="shrink-0">
-            <Button
-              variant="outline"
-              onClick={() => handleConfirmPublishOpenChange(false)}
-            >
-              Keep Editing
-            </Button>
-            <Button
-              disabled={
-                saveDraftMutation.isPending ||
-                publishSongVersionMutation.isPending
-              }
-              onClick={handlePublishVersion}
-            >
-              {saveDraftMutation.isPending
-                ? "Saving..."
-                : publishSongVersionMutation.isPending
-                  ? "Publishing..."
-                  : "Publish Version"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        onPublish={handlePublishVersion}
+        score={score}
+        parts={parts}
+        instruments={instruments}
+        isSaving={saveDraftMutation.isPending}
+        isPublishing={publishSongVersionMutation.isPending}
+        publishError={publishSongVersionMutation.isError}
+      />
 
       {pendingPartUpload !== null && (
         <PartUploadDuplicatesDialog
