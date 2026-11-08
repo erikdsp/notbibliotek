@@ -539,6 +539,55 @@ export function SongEditorForm({
                 titleError={validationErrors.title}
               />
 
+              {song !== null && (
+                <section aria-label="Song version" className="space-y-6">
+                  <VersionControls
+                    versionId={versionId}
+                    versionOptions={versionOptions}
+                    onSelectVersion={selectVersion}
+                    onCreateEmptyDraft={handleCreateEmptyDraft}
+                    isDirty={isDirty}
+                    isCreatingVersion={createSongVersionMutation.isPending}
+                  />
+
+                  {versionId === null ? (
+                    <p>This song has no version.</p>
+                  ) : instrumentsPending ? (
+                    <p>Loading instruments...</p>
+                  ) : instrumentsError ? (
+                    <p>Failed to load instruments.</p>
+                  ) : (
+                    <>
+                      {isPublished && (
+                        <p className="text-sm text-muted-foreground">
+                          Published version. PDFs are read-only.
+                        </p>
+                      )}
+                      <ScoreSection
+                        score={score}
+                        isPublished={isPublished}
+                        onAddScoreFile={addScoreFile}
+                        onRemoveScore={handleRemoveScore}
+                        onPreviewFile={previewFile}
+                      />
+
+                      <PartsSection
+                        parts={parts}
+                        instruments={instruments}
+                        partErrors={validationErrors.parts}
+                        isPublished={isPublished}
+                        onAddPartFiles={addPartFiles}
+                        onUpdatePart={updatePart}
+                        onRemovePart={handleRemovePart}
+                        onReplaceFile={replacePartFile}
+                        onToggleInstrument={toggleInstrument}
+                        onPreviewFile={previewFile}
+                      />
+                    </>
+                  )}
+                </section>
+              )}
+
               {song === null ? (
                 <AddSongFooter
                   disabled={
@@ -550,73 +599,22 @@ export function SongEditorForm({
                   onCreateSong={handleCreateSong}
                 />
               ) : (
-                <>
-                  <section aria-label="Song version" className="space-y-6">
-                    <VersionControls
-                      versionId={versionId}
-                      versionOptions={versionOptions}
-                      onSelectVersion={selectVersion}
-                      onCreateEmptyDraft={handleCreateEmptyDraft}
-                      isDirty={isDirty}
-                      isCreatingVersion={createSongVersionMutation.isPending}
-                    />
-
-                    {isPublished && (
-                      <p className="text-sm text-muted-foreground">
-                        Published version. PDFs are read-only.
-                      </p>
-                    )}
-
-                    {/* Version Editing */}
-                    {versionId === null ? (
-                      <p>This song has no version.</p>
-                    ) : instrumentsPending ? (
-                      <p>Loading instruments...</p>
-                    ) : instrumentsError ? (
-                      <p>Failed to load instruments.</p>
-                    ) : (
-                      <>
-                        <ScoreSection
-                          score={score}
-                          isPublished={isPublished}
-                          onAddScoreFile={addScoreFile}
-                          onRemoveScore={handleRemoveScore}
-                          onPreviewFile={previewFile}
-                        />
-
-                        <PartsSection
-                          parts={parts}
-                          instruments={instruments}
-                          partErrors={validationErrors.parts}
-                          isPublished={isPublished}
-                          onAddPartFiles={addPartFiles}
-                          onUpdatePart={updatePart}
-                          onRemovePart={handleRemovePart}
-                          onReplaceFile={replacePartFile}
-                          onToggleInstrument={toggleInstrument}
-                          onPreviewFile={previewFile}
-                        />
-                      </>
-                    )}
-                  </section>
-
-                  <EditSongFooter
-                    isPublished={isPublished}
-                    isSaving={saveDraftMutation.isPending}
-                    saveDisabled={
-                      !isDirty || saveDraftMutation.isPending || !isValid
-                    }
-                    publishDisabled={
-                      versionId === null ||
-                      !isValid ||
-                      !hasScore ||
-                      saveDraftMutation.isPending
-                    }
-                    onClose={requestClose}
-                    onSave={handleSaveDraft}
-                    onPublish={() => setConfirmPublish(true)}
-                  />
-                </>
+                <EditSongFooter
+                  isPublished={isPublished}
+                  isSaving={saveDraftMutation.isPending}
+                  saveDisabled={
+                    !isDirty || saveDraftMutation.isPending || !isValid
+                  }
+                  publishDisabled={
+                    versionId === null ||
+                    !isValid ||
+                    !hasScore ||
+                    saveDraftMutation.isPending
+                  }
+                  onClose={requestClose}
+                  onSave={handleSaveDraft}
+                  onPublish={() => setConfirmPublish(true)}
+                />
               )}
             </div>
           </div>
