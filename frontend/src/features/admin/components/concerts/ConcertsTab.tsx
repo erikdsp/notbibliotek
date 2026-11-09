@@ -1,13 +1,3 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -18,12 +8,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { ConcertDetailedResponse } from "@/core/types";
-import { ConcertEditor } from "@/features/admin/components/ConcertEditor";
+import { ConcertEditor } from "./ConcertEditor";
 import { useConcerts, useDeleteConcert, useSongs } from "@/hooks";
 import { createLogger } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, Pencil, Plus, Trash } from "lucide-react";
 import { useState } from "react";
+import { DeleteConcertDialog } from "@/features/admin/components/concerts/DeleteConcertDialog";
 
 const log = createLogger("ConcertsTab");
 
@@ -55,7 +46,7 @@ export function ConcertsTab() {
     setEditorOpen(true);
   }
 
-   const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   const deleteConcertMutation = useDeleteConcert();
 
   function handleDelete(concert: ConcertDetailedResponse) {
@@ -74,6 +65,12 @@ export function ConcertsTab() {
       setDeletingConcert(null);
     } catch (error) {
       log.error("Failed to delete concert:", error);
+    }
+  }
+
+  function handleDeleteConcertOpenChange(open: boolean) {
+    if (!open && !deleteConcertMutation.isPending) {
+      setDeletingConcert(null);
     }
   }
 
@@ -155,66 +152,14 @@ export function ConcertsTab() {
         />
       )}
 
-      <AlertDialog
-        open={deletingConcert !== null}
-        onOpenChange={(open) => {
-          if (!open && !deleteConcertMutation.isPending) {
-            setDeletingConcert(null);
-          }
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Concert?</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              <span className="block">
-                Are you sure you want to delete this concert?
-              </span>
-
-              <span className="block rounded-md border p-3">
-                <strong className="block text-foreground">
-                  {deletingConcert?.name}
-                </strong>
-                <span className="block text-sm">{deletingConcert?.date}</span>
-              </span>
-
-              <span className="block">
-                The concert and its setlist with {deletingSongCount} song
-                {deletingSongCount !== 1 && "s"} will be deleted <br/> (All songs will remain in the library)
-              </span>
-
-              <span className="block">
-
-              </span>
-              <strong className="block text-destructive">
-                This action cannot be undone
-              </strong>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          {deleteConcertMutation.isError && (
-            <p role="alert" className="text-sm text-destructive">
-              Failed to delete concert. Please hope for the best and try again.
-            </p>
-          )}
-
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteConcertMutation.isPending}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={deleteConcertMutation.isPending}
-              onClick={(event) => {
-                event.preventDefault();
-                void confirmDelete();
-              }}
-            >
-              {deleteConcertMutation.isPending ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConcertDialog
+        concert={deletingConcert}
+        songCount={deletingSongCount}
+        isDeleting={deleteConcertMutation.isPending}
+        deleteError={deleteConcertMutation.isError}
+        onOpenChange={handleDeleteConcertOpenChange}
+        onConfirmDelete={confirmDelete}
+      />
     </section>
   );
 }
