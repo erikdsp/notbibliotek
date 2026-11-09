@@ -7,7 +7,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { SongResponse, Instrument } from "@/core/types";
-import { formatSongVersion } from "@/utils/song-utils";
 import { useCreateSong, useCreateSongVersion } from "@/hooks";
 import { createLogger } from "@/utils/logger";
 import type {
@@ -40,6 +39,7 @@ import { partsHaveChanged } from "@/features/admin/lib/parts-have-changed";
 import { separatePartFileConflicts } from "@/features/admin/lib/separate-file-part-conflicts";
 import { createEditablePart } from "@/features/admin/lib/create-editable-part";
 import { replaceConflictingPartFiles } from "@/features/admin/lib/replace-conflicting-part-files";
+import { createVersionOptions } from "@/features/admin/lib/create-version-options";
 
 const log = createLogger("SongEditorForm");
 
@@ -102,18 +102,16 @@ export function SongEditorForm({
   const isDirty = titleIsDirty || versionIsDirty;
 
   const validationErrors = validateSongDraft(title, parts);
-
   const isValid =
     validationErrors.title === undefined &&
     Object.keys(validationErrors.parts).length === 0;
 
   const hasScore = score !== null;
-
   const selectedVersion = song?.versions.find(
     (version) => version.song_version_id === versionId,
   );
-
   const isPublished = selectedVersion?.published_at != null;
+  const versionOptions = createVersionOptions(song);
 
   function requestClose() {
     if (song !== null && isDirty) {
@@ -329,20 +327,6 @@ export function SongEditorForm({
     // URL cleanup will be handled when preview functionality
     // is connected to the persisted file endpoints.
   }
-
-  const versionOptions =
-    song?.versions.map((version) => {
-      const label = formatSongVersion(song, version.song_version_id) ?? "Draft";
-
-      return {
-        value: version.song_version_id,
-        label:
-          label +
-          (version.song_version_id === song.current_version_id
-            ? " (Current)"
-            : ""),
-      };
-    }) ?? [];
 
   function handleRemoveScore() {
     if (versionId === null) return;
