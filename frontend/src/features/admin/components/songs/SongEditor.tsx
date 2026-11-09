@@ -1,9 +1,8 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { Instrument } from "@/core/types";
-import { SongEditorForm } from "@/features/admin/components/songs/SongEditorForm";
-
+import { SongEditorForm } from "@/features/admin/components/songs/editor";
 import { useSong } from "@/hooks";
-import { createLogger } from "@/utils/logger";
+import { createLogger } from "@/utils";
 
 const log = createLogger("SongEditor");
 

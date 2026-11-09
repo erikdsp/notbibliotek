@@ -14,3 +14,24 @@ export type EditableScore = {
   file_name: string | null;
   file: File | null;
 };
+
+export type ScoreEdits = {
+  versionId: string;
+  score: EditableScore | null;
+};
+
+export type PartsEdits = {
+  versionId: string;
+  parts: EditablePart[];
+};
+
+export type FileConflict = {
+  file: File;
+  existingPartLocalId: string;
+  existingPartName: string;
+};
+
+export type PendingPartUpload = {
+  versionId: string;
+  conflicts: FileConflict[];
+};

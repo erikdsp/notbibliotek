@@ -1,0 +1,10 @@
+export { AddPartInstrumentsPopover } from "./AddPartInstrumentsPopover";
+export { SongEditorForm } from "./SongEditorForm";
+export { PartsSection } from "./PartsSection";
+export { PartEditor } from "./PartEditor";
+export { SelectedPartInstruments } from "./SelectedPartInstruments";
+export { VersionControls } from "./VersionControls";
+export { SongTitleInput } from "./SongTitleInput";
+export { ScoreSection } from "./ScoreSection";
+export { EditSongFooter } from "./EditSongFooter";
+export { AddSongFooter } from "./AddSongFooter";

@@ -8,12 +8,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { createLogger } from "@/utils/logger";
+import { createLogger, formatSongVersion } from "@/utils";
 import { Pencil, Plus } from "lucide-react";
 import { SongEditor } from "./SongEditor";
-import { useInstruments } from "@/hooks/use-instruments";
-import { useSongs } from "@/hooks/use-songs";
-import { formatSongVersion } from "@/utils/song-utils";
+import { useInstruments, useSongs } from "@/hooks";
+
 
 const log = createLogger("SongsTab");
 
