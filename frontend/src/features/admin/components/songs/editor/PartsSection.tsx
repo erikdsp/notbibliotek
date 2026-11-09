@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import type { Instrument } from "@/core/types";
-import { PartEditor } from "@/features/admin/components/songs/PartEditor";
+import { PartEditor } from "@/features/admin/components/songs/editor/PartEditor";
 import type { PartErrors } from "@/features/admin/lib/validate-song-draft";
 import type { EditablePart } from "@/features/admin/types";
 import { Upload } from "lucide-react";
