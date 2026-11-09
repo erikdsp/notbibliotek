@@ -14,21 +14,12 @@ import type { ConcertDetailedResponse, Song } from "@/core/types";
 import { createLogger } from "@/utils/logger";
 import type { EditableConcert } from "@/features/admin/types/concert-editor-types";
 import { makeEditableConcert } from "@/features/admin/mappers/make-editable-concert";
-import { Badge } from "@/components/ui/badge";
-import { X, Plus } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useCreateConcert, useUpdateConcert } from "@/hooks";
-import {
-  createConcertSongConnection,
-  deleteConcertSongConnection,
-} from "@/services/concert-songs-service";
 import { useQueryClient } from "@tanstack/react-query";
 import { nameToKey } from "@/features/admin/lib/name-to-key";
+import { AddConcertSongPopover } from "@/features/admin/components/concerts/AddConcertSongPopover";
+import { SelectedConcertSongs } from "@/features/admin/components/concerts/SelectedConcertSongs";
+import { saveSongConnections } from "@/features/admin/services";
 
 const log = createLogger("ConcertEditor");
 
@@ -78,37 +69,23 @@ export function ConcertEditor({
     }));
   }
 
-  function toggleSong(songId: string) {
-    const songIds = editedConcert.song_ids.includes(songId)
-      ? editedConcert.song_ids.filter((id) => id !== songId)
-      : [...editedConcert.song_ids, songId];
+  function addSong(songId: string) {
+    if (editedConcert.song_ids.includes(songId)) return;
 
-    updateConcert({ song_ids: songIds });
+    updateConcert({
+      song_ids: [...editedConcert.song_ids, songId],
+    });
+  }
+
+  function removeSong(songId: string) {
+    updateConcert({
+      song_ids: editedConcert.song_ids.filter((id) => id !== songId),
+    });
   }
 
   const queryClient = useQueryClient();
   const createConcertMutation = useCreateConcert();
   const updateConcertMutation = useUpdateConcert();
-
-  async function saveSongConnections(
-    concertId: string,
-    originalSongIds: string[],
-  ) {
-    const originalIds = new Set(originalSongIds);
-    const editedIds = new Set(editedConcert.song_ids);
-
-    const addedIds = [...editedIds].filter((id) => !originalIds.has(id));
-    const removedIds = [...originalIds].filter((id) => !editedIds.has(id));
-
-    await Promise.all([
-      ...addedIds.map((songId) =>
-        createConcertSongConnection(concertId, songId),
-      ),
-      ...removedIds.map((songId) =>
-        deleteConcertSongConnection(concertId, songId),
-      ),
-    ]);
-  }
 
   async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -126,7 +103,11 @@ export function ConcertEditor({
           key: nameToKey(`${name}${date.slice(0, 4)}`, concertKeys),
         });
 
-        await saveSongConnections(createdConcert.id, []);
+        await saveSongConnections(
+          createdConcert.id,
+          [],
+          editedConcert.song_ids,
+        );
         await queryClient.invalidateQueries({ queryKey: ["concerts"] });
       } catch (error) {
         log.error("Failed to create concert:", error);
@@ -150,6 +131,7 @@ export function ConcertEditor({
           await saveSongConnections(
             editingConcert.id,
             editingConcert.songs.map((song) => song.id),
+            editedConcert.song_ids,
           );
         }
 
@@ -204,56 +186,18 @@ export function ConcertEditor({
               <FieldLabel>Songs</FieldLabel>
 
               <div className="flex flex-col items-start gap-2 rounded-md border p-2">
-                {editedConcert.song_ids.map((id) => {
-                  const song = songs.find((song) => song.id === id);
+                <SelectedConcertSongs
+                  selectedSongIds={editedConcert.song_ids}
+                  songs={songs}
+                  onRemoveSong={removeSong}
+                />
 
-                  if (!song) return null;
-
-                  return (
-                    <Badge
-                      key={id}
-                      variant="ghost"
-                      className="flex w-full justify-between gap-2 py-1"
-                    >
-                      <span>{song.title}</span>
-
-                      <button
-                        type="button"
-                        aria-label={`Remove ${song.title}`}
-                        onClick={() => toggleSong(id)}
-                      >
-                        <X className="size-3" />
-                      </button>
-                    </Badge>
-                  );
-                })}
-
-                <Popover>
-                  <PopoverTrigger
-                    render={
-                      <Button variant="secondary" size="sm" className="h-7" />
-                    }
-                  >
-                    <Plus className="size-3" />
-                    Add song
-                  </PopoverTrigger>
-
-                  <PopoverContent align="start" className="w-64 space-y-2">
-                    {songs.map((song) => (
-                      <label
-                        key={song.id}
-                        className="flex cursor-pointer items-center gap-2 text-sm"
-                      >
-                        <Checkbox
-                          checked={editedConcert.song_ids.includes(song.id)}
-                          onCheckedChange={() => toggleSong(song.id)}
-                        />
-
-                        {song.title}
-                      </label>
-                    ))}
-                  </PopoverContent>
-                </Popover>
+                <AddConcertSongPopover
+                  songs={songs}
+                  selectedSongIds={editedConcert.song_ids}
+                  onAddSong={addSong}
+                  onRemoveSong={removeSong}
+                />
               </div>
             </Field>
           </FieldGroup>

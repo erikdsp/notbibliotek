@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { InstrumentEditor } from "./InstrumentEditor";
-import { Plus, Pencil, Trash } from "lucide-react";
+import { Plus } from "lucide-react";
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
@@ -14,16 +13,8 @@ import { Button } from "@/components/ui/button";
 import { useDeleteInstrument, useInstruments } from "@/hooks";
 import type { EditableInstrument } from "@/features/admin/types/instrument-editor-types";
 import type { Instrument } from "@/core/types";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteInstrumentDialog } from "@/features/admin/components/instruments/DeleteInstrumentDialog";
+import { InstrumentRow } from "@/features/admin/components/instruments/InstrumentRow";
 
 const log = createLogger("InstrumentsTab");
 
@@ -50,6 +41,12 @@ export function InstrumentsTab() {
   }
 
   const deleteInstrumentMutation = useDeleteInstrument();
+
+  function handleDeleteInstrumentOpenChange(open: boolean) {
+    if (!open && !deleteInstrumentMutation.isPending) {
+      setDeletingInstrument(null);
+    }
+  }
 
   function handleDelete(instrument: Instrument) {
     deleteInstrumentMutation.reset();
@@ -86,6 +83,7 @@ export function InstrumentsTab() {
         <Plus />
         Add Instrument
       </Button>
+
       <div className="rounded-lg border p-1 mt-4">
         <Table>
           <TableHeader className="border-b-2">
@@ -97,31 +95,17 @@ export function InstrumentsTab() {
           </TableHeader>
           <TableBody>
             {safeInstruments.map((instrument) => (
-              <TableRow key={instrument.id}>
-                <TableCell>{instrument.name}</TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    className={"rounded-md"}
-                    onClick={() => handleEdit(instrument)}
-                  >
-                    <Pencil className="size-4" />
-                  </Button>
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    className="rounded-md"
-                    onClick={() => handleDelete(instrument)}
-                  >
-                    <Trash className="size-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
+              <InstrumentRow
+                key={instrument.id}
+                instrument={instrument}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
             ))}
           </TableBody>
         </Table>
       </div>
+
       {editorOpen && (
         <InstrumentEditor
           open={editorOpen}
@@ -131,47 +115,13 @@ export function InstrumentsTab() {
         />
       )}
 
-      <AlertDialog
-        open={deletingInstrument !== null}
-        onOpenChange={(open) => {
-          if (!open && !deleteInstrumentMutation.isPending) {
-            setDeletingInstrument(null);
-          }
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Instrument?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete{" "}
-              <strong>{deletingInstrument?.name}</strong>? This action cannot be
-              undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          {deleteInstrumentMutation.isError && (
-            <p role="alert" className="text-sm text-destructive">
-              Failed to delete instrument. Tip: Remove any connections to this instrument in parts before trying again.
-            </p>
-          )}
-
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteInstrumentMutation.isPending}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={deleteInstrumentMutation.isPending}
-              onClick={(event) => {
-                event.preventDefault();
-                void confirmDelete();
-              }}
-            >
-              {deleteInstrumentMutation.isPending ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteInstrumentDialog
+        instrument={deletingInstrument}
+        isDeleting={deleteInstrumentMutation.isPending}
+        deleteError={deleteInstrumentMutation.isError}
+        onOpenChange={handleDeleteInstrumentOpenChange}
+        onConfirmDelete={confirmDelete}
+      />
     </section>
   );
 }

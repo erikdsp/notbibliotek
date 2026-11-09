@@ -15,16 +15,7 @@ import type { Instrument } from "@/core/types";
 import { useCreateInstrument, useUpdateInstrument } from "@/hooks";
 import { createLogger } from "@/utils/logger";
 import { nameToKey } from "@/features/admin/lib/name-to-key";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DuplicateInstrumentDialog } from "@/features/admin/components/instruments/DuplicateInstrumentDialog";
 
 const log = createLogger("InstrumentEditor");
 
@@ -167,33 +158,17 @@ export function InstrumentEditor({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog
+      <DuplicateInstrumentDialog
         open={duplicateWarningOpen}
         onOpenChange={setDuplicateWarningOpen}
-      >
-        <AlertDialogContent overlayClassName="bg-black/20 supports-backdrop-filter:backdrop-blur-[0.5px]">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Duplicate Instrument Name</AlertDialogTitle>
-            <AlertDialogDescription>
-              An instrument named "{duplicateInstrument?.name}" already exists
-              in the library. Do you want to continue anyway?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+        duplicateInstrumentName={duplicateInstrument?.name}
+        isSaving={
+          createInstrumentMutation.isPending ||
+          updateInstrumentMutation.isPending
+        }
+        onSaveAnyway={saveInstrument}
+      />
 
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={saveInstrument}
-              disabled={
-                createInstrumentMutation.isPending ||
-                updateInstrumentMutation.isPending
-              }
-            >
-              Save Anyway
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
