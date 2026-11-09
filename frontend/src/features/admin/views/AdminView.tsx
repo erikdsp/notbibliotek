@@ -1,7 +1,7 @@
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ConcertsTab } from "@/features/admin/components/ConcertsTab";
-import { InstrumentsTab } from "@/features/admin/components/InstrumentsTab";
+import { ConcertsTab } from "@/features/admin/components/concerts/ConcertsTab";
+import { InstrumentsTab } from "@/features/admin/components/instruments/InstrumentsTab";
 import { SongsTab } from "@/features/admin/components/songs/SongsTab";
 import { createLogger } from "@/utils/logger";
 
