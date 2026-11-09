@@ -1,9 +1,7 @@
-import type { VersionPart, VersionScore } from "@/core/types";
-
-export function previewTitleFromPart(part: VersionPart): string {
-  return `Preview of ${part.file.name} - ${part.name}`;
+export function previewTitleFromPartNames(fileName: string, partName: string): string {
+  return `Preview of ${fileName} - ${partName}`;
 }
 
-export function previewTitleFromScore(score: VersionScore): string {
-  return `Preview of ${score.file.name} - Full Score`;
+export function previewTitleFromScoreName(fileName: string): string {
+  return `Preview of ${fileName} - Full Score`;
 }

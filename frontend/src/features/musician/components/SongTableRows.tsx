@@ -4,8 +4,8 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Download, Eye } from "lucide-react";
 import {
-  previewTitleFromPart,
-  previewTitleFromScore,
+  previewTitleFromPartNames,
+  previewTitleFromScoreName,
 } from "@/utils/preview-title";
 
 type SongTableRowsProps = {
@@ -46,7 +46,10 @@ export function SongTableRows({
               size="icon-sm"
               aria-label={`Preview score`}
               onClick={() =>
-                onPreview(score.file, previewTitleFromScore(score))
+                onPreview(
+                  score.file,
+                  previewTitleFromScoreName(score.file.name),
+                )
               }
             >
               <Eye />
@@ -76,7 +79,10 @@ export function SongTableRows({
                   size="icon-sm"
                   aria-label={`Preview ${part.name}`}
                   onClick={() =>
-                    onPreview(part.file, previewTitleFromPart(part))
+                    onPreview(
+                      part.file,
+                      previewTitleFromPartNames(part.file.name, part.name),
+                    )
                   }
                 >
                   <Eye />

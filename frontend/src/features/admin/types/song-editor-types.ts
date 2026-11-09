@@ -11,7 +11,7 @@ export type EditablePart = {
 
 export type EditableScore = {
   file_id: string | null;
-  file_name: string | null;
+  file_name: string;
   file: File | null;
 };
 

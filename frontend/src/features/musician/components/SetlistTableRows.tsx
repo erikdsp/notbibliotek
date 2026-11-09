@@ -4,7 +4,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { formatDateTime } from "@/utils/format-time";
 import { Download, Eye } from "lucide-react";
-import { previewTitleFromPart } from "@/utils/preview-title";
+import { previewTitleFromPartNames } from "@/utils/preview-title";
 
 type SetlistTableRowsProps = {
   songs: SongResponse[];
@@ -77,7 +77,10 @@ export function SetlistTableRows({
                     size="icon-sm"
                     aria-label={`Preview ${part.name}`}
                     onClick={() =>
-                      onPreview(part.file, previewTitleFromPart(part))
+                      onPreview(
+                        part.file,
+                        previewTitleFromPartNames(part.file.name, part.name),
+                      )
                     }
                   >
                     <Eye />
