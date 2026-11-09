@@ -15,7 +15,8 @@ type PartsSectionProps = {
   onUpdatePart: (localId: string, update: Partial<EditablePart>) => void;
   onRemovePart: (localId: string) => void;
   onReplaceFile: (localId: string, file: File) => void;
-  onToggleInstrument: (part: EditablePart, instrumentId: string) => void;
+  onAddInstrumentConnection: (part: EditablePart, instrumentId: string) => void;
+  onRemoveInstrumentConnection: (part: EditablePart, instrumentId: string) => void;
   onPreviewFile: (file: File | null) => void;
 };
 
@@ -28,7 +29,8 @@ export function PartsSection({
   onUpdatePart,
   onRemovePart,
   onReplaceFile,
-  onToggleInstrument,
+  onAddInstrumentConnection,
+  onRemoveInstrumentConnection,
   onPreviewFile,
 }: PartsSectionProps) {
   const partsInputRef = useRef<HTMLInputElement>(null);
@@ -86,7 +88,8 @@ export function PartsSection({
                 isPublished={isPublished}
                 onUpdatePart={onUpdatePart}
                 onRemovePart={onRemovePart}
-                onToggleInstrument={onToggleInstrument}
+                onAddInstrumentConnection={onAddInstrumentConnection}
+                onRemoveInstrumentConnection={onRemoveInstrumentConnection}
                 onReplaceFile={onReplaceFile}
                 onPreviewFile={onPreviewFile}
               />

@@ -1,17 +1,12 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import type { Instrument } from "@/core/types";
+import { AddPartInstrumentPopover } from "@/features/admin/components/songs/editor/AddPartInstrumentsPopover";
+import { SelectedPartInstruments } from "@/features/admin/components/songs/editor/SelectedPartInstruments";
 import type { PartErrors } from "@/features/admin/lib/validate-song-draft";
 import type { EditablePart } from "@/features/admin/types";
-import { Eye, FileText, FileUp, Plus, X } from "lucide-react";
+import { Eye, FileText, FileUp, X } from "lucide-react";
 import { useRef } from "react";
 
 type PartEditorProps = {
@@ -22,7 +17,11 @@ type PartEditorProps = {
   onUpdatePart: (localId: string, update: Partial<EditablePart>) => void;
   onRemovePart: (localId: string) => void;
   onReplaceFile: (localId: string, file: File) => void;
-  onToggleInstrument: (part: EditablePart, instrumentId: string) => void;
+  onAddInstrumentConnection: (part: EditablePart, instrumentId: string) => void;
+  onRemoveInstrumentConnection: (
+    part: EditablePart,
+    instrumentId: string,
+  ) => void;
   onPreviewFile: (file: File | null) => void;
 };
 
@@ -34,7 +33,8 @@ export function PartEditor({
   onUpdatePart,
   onRemovePart,
   onReplaceFile,
-  onToggleInstrument,
+  onAddInstrumentConnection,
+  onRemoveInstrumentConnection,
   onPreviewFile,
 }: PartEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -54,14 +54,20 @@ export function PartEditor({
     input.value = "";
   }
 
+  const handleAddInstrumentConnection = (instrumentId: string) => {
+    onAddInstrumentConnection(part, instrumentId);
+  };
+
+  const handleRemoveInstrumentConnection = (instrumentId: string) => {
+    onRemoveInstrumentConnection(part, instrumentId);
+  };
+
   return (
     <div className="space-y-3 rounded-lg border p-3">
       <div className="flex items-center gap-2">
         <FileText className="size-4 shrink-0 text-muted-foreground" />
 
-        <span className="min-w-0 truncate text-sm mr-1">
-          {part.file_name}
-        </span>
+        <span className="min-w-0 truncate text-sm mr-1">{part.file_name}</span>
 
         <Button
           variant="ghost"
@@ -127,54 +133,19 @@ export function PartEditor({
           <Label>Instruments</Label>
 
           <div className="flex min-h-9 flex-wrap items-center gap-1 rounded-md border px-2 py-1">
-            {part.instrument_ids.map((id) => {
-              const instrument = instruments.find(
-                (instrument) => instrument.id === id,
-              );
+            <SelectedPartInstruments
+              instrumentIds={part.instrument_ids}
+              instruments={instruments}
+              onRemoveInstrumentConnection={handleRemoveInstrumentConnection}
+            />
 
-              if (!instrument) return null;
+            <AddPartInstrumentPopover
+              instrumentIds={part.instrument_ids}
+              instruments={instruments}
+              onAddInstrumentConnection={handleAddInstrumentConnection}
+              onRemoveInstrumentConnection={handleRemoveInstrumentConnection}
+            />
 
-              return (
-                <Badge key={id} variant="secondary" className="gap-1">
-                  {instrument.name}
-
-                  <button
-                    type="button"
-                    aria-label={`Remove ${instrument.name}`}
-                    onClick={() => onToggleInstrument(part, id)}
-                  >
-                    <X className="size-3" />
-                  </button>
-                </Badge>
-              );
-            })}
-
-            <Popover>
-              <PopoverTrigger
-                render={<Button variant="ghost" size="sm" className="h-7" />}
-              >
-                <Plus className="size-3" />
-                Add instrument
-              </PopoverTrigger>
-
-              <PopoverContent align="start" className="w-56 space-y-2">
-                {instruments.map((instrument) => (
-                  <label
-                    key={instrument.id}
-                    className="flex cursor-pointer items-center gap-2 text-sm"
-                  >
-                    <Checkbox
-                      checked={part.instrument_ids.includes(instrument.id)}
-                      onCheckedChange={() =>
-                        onToggleInstrument(part, instrument.id)
-                      }
-                    />
-
-                    {instrument.name}
-                  </label>
-                ))}
-              </PopoverContent>
-            </Popover>
           </div>
         </div>
       </div>

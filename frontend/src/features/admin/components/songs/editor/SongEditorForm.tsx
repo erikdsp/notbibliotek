@@ -10,7 +10,13 @@ import type { SongResponse, Instrument } from "@/core/types";
 import { formatSongVersion } from "@/utils/song-utils";
 import { useCreateSong, useCreateSongVersion } from "@/hooks";
 import { createLogger } from "@/utils/logger";
-import type { EditableScore, EditablePart } from "@/features/admin/types";
+import type {
+  EditablePart,
+  ScoreEdits,
+  PartsEdits,
+  PendingPartUpload,
+  FileConflict,
+} from "@/features/admin/types";
 import { makeEditableScore, makeEditableParts } from "@/features/admin/mappers";
 import { suggestPartName } from "@/features/admin/lib/suggest-part-name";
 import { initialVersionId } from "@/features/admin/lib/initial-version-id";
@@ -33,33 +39,9 @@ import { UnsavedChangesOnVersionSwitchDialog } from "@/features/admin/components
 import { UnsavedChangesOnCloseDialog } from "@/features/admin/components/songs/editor/dialogs/UnsavedChangesOnCloseDialog";
 import { SaveDraftErrorDialog } from "@/features/admin/components/songs/editor/dialogs/SaveDraftErrorDialog";
 import { ConfirmPublishDialog } from "@/features/admin/components/songs/editor/dialogs/ConfirmPublishDialog";
+import { createLocalId } from "@/features/admin/utils/create-local-id";
 
 const log = createLogger("SongEditorForm");
-
-function createLocalId() {
-  return crypto.randomUUID();
-}
-
-type ScoreEdits = {
-  versionId: string;
-  score: EditableScore | null;
-};
-
-type PartsEdits = {
-  versionId: string;
-  parts: EditablePart[];
-};
-
-export type FileConflict = {
-  file: File;
-  existingPartLocalId: string;
-  existingPartName: string;
-};
-
-type PendingPartUpload = {
-  versionId: string;
-  conflicts: FileConflict[];
-};
 
 type SongEditorFormProps = {
   open: boolean;
@@ -380,13 +362,23 @@ export function SongEditorForm({
     });
   }
 
-  function toggleInstrument(part: EditablePart, instrumentId: string) {
-    const selected = part.instrument_ids.includes(instrumentId);
+  function addInstrumentConnection(part: EditablePart, instrumentId: string) {
+    if (part.instrument_ids.includes(instrumentId)) {
+      log.warn("Adding already existing Instrument connection: ", instrumentId);
+      return;
+    }
 
     updatePart(part.local_id, {
-      instrument_ids: selected
-        ? part.instrument_ids.filter((id) => id !== instrumentId)
-        : [...part.instrument_ids, instrumentId],
+      instrument_ids: [...part.instrument_ids, instrumentId],
+    });
+  }
+
+  function removeInstrumentConnection(
+    part: EditablePart,
+    instrumentId: string,
+  ) {
+    updatePart(part.local_id, {
+      instrument_ids: part.instrument_ids.filter((id) => id !== instrumentId),
     });
   }
 
@@ -579,7 +571,10 @@ export function SongEditorForm({
                         onUpdatePart={updatePart}
                         onRemovePart={handleRemovePart}
                         onReplaceFile={replacePartFile}
-                        onToggleInstrument={toggleInstrument}
+                        onAddInstrumentConnection={addInstrumentConnection}
+                        onRemoveInstrumentConnection={
+                          removeInstrumentConnection
+                        }
                         onPreviewFile={previewFile}
                       />
                     </>
