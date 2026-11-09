@@ -39,6 +39,7 @@ import { ConfirmPublishDialog } from "@/features/admin/components/songs/editor/d
 import { partsHaveChanged } from "@/features/admin/lib/parts-have-changed";
 import { separatePartFileConflicts } from "@/features/admin/lib/separate-file-part-conflicts";
 import { createEditablePart } from "@/features/admin/lib/create-editable-part";
+import { replaceConflictingPartFiles } from "@/features/admin/lib/replace-conflicting-part-files";
 
 const log = createLogger("SongEditorForm");
 
@@ -249,32 +250,21 @@ export function SongEditorForm({
       return;
     if (pendingPartUpload.versionId !== versionId) return;
 
-    const replacements = action === "replace" ? conflictsToResolve : [];
-
-    const updatedParts = parts.map((part) => {
-      const replacement = replacements.find(
-        (conflict) => conflict.existingPartLocalId === part.local_id,
+    if (action === "replace" && conflictsToResolve.length > 0) {
+      const updatedParts = replaceConflictingPartFiles(
+        parts,
+        conflictsToResolve,
       );
 
-      if (!replacement) return part;
-
-      return {
-        ...part,
-        file: replacement.file,
-        file_name: replacement.file.name,
-      };
-    });
-
-    const remainingConflicts = pendingPartUpload.conflicts.filter(
-      (conflict) => !conflictsToResolve.includes(conflict),
-    );
-
-    if (replacements.length > 0) {
       setEditedParts({
         versionId,
         parts: updatedParts,
       });
     }
+
+    const remainingConflicts = pendingPartUpload.conflicts.filter(
+      (conflict) => !conflictsToResolve.includes(conflict),
+    );
 
     setPendingPartUpload(
       remainingConflicts.length > 0
@@ -283,24 +273,28 @@ export function SongEditorForm({
     );
   }
 
-  function updatePart(localId: string, update: Partial<EditablePart>) {
+  function updateEditablePart(localId: string, update: Partial<EditablePart>) {
     if (versionId === null || originalParts === null) return;
 
-    setEditedParts((current) => ({
-      versionId,
-      parts: (current?.versionId === versionId
-        ? current.parts
-        : originalParts
-      ).map((part) =>
+    setEditedParts((current) => {
+      const parts =
+        current?.versionId === versionId ? current.parts : originalParts;
+
+      const updatedParts = parts.map((part) =>
         part.local_id === localId ? { ...part, ...update } : part,
-      ),
-    }));
+      );
+
+      return {
+        versionId,
+        parts: updatedParts,
+      };
+    });
   }
 
   function replacePartFile(localId: string, file: File) {
     if (file.type !== "application/pdf") return;
 
-    updatePart(localId, {
+    updateEditablePart(localId, {
       file,
       file_name: file.name,
     });
@@ -312,7 +306,7 @@ export function SongEditorForm({
       return;
     }
 
-    updatePart(part.local_id, {
+    updateEditablePart(part.local_id, {
       instrument_ids: [...part.instrument_ids, instrumentId],
     });
   }
@@ -321,7 +315,7 @@ export function SongEditorForm({
     part: EditablePart,
     instrumentId: string,
   ) {
-    updatePart(part.local_id, {
+    updateEditablePart(part.local_id, {
       instrument_ids: part.instrument_ids.filter((id) => id !== instrumentId),
     });
   }
@@ -512,7 +506,7 @@ export function SongEditorForm({
                         partErrors={validationErrors.parts}
                         isPublished={isPublished}
                         onAddPartFiles={addPartFiles}
-                        onUpdatePart={updatePart}
+                        onUpdatePart={updateEditablePart}
                         onRemovePart={handleRemovePart}
                         onReplaceFile={replacePartFile}
                         onAddInstrumentConnection={addInstrumentConnection}
