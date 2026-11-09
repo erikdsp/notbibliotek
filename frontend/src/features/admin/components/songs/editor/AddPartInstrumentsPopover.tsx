@@ -9,19 +9,19 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Plus } from "lucide-react";
 import { Label } from "@/components/ui/label";
 
-type AddPartInstrumentPopoverProps = {
+type AddPartInstrumentsPopoverProps = {
   instrumentIds: string[];
   instruments: Instrument[];
   onAddInstrumentConnection: (instrumentId: string) => void;
   onRemoveInstrumentConnection: (instrumentId: string) => void;
 };
 
-export function AddPartInstrumentPopover({
+export function AddPartInstrumentsPopover({
   instrumentIds,
   instruments,
   onAddInstrumentConnection,
   onRemoveInstrumentConnection,
-}: AddPartInstrumentPopoverProps) {
+}: AddPartInstrumentsPopoverProps) {
   return (
     <Popover>
       <PopoverTrigger

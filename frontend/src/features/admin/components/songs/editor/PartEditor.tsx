@@ -2,9 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Instrument } from "@/core/types";
-import { AddPartInstrumentPopover } from "@/features/admin/components/songs/editor/AddPartInstrumentsPopover";
-import { SelectedPartInstruments } from "@/features/admin/components/songs/editor/SelectedPartInstruments";
-import type { PartErrors } from "@/features/admin/lib/validate-song-draft";
+import { AddPartInstrumentsPopover, SelectedPartInstruments } from "@/features/admin/components/songs/editor";
+import type { PartErrors } from "@/features/admin/lib";
 import type { EditablePart } from "@/features/admin/types";
 import { Eye, FileText, FileUp, X } from "lucide-react";
 import { useRef } from "react";
@@ -139,7 +138,7 @@ export function PartEditor({
               onRemoveInstrumentConnection={handleRemoveInstrumentConnection}
             />
 
-            <AddPartInstrumentPopover
+            <AddPartInstrumentsPopover
               instrumentIds={part.instrument_ids}
               instruments={instruments}
               onAddInstrumentConnection={handleAddInstrumentConnection}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -6,9 +7,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { createLogger } from "@/utils";
 import type { SongResponse, Instrument } from "@/core/types";
-import { useCreateSong, useCreateSongVersion } from "@/hooks";
-import { createLogger } from "@/utils/logger";
 import type {
   EditablePart,
   ScoreEdits,
@@ -17,29 +17,38 @@ import type {
   FileConflict,
 } from "@/features/admin/types";
 import { makeEditableScore, makeEditableParts } from "@/features/admin/mappers";
-import { initialVersionId } from "@/features/admin/lib/initial-version-id";
-import { usePartInstruments } from "@/hooks/use-part-instruments";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { saveSongDraft } from "@/features/admin/services/save-song-draft";
-import { refetchSongQueries } from "@/features/admin/lib/refetch-song-queries";
-import { validateSongDraft } from "@/features/admin/lib/validate-song-draft";
-import { usePublishSongVersion } from "@/hooks/use-publish-song-version";
-import { SongTitleInput } from "@/features/admin/components/songs/editor/SongTitleInput";
-import { VersionControls } from "@/features/admin/components/songs/editor/VersionControls";
-import { ScoreSection } from "@/features/admin/components/songs/editor/ScoreSection";
-import { PartsSection } from "@/features/admin/components/songs/editor/PartsSection";
-import { AddSongFooter } from "@/features/admin/components/songs/editor/AddSongFooter";
-import { EditSongFooter } from "@/features/admin/components/songs/editor/EditSongFooter";
-import { PartUploadDuplicatesDialog } from "@/features/admin/components/songs/editor/dialogs/PartUploadDuplicatesDialog";
-import { UnsavedChangesOnVersionSwitchDialog } from "@/features/admin/components/songs/editor/dialogs/UnsavedChangesOnVersionSwitchDialog";
-import { UnsavedChangesOnCloseDialog } from "@/features/admin/components/songs/editor/dialogs/UnsavedChangesOnCloseDialog";
-import { SaveDraftErrorDialog } from "@/features/admin/components/songs/editor/dialogs/SaveDraftErrorDialog";
-import { ConfirmPublishDialog } from "@/features/admin/components/songs/editor/dialogs/ConfirmPublishDialog";
-import { partsHaveChanged } from "@/features/admin/lib/parts-have-changed";
-import { separatePartFileConflicts } from "@/features/admin/lib/separate-file-part-conflicts";
-import { createEditablePart } from "@/features/admin/lib/create-editable-part";
-import { replaceConflictingPartFiles } from "@/features/admin/lib/replace-conflicting-part-files";
-import { createVersionOptions } from "@/features/admin/lib/create-version-options";
+import {
+  useCreateSong,
+  useCreateSongVersion,
+  usePartInstruments,
+  usePublishSongVersion,
+} from "@/hooks";
+import { saveSongDraft } from "@/features/admin/services";
+import {
+  SongTitleInput,
+  VersionControls,
+  ScoreSection,
+  PartsSection,
+  AddSongFooter,
+  EditSongFooter,
+} from "@/features/admin/components/songs/editor";
+import {
+  PartUploadDuplicatesDialog,
+  UnsavedChangesOnVersionSwitchDialog,
+  UnsavedChangesOnCloseDialog,
+  SaveDraftErrorDialog,
+  ConfirmPublishDialog,
+} from "@/features/admin/components/songs/editor/dialogs";
+import {
+  initialVersionId,
+  partsHaveChanged,
+  refetchSongQueries,
+  validateSongDraft,
+  separatePartFileConflicts,
+  createEditablePart,
+  replaceConflictingPartFiles,
+  createVersionOptions,
+} from "@/features/admin/lib";
 
 const log = createLogger("SongEditorForm");
 

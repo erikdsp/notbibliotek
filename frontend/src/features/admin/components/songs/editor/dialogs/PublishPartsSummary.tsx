@@ -7,7 +7,7 @@ import {
   TableRow,
   TableHead,
 } from "@/components/ui/table";
-import { PublishPartRow } from "@/features/admin/components/songs/editor/dialogs/PublishPartRow";
+import { PublishPartRow } from "@/features/admin/components/songs/editor/dialogs";
 
 type PublishPartsSummaryProps = {
   parts: EditablePart[] | null;
