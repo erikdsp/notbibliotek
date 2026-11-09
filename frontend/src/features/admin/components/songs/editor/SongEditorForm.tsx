@@ -40,6 +40,7 @@ import { UnsavedChangesOnCloseDialog } from "@/features/admin/components/songs/e
 import { SaveDraftErrorDialog } from "@/features/admin/components/songs/editor/dialogs/SaveDraftErrorDialog";
 import { ConfirmPublishDialog } from "@/features/admin/components/songs/editor/dialogs/ConfirmPublishDialog";
 import { createLocalId } from "@/features/admin/utils/create-local-id";
+import { partsHaveChanged } from "@/features/admin/lib/parts-have-changed";
 
 const log = createLogger("SongEditorForm");
 
@@ -98,33 +99,7 @@ export function SongEditorForm({
   const parts =
     editedParts?.versionId === versionId ? editedParts.parts : originalParts;
 
-  function partHasChanged(
-    part: EditablePart,
-    originalParts: EditablePart[],
-  ): boolean {
-    if (part.id === null) return true;
-
-    const original = originalParts.find((p) => p.id === part.id);
-
-    if (!original) {
-      return true;
-    }
-
-    return (
-      part.name !== original.name ||
-      part.file_id !== original.file_id ||
-      part.file != null ||
-      part.instrument_ids.length !== original.instrument_ids.length ||
-      part.instrument_ids.some((id) => !original.instrument_ids.includes(id))
-    );
-  }
-
-  const partsAreDirty =
-    originalParts !== null &&
-    parts !== null &&
-    (parts.length !== originalParts.length ||
-      parts.some((part) => partHasChanged(part, originalParts)));
-
+  const partsAreDirty = partsHaveChanged(parts, originalParts);
   const versionIsDirty = scoreIsDirty || partsAreDirty;
   const isDirty = titleIsDirty || versionIsDirty;
 
