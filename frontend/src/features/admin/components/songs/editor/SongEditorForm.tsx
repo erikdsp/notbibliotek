@@ -21,6 +21,7 @@ import {
   useCreateSong,
   useCreateSongVersion,
   usePartInstruments,
+  usePdfPreview,
   usePublishSongVersion,
 } from "@/hooks";
 import { saveSongDraft } from "@/features/admin/services";
@@ -49,6 +50,8 @@ import {
   replaceConflictingPartFiles,
   createVersionOptions,
 } from "@/features/admin/lib";
+import { PdfPreviewDialog } from "@/components/pdf-preview";
+import type { Preview } from "@/types";
 
 const log = createLogger("SongEditorForm");
 
@@ -89,6 +92,16 @@ export function SongEditorForm({
   const [confirmClose, setConfirmClose] = useState(false);
   const [saveErrorOpen, setSaveErrorOpen] = useState(false);
   const [confirmPublish, setConfirmPublish] = useState(false);
+  const [preview, setPreview] = useState<Preview | null>(null);
+
+  const previewFileId = preview?.type === "saved" ? preview.fileId : null;
+  const {
+    data: savedPreviewFile,
+    isFetching: previewIsLoading,
+    error: previewError,
+  } = usePdfPreview(previewFileId);
+  const previewFile =
+    preview?.type === "local" ? preview.file : (savedPreviewFile ?? null);
 
   const originalScore = makeEditableScore(song, versionId);
 
@@ -327,14 +340,21 @@ export function SongEditorForm({
     });
   }
 
-  function previewFile(file: File | null) {
-    if (!file) return;
+  function handlePreviewFile(
+    file: File | null,
+    fileId: string | null,
+    title: string,
+  ) {
+    if (file === null && fileId === null) return;
 
-    const url = URL.createObjectURL(file);
-    window.open(url, "_blank", "noopener,noreferrer");
+    if (file !== null) {
+      setPreview({ type: "local", file, title });
+      return;
+    }
 
-    // URL cleanup will be handled when preview functionality
-    // is connected to the persisted file endpoints.
+    if (fileId !== null) {
+      setPreview({ type: "saved", fileId, title });
+    }
   }
 
   function handleRemoveScore() {
@@ -490,7 +510,7 @@ export function SongEditorForm({
                         isPublished={isPublished}
                         onAddScoreFile={addScoreFile}
                         onRemoveScore={handleRemoveScore}
-                        onPreviewFile={previewFile}
+                        onPreviewFile={handlePreviewFile}
                       />
 
                       <PartsSection
@@ -506,7 +526,7 @@ export function SongEditorForm({
                         onRemoveInstrumentConnection={
                           removeInstrumentConnection
                         }
-                        onPreviewFile={previewFile}
+                        onPreviewFile={handlePreviewFile}
                       />
                     </>
                   )}
@@ -566,6 +586,17 @@ export function SongEditorForm({
           setConfirmClose(false);
           onOpenChange(false);
         }}
+      />
+
+      <PdfPreviewDialog
+        open={preview !== null}
+        onOpenChange={(open) => {
+          if (!open) setPreview(null);
+        }}
+        file={previewFile}
+        title={preview?.title}
+        isLoading={previewIsLoading}
+        error={previewError}
       />
 
       <SaveDraftErrorDialog

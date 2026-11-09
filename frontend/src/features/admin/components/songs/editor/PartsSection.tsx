@@ -17,7 +17,11 @@ type PartsSectionProps = {
   onReplaceFile: (localId: string, file: File) => void;
   onAddInstrumentConnection: (part: EditablePart, instrumentId: string) => void;
   onRemoveInstrumentConnection: (part: EditablePart, instrumentId: string) => void;
-  onPreviewFile: (file: File | null) => void;
+  onPreviewFile: (
+    file: File | null,
+    fileId: string | null,
+    title: string,
+  ) => void;
 };
 
 export function PartsSection({

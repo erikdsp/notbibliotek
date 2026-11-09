@@ -2,9 +2,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Instrument } from "@/core/types";
-import { AddPartInstrumentsPopover, SelectedPartInstruments } from "@/features/admin/components/songs/editor";
+import {
+  AddPartInstrumentsPopover,
+  SelectedPartInstruments,
+} from "@/features/admin/components/songs/editor";
 import type { PartErrors } from "@/features/admin/lib";
 import type { EditablePart } from "@/features/admin/types";
+import { previewTitleFromPartNames } from "@/utils";
 import { Eye, FileText, FileUp, X } from "lucide-react";
 import { useRef } from "react";
 
@@ -21,7 +25,11 @@ type PartEditorProps = {
     part: EditablePart,
     instrumentId: string,
   ) => void;
-  onPreviewFile: (file: File | null) => void;
+  onPreviewFile: (
+    file: File | null,
+    fileId: string | null,
+    title: string,
+  ) => void;
 };
 
 export function PartEditor({
@@ -72,8 +80,13 @@ export function PartEditor({
           variant="ghost"
           size="icon-sm"
           aria-label={`Preview ${part.name}`}
-          disabled={!part.file}
-          onClick={() => onPreviewFile(part.file)}
+          onClick={() =>
+            onPreviewFile(
+              part.file,
+              part.file_id,
+              previewTitleFromPartNames(part.file_name, part.name),
+            )
+          }
         >
           <Eye className="size-4" />
         </Button>
@@ -144,7 +157,6 @@ export function PartEditor({
               onAddInstrumentConnection={handleAddInstrumentConnection}
               onRemoveInstrumentConnection={handleRemoveInstrumentConnection}
             />
-
           </div>
         </div>
       </div>

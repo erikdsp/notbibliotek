@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import type { EditableScore } from "@/features/admin/types";
+import { previewTitleFromScoreName } from "@/utils";
 import { Eye, FileText, Upload, X } from "lucide-react";
 import { useRef } from "react";
 
@@ -9,7 +10,11 @@ type ScoreSectionProps = {
   isPublished: boolean;
   onAddScoreFile: (file: File) => void;
   onRemoveScore: () => void;
-  onPreviewFile: (file: File | null) => void;
+  onPreviewFile: (
+    file: File | null,
+    fileId: string | null,
+    title: string,
+  ) => void;
 };
 
 export function ScoreSection({
@@ -35,8 +40,13 @@ export function ScoreSection({
             variant="ghost"
             size="icon-sm"
             aria-label="Preview score"
-            disabled={!score.file}
-            onClick={() => onPreviewFile(score.file)}
+            onClick={() =>
+              onPreviewFile(
+                score.file,
+                score.file_id,
+                previewTitleFromScoreName(score.file_name),
+              )
+            }
           >
             <Eye className="size-4" />
           </Button>
