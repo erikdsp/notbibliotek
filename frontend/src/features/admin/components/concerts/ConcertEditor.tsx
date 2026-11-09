@@ -15,14 +15,11 @@ import { createLogger } from "@/utils/logger";
 import type { EditableConcert } from "@/features/admin/types/concert-editor-types";
 import { makeEditableConcert } from "@/features/admin/mappers/make-editable-concert";
 import { useCreateConcert, useUpdateConcert } from "@/hooks";
-import {
-  createConcertSongConnection,
-  deleteConcertSongConnection,
-} from "@/services/concert-songs-service";
 import { useQueryClient } from "@tanstack/react-query";
 import { nameToKey } from "@/features/admin/lib/name-to-key";
 import { AddConcertSongPopover } from "@/features/admin/components/concerts/AddConcertSongPopover";
 import { SelectedConcertSongs } from "@/features/admin/components/concerts/SelectedConcertSongs";
+import { saveSongConnections } from "@/features/admin/services";
 
 const log = createLogger("ConcertEditor");
 
@@ -90,26 +87,6 @@ export function ConcertEditor({
   const createConcertMutation = useCreateConcert();
   const updateConcertMutation = useUpdateConcert();
 
-  async function saveSongConnections(
-    concertId: string,
-    originalSongIds: string[],
-  ) {
-    const originalIds = new Set(originalSongIds);
-    const editedIds = new Set(editedConcert.song_ids);
-
-    const addedIds = [...editedIds].filter((id) => !originalIds.has(id));
-    const removedIds = [...originalIds].filter((id) => !editedIds.has(id));
-
-    await Promise.all([
-      ...addedIds.map((songId) =>
-        createConcertSongConnection(concertId, songId),
-      ),
-      ...removedIds.map((songId) =>
-        deleteConcertSongConnection(concertId, songId),
-      ),
-    ]);
-  }
-
   async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -126,7 +103,11 @@ export function ConcertEditor({
           key: nameToKey(`${name}${date.slice(0, 4)}`, concertKeys),
         });
 
-        await saveSongConnections(createdConcert.id, []);
+        await saveSongConnections(
+          createdConcert.id,
+          [],
+          editedConcert.song_ids,
+        );
         await queryClient.invalidateQueries({ queryKey: ["concerts"] });
       } catch (error) {
         log.error("Failed to create concert:", error);
@@ -150,6 +131,7 @@ export function ConcertEditor({
           await saveSongConnections(
             editingConcert.id,
             editingConcert.songs.map((song) => song.id),
+            editedConcert.song_ids,
           );
         }
 
