@@ -18,16 +18,13 @@ import type {
   FileConflict,
 } from "@/features/admin/types";
 import { makeEditableScore, makeEditableParts } from "@/features/admin/mappers";
-import { suggestPartName } from "@/features/admin/lib/suggest-part-name";
 import { initialVersionId } from "@/features/admin/lib/initial-version-id";
 import { usePartInstruments } from "@/hooks/use-part-instruments";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { saveSongDraft } from "@/features/admin/services/save-song-draft";
 import { refetchSongQueries } from "@/features/admin/lib/refetch-song-queries";
 import { validateSongDraft } from "@/features/admin/lib/validate-song-draft";
-import { defaultInstrumentMappings } from "@/features/admin/lib/default-instrument-mappings";
 import { usePublishSongVersion } from "@/hooks/use-publish-song-version";
-import { nameToKey } from "@/features/admin/lib/name-to-key";
 import { SongTitleInput } from "@/features/admin/components/songs/editor/SongTitleInput";
 import { VersionControls } from "@/features/admin/components/songs/editor/VersionControls";
 import { ScoreSection } from "@/features/admin/components/songs/editor/ScoreSection";
@@ -39,8 +36,9 @@ import { UnsavedChangesOnVersionSwitchDialog } from "@/features/admin/components
 import { UnsavedChangesOnCloseDialog } from "@/features/admin/components/songs/editor/dialogs/UnsavedChangesOnCloseDialog";
 import { SaveDraftErrorDialog } from "@/features/admin/components/songs/editor/dialogs/SaveDraftErrorDialog";
 import { ConfirmPublishDialog } from "@/features/admin/components/songs/editor/dialogs/ConfirmPublishDialog";
-import { createLocalId } from "@/features/admin/utils/create-local-id";
 import { partsHaveChanged } from "@/features/admin/lib/parts-have-changed";
+import { separatePartFileConflicts } from "@/features/admin/lib/separate-file-part-conflicts";
+import { createEditablePart } from "@/features/admin/lib/create-editable-part";
 
 const log = createLogger("SongEditorForm");
 
@@ -82,14 +80,10 @@ export function SongEditorForm({
   const [saveErrorOpen, setSaveErrorOpen] = useState(false);
   const [confirmPublish, setConfirmPublish] = useState(false);
 
-  const titleIsDirty = title !== (song?.title ?? "");
   const originalScore = makeEditableScore(song, versionId);
 
   const score =
     editedScore?.versionId === versionId ? editedScore.score : originalScore;
-
-  const scoreIsDirty =
-    score?.file_id !== originalScore?.file_id || score?.file != null;
 
   const originalParts =
     partInstruments !== undefined
@@ -99,6 +93,9 @@ export function SongEditorForm({
   const parts =
     editedParts?.versionId === versionId ? editedParts.parts : originalParts;
 
+  const titleIsDirty = title !== (song?.title ?? "");
+  const scoreIsDirty =
+    score?.file_id !== originalScore?.file_id || score?.file != null;
   const partsAreDirty = partsHaveChanged(parts, originalParts);
   const versionIsDirty = scoreIsDirty || partsAreDirty;
   const isDirty = titleIsDirty || versionIsDirty;
@@ -110,6 +107,12 @@ export function SongEditorForm({
     Object.keys(validationErrors.parts).length === 0;
 
   const hasScore = score !== null;
+
+  const selectedVersion = song?.versions.find(
+    (version) => version.song_version_id === versionId,
+  );
+
+  const isPublished = selectedVersion?.published_at != null;
 
   function requestClose() {
     if (song !== null && isDirty) {
@@ -159,19 +162,13 @@ export function SongEditorForm({
     }
   }
 
-  const selectedVersion = song?.versions.find(
-    (version) => version.song_version_id === versionId,
-  );
-
-  const isPublished = selectedVersion?.published_at != null;
-
   function switchVersion(nextVersionId: string | null) {
     setVersionId(nextVersionId);
     setEditedScore(null);
     setEditedParts(null);
   }
 
-  function selectVersion(nextVersionId: string | null) {
+  function handleSelectVersion(nextVersionId: string | null) {
     if (nextVersionId === versionId) return;
 
     if (versionIsDirty) {
@@ -204,42 +201,14 @@ export function SongEditorForm({
       (file) => file.type === "application/pdf",
     );
 
-    const conflicts: FileConflict[] = [];
-    const filesToAdd: File[] = [];
+    const { conflicts, filesToAdd } = separatePartFileConflicts(
+      pdfFiles,
+      parts,
+    );
 
-    for (const file of pdfFiles) {
-      const existingPart = parts.find((part) => part.file_name === file.name);
-
-      if (existingPart) {
-        conflicts.push({
-          file,
-          existingPartLocalId: existingPart.local_id,
-          existingPartName: existingPart.name,
-        });
-      } else {
-        filesToAdd.push(file);
-      }
-    }
-
-    const newParts = filesToAdd.map((file): EditablePart => {
-      const name = suggestPartName(file.name);
-      const key = nameToKey(name, new Set());
-      const instrumentKeys = defaultInstrumentMappings[key] ?? [];
-      const instrumentIds = instruments
-        .filter((instrument) => instrumentKeys.includes(instrument.key))
-        .map((instrument) => instrument.id);
-
-      return {
-        local_id: createLocalId(),
-        id: null,
-        key,
-        name,
-        file_id: null,
-        file_name: file.name,
-        file,
-        instrument_ids: instrumentIds,
-      };
-    });
+    const newParts = filesToAdd.map((file) =>
+      createEditablePart(file, instruments),
+    );
 
     if (newParts.length > 0) {
       setEditedParts({
@@ -510,7 +479,7 @@ export function SongEditorForm({
                   <VersionControls
                     versionId={versionId}
                     versionOptions={versionOptions}
-                    onSelectVersion={selectVersion}
+                    onSelectVersion={handleSelectVersion}
                     onCreateEmptyDraft={handleCreateEmptyDraft}
                     isDirty={isDirty}
                     isCreatingVersion={createSongVersionMutation.isPending}
