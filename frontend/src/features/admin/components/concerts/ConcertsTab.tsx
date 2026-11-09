@@ -1,20 +1,13 @@
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import type { ConcertDetailedResponse } from "@/core/types";
 import { ConcertEditor } from "./ConcertEditor";
 import { useConcerts, useDeleteConcert, useSongs } from "@/hooks";
 import { createLogger } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, Pencil, Plus, Trash } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useState } from "react";
 import { DeleteConcertDialog } from "@/features/admin/components/concerts/DeleteConcertDialog";
+import { ConcertsTable } from "@/features/admin/components/concerts/ConcertsTable";
 
 const log = createLogger("ConcertsTab");
 
@@ -99,49 +92,12 @@ export function ConcertsTab() {
         Add Concert
       </Button>
 
-      <div className="rounded-lg border p-1 mt-4 ">
-        <Table>
-          <TableHeader className="border-b-2">
-            <TableRow className="text-base">
-              <TableHead className="font-normal">Name</TableHead>
-              <TableHead className="font-normal">Date</TableHead>
-              <TableHead className="font-normal w-50">Songs</TableHead>
-              <TableHead className="font-normal w-2"></TableHead>
-              <TableHead className="font-normal w-2"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {safeConcerts.map((concert) => (
-              <TableRow key={concert.id}>
-                <TableCell>{concert.name}</TableCell>
-                <TableCell>{concert.date}</TableCell>
-                <TableCell>
-                  {" "}
-                  <ChevronDown className="ml-2 size-5" />
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    className={"rounded-md"}
-                    onClick={() => handleEdit(concert)}
-                  >
-                    <Pencil className="size-4" />
-                  </Button>
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    className="rounded-md"
-                    onClick={() => handleDelete(concert)}
-                  >
-                    <Trash className="size-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      <ConcertsTable
+        concerts={safeConcerts}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
+
       {editorOpen && (
         <ConcertEditor
           open={editorOpen}
