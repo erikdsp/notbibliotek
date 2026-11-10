@@ -1,5 +1,9 @@
 package http
 
+import (
+	"github.com/oklog/ulid/v2"
+)
+
 type CreateSongRequest struct {
 	Title string `json:"title"`
 }
@@ -30,3 +34,17 @@ type UpdateConcertRequest struct {
 	Name *string `json:"name"`
 	Date *string `json:"date"`
 }
+
+type DownloadFilesRequest struct {
+	Files []struct {
+		FileID ulid.ULID `json:"file_id"`
+	} `json:"files"`
+}
+
+// type FileIDRequest struct {
+// 	FileID ulid.ULID `json:"file_id"`
+// }
+
+// type DownloadFilesRequest struct {
+// 	Files []FileIDRequest `json:"files"`
+// }
