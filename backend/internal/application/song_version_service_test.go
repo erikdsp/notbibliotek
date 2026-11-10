@@ -1328,6 +1328,7 @@ func (m *mockPartInstrumentRepository) GetBySongVersionID(songVersionID ulid.ULI
 
 type mockFileStorage struct {
 	file           string
+	files          map[ulid.ULID]string
 	savedFileIDs   []ulid.ULID
 	deletedFileIDs []ulid.ULID
 
@@ -1349,6 +1350,15 @@ func (m *mockFileStorage) Save(fileID ulid.ULID, file io.Reader) error {
 func (m *mockFileStorage) Load(fileID ulid.ULID) (io.ReadCloser, error) {
 	if m.loadErr != nil {
 		return nil, m.loadErr
+	}
+
+	if m.files != nil {
+		content, exists := m.files[fileID]
+		if !exists {
+			return nil, ErrFileNotFound
+		}
+
+		return io.NopCloser(strings.NewReader(content)), nil
 	}
 
 	return io.NopCloser(strings.NewReader(m.file)), nil
