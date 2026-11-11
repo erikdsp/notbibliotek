@@ -330,8 +330,14 @@ func (s *SongVersionService) fileStorageRollback(fileID ulid.ULID) {
 }
 
 func (s *SongVersionService) fileRepositoryRollback(fileID ulid.ULID) {
-	if deleteErr := s.fileRepository.Delete(fileID); deleteErr != nil {
-		log.Printf("failed to delete file metadata %s: %v during rollback", fileID, deleteErr)
+	deleted, err := s.fileRepository.DeleteIfUnreferenced(fileID)
+	if err != nil {
+		log.Printf("failed to delete file metadata %s: %v during rollback", fileID, err)
+		return
+	}
+
+	if !deleted {
+		log.Printf("file metadata %s was not deleted during rollback: file is still referenced", fileID)
 	}
 }
 
