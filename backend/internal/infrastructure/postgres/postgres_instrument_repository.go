@@ -39,6 +39,13 @@ const deleteInstrumentQuery = `
     WHERE id = $1
 `
 
+const getInstrumentsByKeysQuery = `
+    SELECT id, key, name
+    FROM instruments
+    WHERE key = ANY($1)
+    ORDER BY key
+`
+
 type PostgresInstrumentRepository struct {
 	db *sql.DB
 }
@@ -98,37 +105,7 @@ func (r *PostgresInstrumentRepository) GetByID(id ulid.ULID) (domain.Instrument,
 }
 
 func (r *PostgresInstrumentRepository) GetAll() ([]domain.Instrument, error) {
-
-	rows, err := r.db.Query(
-		getAllInstrumentsQuery,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	instruments := []domain.Instrument{}
-
-	for rows.Next() {
-		var dbInstrument dbInstrument
-
-		err := rows.Scan(
-			&dbInstrument.ID,
-			&dbInstrument.Key,
-			&dbInstrument.Name,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		instruments = append(instruments, dbInstrument.toDomain())
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return instruments, nil
+	return r.getInstruments(getAllInstrumentsQuery)
 }
 
 func (r *PostgresInstrumentRepository) Update(instrument domain.Instrument) error {
@@ -173,4 +150,41 @@ func (r *PostgresInstrumentRepository) Delete(id ulid.ULID) error {
 	}
 
 	return nil
+}
+
+func (r *PostgresInstrumentRepository) GetByKeys(keys []string) ([]domain.Instrument, error) {
+	return r.getInstruments(getInstrumentsByKeysQuery, keys)
+}
+
+func (r *PostgresInstrumentRepository) getInstruments(query string, args ...any) ([]domain.Instrument, error) {
+
+	rows, err := r.db.Query(query, args...)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	instruments := []domain.Instrument{}
+
+	for rows.Next() {
+		var dbInstrument dbInstrument
+
+		err := rows.Scan(
+			&dbInstrument.ID,
+			&dbInstrument.Key,
+			&dbInstrument.Name,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		instruments = append(instruments, dbInstrument.toDomain())
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return instruments, nil
 }
