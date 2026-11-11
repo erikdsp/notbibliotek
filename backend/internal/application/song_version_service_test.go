@@ -325,6 +325,7 @@ func Test_WhenScoreExistsThenUpdateScoreReplacesScoreFile(t *testing.T) {
 	scoreID := ulid.Make()
 	oldFileID := ulid.Make()
 	f := newSongVersionServiceFixture(&songID, "", &versionID)
+	f.fileRepository.deleteIfUnreferencedResult = true
 	f.scoreRepository.scores = append(f.scoreRepository.scores, domain.Score{
 		ID:            scoreID,
 		SongVersionID: versionID,
@@ -387,6 +388,14 @@ func Test_WhenScoreExistsThenUpdateScoreReplacesScoreFile(t *testing.T) {
 	if f.fileStorage.deletedFileIDs[0] != oldFileID {
 		t.Error("expected old file to be deleted")
 	}
+
+	if !f.fileRepository.deleteIfUnreferencedCalled {
+		t.Error("expected DeleteIfUnreferenced to be called")
+	}
+
+	if f.fileRepository.deleteCalled {
+		t.Error("expected Delete not to be called")
+	}
 }
 
 func Test_WhenScoreDoesNotExistThenUpdateScoreReturnsScoreNotFound(t *testing.T) {
@@ -441,6 +450,7 @@ func Test_WhenScoreRepositoryDeleteFailsThenDeleteScoreReturnsError(t *testing.T
 
 func Test_WhenScoreRepositoryDeleteSucceedsThenFilesAreDeleted(t *testing.T) {
 	f := newSongVersionServiceFixture(nil, "", nil)
+	f.fileRepository.deleteIfUnreferencedResult = true
 	songID := ulid.Make()
 	versionID := ulid.Make()
 
@@ -460,8 +470,12 @@ func Test_WhenScoreRepositoryDeleteSucceedsThenFilesAreDeleted(t *testing.T) {
 		t.Error("expected fileStorage.Delete to be called")
 	}
 
-	if !f.fileRepository.deleteCalled {
-		t.Error("expected fileRepository.Delete to be called")
+	if !f.fileRepository.deleteIfUnreferencedCalled {
+		t.Error("expected DeleteIfUnreferenced to be called")
+	}
+
+	if f.fileRepository.deleteCalled {
+		t.Error("expected Delete not to be called")
 	}
 }
 
@@ -606,7 +620,7 @@ func Test_WhenSongIDDoesNotMatchSongVersionThenUploadPartReturnsInvalidSongID(t 
 	}
 }
 
-func Test_WhenPartExistsThenUpdatePartReplacesPartFile(t *testing.T) {
+func Test_WhenPartExistsThenUpdatePartReplacesUnreferencedPartFile(t *testing.T) {
 
 	songID := ulid.Make()
 	versionID := ulid.Make()
@@ -615,6 +629,7 @@ func Test_WhenPartExistsThenUpdatePartReplacesPartFile(t *testing.T) {
 	name := "Part Name"
 	oldFileID := ulid.Make()
 	f := newSongVersionServiceFixture(&songID, "", &versionID)
+	f.fileRepository.deleteIfUnreferencedResult = true
 	f.partRepository.parts = append(f.partRepository.parts, domain.Part{
 		ID:            partID,
 		Key:           key,
@@ -679,6 +694,65 @@ func Test_WhenPartExistsThenUpdatePartReplacesPartFile(t *testing.T) {
 
 	if f.fileStorage.deletedFileIDs[0] != oldFileID {
 		t.Error("expected old file to be deleted")
+	}
+
+	if !f.fileRepository.deleteIfUnreferencedCalled {
+		t.Error("expected DeleteIfUnreferenced to be called")
+	}
+
+	if f.fileRepository.deleteCalled {
+		t.Error("expected Delete not to be called")
+	}
+
+}
+
+func Test_WhenPartFileIsStillReferencedThenUpdatePartPreservesOldFile(t *testing.T) {
+	songID := ulid.Make()
+	versionID := ulid.Make()
+	partID := ulid.Make()
+	oldFileID := ulid.Make()
+
+	f := newSongVersionServiceFixture(&songID, "", &versionID)
+	f.fileRepository.deleteIfUnreferencedResult = false
+
+	f.partRepository.parts = append(f.partRepository.parts, domain.Part{
+		ID:            partID,
+		Key:           "partkey",
+		Name:          "Part Name",
+		SongVersionID: versionID,
+		FileID:        oldFileID,
+	})
+
+	part, err := f.service.UpdatePart(
+		partID,
+		"partkey",
+		"Part Name",
+		"new-part.pdf",
+		strings.NewReader("new pdf content"),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if part.FileID == oldFileID {
+		t.Error("expected part to reference a new file")
+	}
+
+	if !f.fileRepository.deleteIfUnreferencedCalled {
+		t.Error("expected DeleteIfUnreferenced to be called")
+	}
+
+	if len(f.fileRepository.deletedFileIDs) != 1 ||
+		f.fileRepository.deletedFileIDs[0] != oldFileID {
+		t.Error("expected DeleteIfUnreferenced to be called with the old file ID")
+	}
+
+	if f.fileRepository.deleteCalled {
+		t.Error("expected Delete not to be called")
+	}
+
+	if len(f.fileStorage.deletedFileIDs) != 0 {
+		t.Error("expected old file to be preserved")
 	}
 }
 
@@ -851,6 +925,7 @@ func Test_WhenPartRepositoryDeleteFailsThenDeletePartReturnsError(t *testing.T) 
 
 func Test_WhenPartRepositoryDeleteSucceedsThenFilesAreDeleted(t *testing.T) {
 	f := newSongVersionServiceFixture(nil, "", nil)
+	f.fileRepository.deleteIfUnreferencedResult = true
 	partID := ulid.Make()
 	fileID := ulid.Make()
 
@@ -872,67 +947,69 @@ func Test_WhenPartRepositoryDeleteSucceedsThenFilesAreDeleted(t *testing.T) {
 		t.Error("expected fileStorage.Delete to be called")
 	}
 
-	if !f.fileRepository.deleteCalled {
-		t.Error("expected fileRepository.Delete to be called")
+	if !f.fileRepository.deleteIfUnreferencedCalled {
+		t.Error("expected fileRepository.DeleteIfUnreferenced to be called")
+	}
+
+	if f.fileRepository.deleteCalled {
+		t.Error("expected fileRepository.Deletenot to be called")
 	}
 }
 
-func Test_WhenFileStorageDeleteFailsThenDeletePartReturnsNilAndFileMetadataIsNotDeleted(t *testing.T) {
+func Test_WhenPartFileIsStillReferencedThenDeletePartPreservesFile(t *testing.T) {
 	f := newSongVersionServiceFixture(nil, "", nil)
+	f.fileRepository.deleteIfUnreferencedResult = false
+
 	partID := ulid.Make()
+	fileID := ulid.Make()
 
 	f.partRepository.parts = append(f.partRepository.parts, domain.Part{
-		ID:            partID,
-		Key:           "key",
-		Name:          "name",
-		SongVersionID: ulid.Make(),
-		FileID:        ulid.Make(),
+		ID:     partID,
+		FileID: fileID,
+	})
+
+	err := f.service.DeletePart(partID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !f.fileRepository.deleteIfUnreferencedCalled {
+		t.Error("expected DeleteIfUnreferenced to be called")
+	}
+
+	if len(f.fileRepository.deletedFileIDs) != 1 ||
+		f.fileRepository.deletedFileIDs[0] != fileID {
+		t.Error("expected DeleteIfUnreferenced to be called with the correct file ID")
+	}
+
+	if f.fileStorage.deleteCalled {
+		t.Error("expected referenced file to be preserved")
+	}
+}
+
+func Test_WhenFileStorageDeleteFailsThenDeletePartReturnsNil(t *testing.T) {
+	f := newSongVersionServiceFixture(nil, "", nil)
+	f.fileRepository.deleteIfUnreferencedResult = true
+
+	partID := ulid.Make()
+	f.partRepository.parts = append(f.partRepository.parts, domain.Part{
+		ID:     partID,
+		FileID: ulid.Make(),
 	})
 
 	f.fileStorage.deleteErr = errors.New("delete failed")
 
 	err := f.service.DeletePart(partID)
-
 	if err != nil {
 		t.Fatalf("expected nil, got %v", err)
 	}
 
-	if !f.fileStorage.deleteCalled {
-		t.Error("expected fileStorage.Delete to be called")
-	}
-
-	if f.fileRepository.deleteCalled {
-		t.Error("expected fileRepository.Delete not to be called")
-	}
-}
-
-func Test_WhenFileRepositoryDeleteFailsThenDeletePartIgnoresCleanupError(t *testing.T) {
-	f := newSongVersionServiceFixture(nil, "", nil)
-	partID := ulid.Make()
-
-	f.partRepository.parts = append(f.partRepository.parts, domain.Part{
-		ID:            partID,
-		Key:           "key",
-		Name:          "name",
-		SongVersionID: ulid.Make(),
-		FileID:        ulid.Make(),
-	})
-
-	// Metadata cleanup failure must not fail an already successful part deletion.
-	f.fileRepository.deleteErr = errors.New("delete failed")
-
-	err := f.service.DeletePart(partID)
-
-	if err != nil {
-		t.Fatalf("expected nil, got %v", err)
+	if !f.fileRepository.deleteIfUnreferencedCalled {
+		t.Error("expected DeleteIfUnreferenced to be called")
 	}
 
 	if !f.fileStorage.deleteCalled {
 		t.Error("expected fileStorage.Delete to be called")
-	}
-
-	if !f.fileRepository.deleteCalled {
-		t.Error("expected fileRepository.Delete to be called")
 	}
 }
 
@@ -1112,9 +1189,12 @@ type mockFileRepository struct {
 	files []domain.File
 	err   error
 
-	deletedFileIDs []ulid.ULID
-	deleteErr      error
-	deleteCalled   bool
+	deletedFileIDs             []ulid.ULID
+	deleteErr                  error
+	deleteCalled               bool
+	deleteIfUnreferencedCalled bool
+	deleteIfUnreferencedResult bool
+	deleteIfUnreferencedErr    error
 }
 
 func (m *mockFileRepository) Create(file domain.File) error {
@@ -1148,6 +1228,12 @@ func (m *mockFileRepository) Delete(id ulid.ULID) error {
 	m.deleteCalled = true
 	m.deletedFileIDs = append(m.deletedFileIDs, id)
 	return m.deleteErr
+}
+
+func (m *mockFileRepository) DeleteIfUnreferenced(id ulid.ULID) (deleted bool, err error) {
+	m.deleteIfUnreferencedCalled = true
+	m.deletedFileIDs = append(m.deletedFileIDs, id)
+	return m.deleteIfUnreferencedResult, m.deleteIfUnreferencedErr
 }
 
 type mockScoreRepository struct {
