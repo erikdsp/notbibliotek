@@ -393,9 +393,6 @@ func Test_WhenScoreExistsThenUpdateScoreReplacesScoreFile(t *testing.T) {
 		t.Error("expected DeleteIfUnreferenced to be called")
 	}
 
-	if f.fileRepository.deleteCalled {
-		t.Error("expected Delete not to be called")
-	}
 }
 
 func Test_WhenScoreDoesNotExistThenUpdateScoreReturnsScoreNotFound(t *testing.T) {
@@ -443,8 +440,8 @@ func Test_WhenScoreRepositoryDeleteFailsThenDeleteScoreReturnsError(t *testing.T
 		t.Error("expected fileStorage.Delete not to be called")
 	}
 
-	if f.fileRepository.deleteCalled {
-		t.Error("expected fileRepository.Delete not to be called")
+	if f.fileRepository.deleteIfUnreferencedCalled {
+		t.Error("expected fileRepository.DeleteIfUnreferenced not to be called")
 	}
 }
 
@@ -474,9 +471,6 @@ func Test_WhenScoreRepositoryDeleteSucceedsThenFilesAreDeleted(t *testing.T) {
 		t.Error("expected DeleteIfUnreferenced to be called")
 	}
 
-	if f.fileRepository.deleteCalled {
-		t.Error("expected Delete not to be called")
-	}
 }
 
 func Test_WhenUploadingValidPartThenUploadPartCreatesTheExpectedPart(t *testing.T) {
@@ -700,10 +694,6 @@ func Test_WhenPartExistsThenUpdatePartReplacesUnreferencedPartFile(t *testing.T)
 		t.Error("expected DeleteIfUnreferenced to be called")
 	}
 
-	if f.fileRepository.deleteCalled {
-		t.Error("expected Delete not to be called")
-	}
-
 }
 
 func Test_WhenPartFileIsStillReferencedThenUpdatePartPreservesOldFile(t *testing.T) {
@@ -745,10 +735,6 @@ func Test_WhenPartFileIsStillReferencedThenUpdatePartPreservesOldFile(t *testing
 	if len(f.fileRepository.deletedFileIDs) != 1 ||
 		f.fileRepository.deletedFileIDs[0] != oldFileID {
 		t.Error("expected DeleteIfUnreferenced to be called with the old file ID")
-	}
-
-	if f.fileRepository.deleteCalled {
-		t.Error("expected Delete not to be called")
 	}
 
 	if len(f.fileStorage.deletedFileIDs) != 0 {
@@ -918,8 +904,8 @@ func Test_WhenPartRepositoryDeleteFailsThenDeletePartReturnsError(t *testing.T) 
 		t.Error("expected fileStorage.Delete not to be called")
 	}
 
-	if f.fileRepository.deleteCalled {
-		t.Error("expected fileRepository.Delete not to be called")
+	if f.fileRepository.deleteIfUnreferencedCalled {
+		t.Error("expected fileRepository.DeleteIfUnreferenced not to be called")
 	}
 }
 
@@ -951,9 +937,6 @@ func Test_WhenPartRepositoryDeleteSucceedsThenFilesAreDeleted(t *testing.T) {
 		t.Error("expected fileRepository.DeleteIfUnreferenced to be called")
 	}
 
-	if f.fileRepository.deleteCalled {
-		t.Error("expected fileRepository.Deletenot to be called")
-	}
 }
 
 func Test_WhenPartFileIsStillReferencedThenDeletePartPreservesFile(t *testing.T) {
@@ -1190,8 +1173,6 @@ type mockFileRepository struct {
 	err   error
 
 	deletedFileIDs             []ulid.ULID
-	deleteErr                  error
-	deleteCalled               bool
 	deleteIfUnreferencedCalled bool
 	deleteIfUnreferencedResult bool
 	deleteIfUnreferencedErr    error
@@ -1222,12 +1203,6 @@ func (m *mockFileRepository) GetByID(id ulid.ULID) (domain.File, error) {
 
 func (m *mockFileRepository) Update(file domain.File) error {
 	return nil
-}
-
-func (m *mockFileRepository) Delete(id ulid.ULID) error {
-	m.deleteCalled = true
-	m.deletedFileIDs = append(m.deletedFileIDs, id)
-	return m.deleteErr
 }
 
 func (m *mockFileRepository) DeleteIfUnreferenced(id ulid.ULID) (deleted bool, err error) {
