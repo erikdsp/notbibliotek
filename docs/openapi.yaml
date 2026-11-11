@@ -209,6 +209,43 @@ paths:
               $ref: "#/components/schemas/DownloadRequest"
       security:
         - libraryAccess: []
+  /concerts/{concert_id}/download:
+    get:
+      tags:
+        - Downloads
+      summary: Download sheet music from concert
+      description: >
+        Downloads a ZIP archive containing sheet music for the specified concert.
+        At least one instrument must be specified, or include_unconnected_parts
+        must be true. 
+      operationId: download-from-concert
+      responses:
+        "200":
+          description: OK
+          content:
+            application/zip:
+              schema:
+                $ref: "#/components/schemas/ZipContent"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "404":
+          description: Resource not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      parameters:
+        - name: concert_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"
+        - $ref: "#/components/parameters/instrumentQuery"
+        - $ref: "#/components/parameters/includeUnconnectedPartsQuery"
+      security:
+        - libraryAccess: []
   /songs/{song_id}/versions:
     post:
       tags:
