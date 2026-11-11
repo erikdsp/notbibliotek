@@ -153,7 +153,7 @@ func (s *SongVersionService) UpdateScore(songID ulid.ULID, versionID ulid.ULID,
 		return domain.Score{}, err
 	}
 
-	s.cleanupOldFile(oldFileID)
+	s.deleteFileIfUnreferenced(oldFileID)
 
 	return score, nil
 
@@ -166,14 +166,7 @@ func (s *SongVersionService) DeleteScore(songID ulid.ULID, versionID ulid.ULID) 
 		return err
 	}
 
-	if err := s.fileStorage.Delete(fileID); err != nil {
-		log.Printf("failed to delete stored file %s: %v", fileID, err)
-		return nil
-	}
-
-	if err := s.fileRepository.Delete(fileID); err != nil {
-		log.Printf("failed to delete file metadata %s: %v", fileID, err)
-	}
+	s.deleteFileIfUnreferenced(fileID)
 
 	return nil
 }
@@ -270,7 +263,7 @@ func (s *SongVersionService) UpdatePart(partID ulid.ULID,
 		return domain.Part{}, err
 	}
 
-	s.cleanupOldFile(oldFileID)
+	s.deleteFileIfUnreferenced(oldFileID)
 
 	return part, nil
 
@@ -283,16 +276,10 @@ func (s *SongVersionService) DeletePart(partID ulid.ULID) error {
 		return err
 	}
 
-	if err := s.fileStorage.Delete(fileID); err != nil {
-		log.Printf("failed to delete stored file %s: %v", fileID, err)
-		return nil
-	}
-
-	if err := s.fileRepository.Delete(fileID); err != nil {
-		log.Printf("failed to delete file metadata %s: %v", fileID, err)
-	}
+	s.deleteFileIfUnreferenced(fileID)
 
 	return nil
+
 }
 
 func (s *SongVersionService) GetPartInstrumentsBySongVersionID(versionID ulid.ULID) ([]PartInstruments, error) {
@@ -348,20 +335,26 @@ func (s *SongVersionService) fileRepositoryRollback(fileID ulid.ULID) {
 	}
 }
 
-func (s *SongVersionService) cleanupOldFile(fileID ulid.ULID) {
-	if err := s.fileRepository.Delete(fileID); err != nil {
-		log.Printf("failed to delete old file metadata %s: %v", fileID, err)
-	}
-
-	if err := s.fileStorage.Delete(fileID); err != nil {
-		log.Printf("failed to delete old file %s: %v", fileID, err)
-	}
-}
-
 func (s *SongVersionService) CreateConnection(partID ulid.ULID, instrumentID ulid.ULID) error {
 	return s.partInstrumentRepository.Create(partID, instrumentID)
 }
 
 func (s *SongVersionService) DeleteConnection(partID ulid.ULID, instrumentID ulid.ULID) error {
 	return s.partInstrumentRepository.Delete(partID, instrumentID)
+}
+
+func (s *SongVersionService) deleteFileIfUnreferenced(fileID ulid.ULID) {
+	deleted, err := s.fileRepository.DeleteIfUnreferenced(fileID)
+	if err != nil {
+		log.Printf("failed to delete file metadata %s: %v", fileID, err)
+		return
+	}
+
+	if !deleted {
+		return
+	}
+
+	if err := s.fileStorage.Delete(fileID); err != nil {
+		log.Printf("failed to delete stored file %s: %v", fileID, err)
+	}
 }
