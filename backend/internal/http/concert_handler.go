@@ -3,8 +3,12 @@ package http
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/erikdsp/notbibliotek/backend/internal/application"
@@ -226,4 +230,80 @@ func (h *ConcertHandler) DeleteConcertSongConnection(w http.ResponseWriter, r *h
 
 	w.WriteHeader(http.StatusNoContent)
 
+}
+
+func (h *ConcertHandler) DownloadConcert(w http.ResponseWriter, r *http.Request) {
+
+	concertID, err := ulid.Parse(r.PathValue("concert_id"))
+	if err != nil {
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	query, err := parseDownloadConcertQuery(r.URL.RawQuery)
+	if err != nil {
+		log.Printf("parseDownloadConcertQuery failed: %v", err)
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	response, fileDownloadErrors, err := h.service.DownloadConcert(concertID, query)
+
+	for _, downloadError := range fileDownloadErrors {
+		log.Printf(
+			"ConcertHandler.DownloadConcert: failed to download file %s: %v",
+			downloadError.FileID,
+			downloadError.Err,
+		)
+	}
+
+	if err != nil {
+		switch {
+		case errors.Is(err, application.ErrInvalidOperation):
+			writeError(w, err.Error(), http.StatusBadRequest)
+
+		case errors.Is(err, application.ErrConcertNotFound),
+			errors.Is(err, application.ErrInstrumentNotFound),
+			errors.Is(err, application.ErrNoFilesAvailable):
+			writeError(w, err.Error(), http.StatusNotFound)
+
+		default:
+			log.Printf("ConcertHandler.DownloadConcert failed: %v", err)
+			writeError(w, "internal server error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	defer response.File.Close()
+
+	setDownloadFileName(w, response.FileName)
+	w.Header().Set("Content-Type", "application/zip")
+
+	_, err = io.Copy(w, response.File)
+	if err != nil {
+		log.Printf("ConcertHandler.DownloadConcert Copy failed: %v", err)
+		return
+	}
+
+}
+
+func parseDownloadConcertQuery(rawQuery string) (application.DownloadConcertQuery, error) {
+	queryValues, err := url.ParseQuery(rawQuery)
+	if err != nil {
+		return application.DownloadConcertQuery{}, err
+	}
+
+	query := application.DownloadConcertQuery{
+		Instruments: queryValues["instrument"],
+	}
+
+	if includeUnconnectedParts := queryValues.Get("include_unconnected_parts"); includeUnconnectedParts != "" {
+		queryValue, err := strconv.ParseBool(includeUnconnectedParts)
+		if err != nil {
+			return application.DownloadConcertQuery{}, fmt.Errorf("invalid include_unconnected_parts: %w", err)
+		}
+		query.IncludeUnconnectedParts = queryValue
+	}
+
+	return query, nil
 }
