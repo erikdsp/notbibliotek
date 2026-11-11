@@ -12,3 +12,7 @@ type InstrumentRepository interface {
 	Update(instrument domain.Instrument) error
 	Delete(id ulid.ULID) error
 }
+
+type InstrumentLookup interface {
+	GetByKeys(keys []string) ([]domain.Instrument, error)
+}

@@ -9,3 +9,8 @@ type ConcertDetails struct {
 	Concert domain.Concert
 	Songs   []domain.Song
 }
+
+type DownloadConcertQuery struct {
+	Instruments             []string
+	IncludeUnconnectedParts bool
+}

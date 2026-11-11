@@ -339,23 +339,55 @@ func (m *mockConcertSongRepository) Delete(concertID ulid.ULID, songID ulid.ULID
 	return nil
 }
 
+type mockFileZipper struct {
+	err error
+}
+
+func (m *mockFileZipper) GetFilesAsZip(ids []ulid.ULID, outputFileName string) (DownloadableFile, []FileDownloadError, error) {
+	return DownloadableFile{}, nil, nil
+}
+
+type mockInstrumentLookup struct {
+	instruments []domain.Instrument
+	err         error
+}
+
+func (m *mockInstrumentLookup) GetByKeys(keys []string) ([]domain.Instrument, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	return m.instruments, nil
+}
+
 type concertServiceFixture struct {
 	service               *ConcertService
 	repository            *mockConcertRepository
 	concertSongRepository *mockConcertSongRepository
+	songQueryRepository   *mockSongQueryRepository
+	fileZipper            *mockFileZipper
+	instrumentLookup      *mockInstrumentLookup
 }
 
 func newConcertServiceFixture() concertServiceFixture {
 
 	repository := &mockConcertRepository{}
 	concertSongRepository := &mockConcertSongRepository{}
+	songQueryRepository := &mockSongQueryRepository{}
+	fileZipper := &mockFileZipper{}
+	instrumentLookup := &mockInstrumentLookup{}
 
 	return concertServiceFixture{
 		service: NewConcertService(
 			repository,
 			concertSongRepository,
+			songQueryRepository,
+			fileZipper,
+			instrumentLookup,
 		),
 		repository:            repository,
 		concertSongRepository: concertSongRepository,
+		songQueryRepository:   songQueryRepository,
+		fileZipper:            fileZipper,
+		instrumentLookup:      instrumentLookup,
 	}
 }
