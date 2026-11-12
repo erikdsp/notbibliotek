@@ -1132,6 +1132,7 @@ func Test_WhenSongVersionRepositoryReturnsErrorThenPublishSongVersionReturnsErro
 type mockSongVersionRepository struct {
 	songVersions []domain.SongVersion
 	err          error
+	deleteErr    error
 }
 
 func (m *mockSongVersionRepository) Create(songVersion domain.SongVersion) error {
@@ -1166,6 +1167,10 @@ func (m *mockSongVersionRepository) Publish(songVersion domain.SongVersion) erro
 	}
 
 	return ErrNoRowsAffected
+}
+
+func (m *mockSongVersionRepository) Delete(songVersionID ulid.ULID) error {
+	return m.deleteErr
 }
 
 type mockFileRepository struct {
@@ -1282,12 +1287,13 @@ func (m *mockScoreRepository) Delete(songID ulid.ULID, songVersionID ulid.ULID) 
 }
 
 type MockPartRepository struct {
-	parts                 []domain.Part
-	err                   error
-	getByVersionAndKeyErr error
-	updateErr             error
-	deleteErr             error
-	fileIDsPassedToUpdate []ulid.ULID
+	parts                  []domain.Part
+	err                    error
+	getByVersionAndKeyErr  error
+	updateErr              error
+	deleteErr              error
+	fileIDsPassedToUpdate  []ulid.ULID
+	partsAndConnectionsErr error
 }
 
 func (m *MockPartRepository) Create(part domain.Part) error {
@@ -1370,6 +1376,13 @@ func (m *MockPartRepository) Delete(ID ulid.ULID) (fileID ulid.ULID, err error) 
 	}
 
 	return ulid.ULID{}, ErrPartNotFound
+}
+
+func (m *MockPartRepository) CreatePartsAndConnections(parts []domain.Part, partInstruments []PartInstruments) error {
+	if m.partsAndConnectionsErr != nil {
+		return m.partsAndConnectionsErr
+	}
+	return nil
 }
 
 type mockPartInstrumentRepository struct {
