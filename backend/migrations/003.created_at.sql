@@ -1,0 +1,2 @@
+ALTER TABLE song_versions
+ADD COLUMN created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
