@@ -7,6 +7,7 @@ import (
 
 type SongVersionRepository interface {
 	Create(songVersion domain.SongVersion) error
-	GetByID(id ulid.ULID) (domain.SongVersion, error)
+	GetByID(songVersionID ulid.ULID) (domain.SongVersion, error)
 	Publish(songVersion domain.SongVersion) error
+	Delete(songVersionID ulid.ULID) error
 }
