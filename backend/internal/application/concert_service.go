@@ -186,7 +186,7 @@ func getLatestVersionDate(songs []SongDetails) time.Time {
 		}
 
 		version := song.Versions[*song.CurrentVersionID]
-		if version == nil || len(version.Parts) == 0 {
+		if version == nil || (version.Score == nil && len(version.Parts) == 0) {
 			continue
 		}
 
