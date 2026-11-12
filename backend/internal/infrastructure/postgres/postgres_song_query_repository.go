@@ -351,7 +351,9 @@ func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
 	}
 
 	sql = sql.
-		OrderBy("s.id",
+		OrderBy(
+			"s.title ASC",
+			"s.id",
 			"part_file.name ASC",
 		)
 
@@ -374,7 +376,7 @@ func buildSongByIDQuery(id ulid.ULID, query application.SongByIDQuery) sq.Select
 		LeftJoin("song_versions sv ON sv.song_id = s.id").
 		OrderBy(
 			"sv.published_at DESC NULLS LAST",
-			"sv.id",
+			"sv.created_at DESC",
 			"part_file.name ASC",
 		)
 
