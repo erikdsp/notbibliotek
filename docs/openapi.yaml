@@ -521,11 +521,11 @@ paths:
       operationId: duplicate-song-version
       responses:
         "201":
-          description: Song version draft created.
+          description: Duplicate Song Version created.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Version"
+                $ref: "#/components/schemas/SongVersion"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":

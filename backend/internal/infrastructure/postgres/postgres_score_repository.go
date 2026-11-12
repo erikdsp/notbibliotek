@@ -76,12 +76,12 @@ func (r *PostgresScoreRepository) Create(score domain.Score) error {
 	return err
 }
 
-func (r *PostgresScoreRepository) GetByID(id ulid.ULID) (domain.Score, error) {
+func (r *PostgresScoreRepository) GetByID(scoreID ulid.ULID) (domain.Score, error) {
 	var dbScore dbScore
 
 	err := r.db.QueryRow(
 		getScoreByIDQuery,
-		uuid.UUID(id),
+		uuid.UUID(scoreID),
 	).Scan(
 		&dbScore.ID,
 		&dbScore.SongVersionID,
@@ -131,7 +131,7 @@ func (r *PostgresScoreRepository) Update(score domain.Score) error {
 
 }
 
-func (r *PostgresScoreRepository) Delete(songID ulid.ULID, songVersionID ulid.ULID) (ulid.ULID, error) {
+func (r *PostgresScoreRepository) Delete(songID ulid.ULID, songVersionID ulid.ULID) (fileID ulid.ULID, err error) {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return ulid.ULID{}, err
@@ -141,7 +141,7 @@ func (r *PostgresScoreRepository) Delete(songID ulid.ULID, songVersionID ulid.UL
 	var publishedAt sql.NullTime
 
 	err = tx.QueryRow(
-		selectAndLockSongVersionQuery,
+		selectAndLockSongVersionBySongAndVersionIDQuery,
 		uuid.UUID(songVersionID),
 		uuid.UUID(songID),
 	).Scan(&publishedAt)

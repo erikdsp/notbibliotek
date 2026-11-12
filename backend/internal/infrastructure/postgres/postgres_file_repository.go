@@ -27,9 +27,18 @@ const updateFileQuery = `
 	SET name = $2
 	WHERE id = $1
 `
-const deleteFileQuery = `
-    DELETE FROM files
-    WHERE id = $1
+
+const deleteUnreferencedFileQuery = `
+	DELETE FROM files f
+	WHERE f.id = $1
+  	  AND NOT EXISTS (
+        SELECT 1 FROM scores s
+        WHERE s.file_id = f.id
+  	  )
+      AND NOT EXISTS (
+        SELECT 1 FROM parts p
+        WHERE p.file_id = f.id
+      )
 `
 
 type PostgresFileRepository struct {
@@ -97,7 +106,17 @@ func (r *PostgresFileRepository) Update(file domain.File) error {
 	return err
 }
 
-func (r *PostgresFileRepository) Delete(id ulid.ULID) error {
-	_, err := r.db.Exec(deleteFileQuery, uuid.UUID(id))
-	return err
+func (r *PostgresFileRepository) DeleteIfUnreferenced(id ulid.ULID) (deleted bool, err error) {
+	result, err := r.db.Exec(deleteUnreferencedFileQuery, uuid.UUID(id))
+	if err != nil {
+		return false, err
+	}
+
+	affectedRows, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+
+	return affectedRows > 0, nil
+
 }

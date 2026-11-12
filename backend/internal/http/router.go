@@ -50,8 +50,9 @@ func NewRouter(
 	mux.HandleFunc("POST /api/v1/songs/{song_id}/versions/{version_id}/parts", songVersionHandler.UploadPart)
 	mux.HandleFunc("PATCH /api/v1/parts/{part_id}", songVersionHandler.UpdatePart)
 	mux.HandleFunc("DELETE /api/v1/parts/{part_id}", songVersionHandler.DeletePart)
-	mux.HandleFunc("POST /api/v1/songs/{song_id}/versions/{version_id}/publish", songVersionHandler.Publish)
 	mux.HandleFunc("GET /api/v1/songs/{song_id}/versions/{version_id}/instruments", songVersionHandler.GetPartInstruments)
+	mux.HandleFunc("POST /api/v1/songs/{song_id}/versions/{version_id}/duplicate", songVersionHandler.DuplicateSongVersion)
+	mux.HandleFunc("POST /api/v1/songs/{song_id}/versions/{version_id}/publish", songVersionHandler.Publish)
 
 	// Part Instrument Connections
 	mux.HandleFunc("POST /api/v1/parts/{part_id}/instruments/{instrument_id}", songVersionHandler.CreatePartInstrumentConnection)

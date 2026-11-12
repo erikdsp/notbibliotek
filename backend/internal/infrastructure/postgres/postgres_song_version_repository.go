@@ -30,12 +30,24 @@ const updateSongVersionQuery = `
 	  AND published_at IS NULL
 `
 
-const selectAndLockSongVersionQuery = `
+const selectAndLockSongVersionBySongAndVersionIDQuery = `
 	SELECT published_at
 	FROM song_versions
 	WHERE id = $1
 	  AND song_id = $2
 	FOR UPDATE;
+`
+
+const selectAndLockSongVersionByVersionIDQuery = `
+    SELECT published_at
+    FROM song_versions
+    WHERE id = $1
+    FOR UPDATE
+`
+
+const deleteSongVersionQuery = `
+    DELETE FROM song_versions
+    WHERE id = $1
 `
 
 type PostgresSongVersionRepository struct {
@@ -73,12 +85,12 @@ func (r *PostgresSongVersionRepository) Create(songVersion domain.SongVersion) e
 	return err
 }
 
-func (r *PostgresSongVersionRepository) GetByID(id ulid.ULID) (domain.SongVersion, error) {
+func (r *PostgresSongVersionRepository) GetByID(songVersionID ulid.ULID) (domain.SongVersion, error) {
 	var dbSongVersion dbSongVersion
 
 	err := r.db.QueryRow(
 		getSongVersionByIDQuery,
-		uuid.UUID(id),
+		uuid.UUID(songVersionID),
 	).Scan(
 		&dbSongVersion.ID,
 		&dbSongVersion.SongID,
@@ -116,5 +128,43 @@ func (r *PostgresSongVersionRepository) Publish(songVersion domain.SongVersion) 
 	}
 
 	return nil
+
+}
+
+func (r *PostgresSongVersionRepository) Delete(songVersionID ulid.ULID) error {
+
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var publishedAt sql.NullTime
+
+	err = tx.QueryRow(
+		selectAndLockSongVersionByVersionIDQuery,
+		uuid.UUID(songVersionID),
+	).Scan(&publishedAt)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return application.ErrSongVersionNotFound
+	}
+	if err != nil {
+		return err
+	}
+
+	if publishedAt.Valid {
+		return application.ErrSongVersionAlreadyPublished
+	}
+
+	_, err = tx.Exec(
+		deleteSongVersionQuery,
+		uuid.UUID(songVersionID),
+	)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 
 }

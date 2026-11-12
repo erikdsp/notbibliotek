@@ -153,7 +153,7 @@ func (s *SongVersionService) UpdateScore(songID ulid.ULID, versionID ulid.ULID,
 		return domain.Score{}, err
 	}
 
-	s.cleanupOldFile(oldFileID)
+	s.deleteFileIfUnreferenced(oldFileID)
 
 	return score, nil
 
@@ -166,14 +166,7 @@ func (s *SongVersionService) DeleteScore(songID ulid.ULID, versionID ulid.ULID) 
 		return err
 	}
 
-	if err := s.fileStorage.Delete(fileID); err != nil {
-		log.Printf("failed to delete stored file %s: %v", fileID, err)
-		return nil
-	}
-
-	if err := s.fileRepository.Delete(fileID); err != nil {
-		log.Printf("failed to delete file metadata %s: %v", fileID, err)
-	}
+	s.deleteFileIfUnreferenced(fileID)
 
 	return nil
 }
@@ -270,7 +263,7 @@ func (s *SongVersionService) UpdatePart(partID ulid.ULID,
 		return domain.Part{}, err
 	}
 
-	s.cleanupOldFile(oldFileID)
+	s.deleteFileIfUnreferenced(oldFileID)
 
 	return part, nil
 
@@ -283,16 +276,10 @@ func (s *SongVersionService) DeletePart(partID ulid.ULID) error {
 		return err
 	}
 
-	if err := s.fileStorage.Delete(fileID); err != nil {
-		log.Printf("failed to delete stored file %s: %v", fileID, err)
-		return nil
-	}
-
-	if err := s.fileRepository.Delete(fileID); err != nil {
-		log.Printf("failed to delete file metadata %s: %v", fileID, err)
-	}
+	s.deleteFileIfUnreferenced(fileID)
 
 	return nil
+
 }
 
 func (s *SongVersionService) GetPartInstrumentsBySongVersionID(versionID ulid.ULID) ([]PartInstruments, error) {
@@ -336,26 +323,54 @@ func (s *SongVersionService) PublishSongVersion(songID ulid.ULID, versionID ulid
 	return nil
 }
 
-func (s *SongVersionService) fileStorageRollback(fileID ulid.ULID) {
-	if deleteErr := s.fileStorage.Delete(fileID); deleteErr != nil {
-		log.Printf("failed to delete file %s: %v during rollback", fileID, deleteErr)
-	}
-}
+func (s *SongVersionService) DuplicateSongVersion(songID ulid.ULID, versionID ulid.ULID) (domain.SongVersion, error) {
 
-func (s *SongVersionService) fileRepositoryRollback(fileID ulid.ULID) {
-	if deleteErr := s.fileRepository.Delete(fileID); deleteErr != nil {
-		log.Printf("failed to delete file metadata %s: %v during rollback", fileID, deleteErr)
+	version, err := s.repository.GetByID(versionID)
+	if err != nil {
+		return domain.SongVersion{}, err
 	}
-}
-
-func (s *SongVersionService) cleanupOldFile(fileID ulid.ULID) {
-	if err := s.fileRepository.Delete(fileID); err != nil {
-		log.Printf("failed to delete old file metadata %s: %v", fileID, err)
+	if version.SongID != songID {
+		return domain.SongVersion{}, ErrInvalidSongID
 	}
 
-	if err := s.fileStorage.Delete(fileID); err != nil {
-		log.Printf("failed to delete old file %s: %v", fileID, err)
+	score, err := s.getScoreWhenExisting(versionID)
+	if err != nil {
+		return domain.SongVersion{}, err
 	}
+
+	parts, err := s.partRepository.GetBySongVersionID(versionID)
+	if err != nil {
+		return domain.SongVersion{}, err
+	}
+
+	partInstruments, err := s.partInstrumentRepository.GetBySongVersionID(versionID)
+	if err != nil {
+		return domain.SongVersion{}, err
+	}
+
+	newVersion, err := s.CreateSongVersion(songID)
+	if err != nil {
+		return domain.SongVersion{}, err
+	}
+
+	newScore, err := s.createDuplicateScore(score, newVersion.ID)
+	if err != nil {
+		s.songVersionRollback(newVersion.ID)
+		return domain.SongVersion{}, err
+	}
+
+	newParts, newPartInstruments := buildNewPartsAndConnections(parts, partInstruments, newVersion.ID)
+
+	err = s.partRepository.CreatePartsAndConnections(newParts, newPartInstruments)
+	if err != nil {
+		if newScore != nil {
+			s.scoreRecordRollback(songID, newVersion.ID)
+		}
+		s.songVersionRollback(newVersion.ID)
+		return domain.SongVersion{}, err
+	}
+
+	return newVersion, nil
 }
 
 func (s *SongVersionService) CreateConnection(partID ulid.ULID, instrumentID ulid.ULID) error {
@@ -364,4 +379,118 @@ func (s *SongVersionService) CreateConnection(partID ulid.ULID, instrumentID uli
 
 func (s *SongVersionService) DeleteConnection(partID ulid.ULID, instrumentID ulid.ULID) error {
 	return s.partInstrumentRepository.Delete(partID, instrumentID)
+}
+
+func (s *SongVersionService) getScoreWhenExisting(versionID ulid.ULID) (*domain.Score, error) {
+	score, err := s.scoreRepository.GetBySongVersionID(versionID)
+
+	if errors.Is(err, ErrScoreNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &score, nil
+}
+
+func (s *SongVersionService) createDuplicateScore(score *domain.Score, newVersionID ulid.ULID) (*domain.Score, error) {
+
+	if score == nil {
+		return nil, nil
+	}
+
+	newScore := &domain.Score{
+		ID:            ulid.Make(),
+		SongVersionID: newVersionID,
+		FileID:        score.FileID,
+	}
+
+	if err := s.scoreRepository.Create(*newScore); err != nil {
+		return nil, err
+	}
+
+	return newScore, nil
+}
+
+func (s *SongVersionService) songVersionRollback(songVersionID ulid.ULID) {
+	if deleteErr := s.repository.Delete(songVersionID); deleteErr != nil {
+		log.Printf("failed to delete song version %s: %v during rollback", songVersionID, deleteErr)
+	}
+}
+
+func (s *SongVersionService) scoreRecordRollback(songID ulid.ULID, songVersionID ulid.ULID) {
+	if _, deleteErr := s.scoreRepository.Delete(songID, songVersionID); deleteErr != nil {
+		log.Printf("failed to delete score for song version %s: %v during rollback", songVersionID, deleteErr)
+	}
+}
+
+func (s *SongVersionService) fileStorageRollback(fileID ulid.ULID) {
+	if deleteErr := s.fileStorage.Delete(fileID); deleteErr != nil {
+		log.Printf("failed to delete file %s: %v during rollback", fileID, deleteErr)
+	}
+}
+
+func (s *SongVersionService) fileRepositoryRollback(fileID ulid.ULID) {
+	deleted, err := s.fileRepository.DeleteIfUnreferenced(fileID)
+	if err != nil {
+		log.Printf("failed to delete file metadata %s: %v during rollback", fileID, err)
+		return
+	}
+
+	if !deleted {
+		log.Printf("file metadata %s was not deleted during rollback: file is still referenced", fileID)
+	}
+}
+
+func (s *SongVersionService) deleteFileIfUnreferenced(fileID ulid.ULID) {
+	deleted, err := s.fileRepository.DeleteIfUnreferenced(fileID)
+	if err != nil {
+		log.Printf("failed to delete file metadata %s: %v", fileID, err)
+		return
+	}
+
+	if !deleted {
+		return
+	}
+
+	if err := s.fileStorage.Delete(fileID); err != nil {
+		log.Printf("failed to delete stored file %s: %v", fileID, err)
+	}
+}
+
+func mapInstrumentsByPartID(partInstruments []PartInstruments) map[ulid.ULID][]domain.Instrument {
+	instrumentsMap := make(map[ulid.ULID][]domain.Instrument, len(partInstruments))
+
+	for _, partInstrument := range partInstruments {
+		instrumentsMap[partInstrument.PartID] = partInstrument.Instruments
+	}
+
+	return instrumentsMap
+}
+
+func buildNewPartsAndConnections(parts []domain.Part, partInstruments []PartInstruments, newVersionID ulid.ULID) ([]domain.Part, []PartInstruments) {
+	instrumentsMap := mapInstrumentsByPartID(partInstruments)
+
+	newParts := make([]domain.Part, 0, len(parts))
+	newPartInstruments := make([]PartInstruments, 0, len(parts))
+	for _, part := range parts {
+		newPartID := ulid.Make()
+
+		newParts = append(newParts, domain.Part{
+			ID:            newPartID,
+			Key:           part.Key,
+			Name:          part.Name,
+			SongVersionID: newVersionID,
+			FileID:        part.FileID,
+		})
+
+		newPartInstruments = append(newPartInstruments, PartInstruments{
+			PartID:      newPartID,
+			Instruments: instrumentsMap[part.ID],
+		})
+	}
+
+	return newParts, newPartInstruments
+
 }

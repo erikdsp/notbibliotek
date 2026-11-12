@@ -7,10 +7,11 @@ import (
 
 type PartRepository interface {
 	Create(part domain.Part) error
-	GetByID(id ulid.ULID) (domain.Part, error)
+	GetByID(partID ulid.ULID) (domain.Part, error)
 
 	// Returns an empty slice when the song version has no parts.
 	GetBySongVersionID(songVersionID ulid.ULID) ([]domain.Part, error)
 	Update(part domain.Part) error
-	Delete(id ulid.ULID) (fileID ulid.ULID, err error)
+	Delete(partID ulid.ULID) (fileID ulid.ULID, err error)
+	CreatePartsAndConnections(parts []domain.Part, partInstruments []PartInstruments) error
 }

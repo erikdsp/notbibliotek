@@ -322,6 +322,47 @@ func (h *SongVersionHandler) DeletePart(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *SongVersionHandler) DuplicateSongVersion(w http.ResponseWriter, r *http.Request) {
+	songID, err := ulid.Parse(r.PathValue("song_id"))
+	if err != nil {
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	versionID, err := ulid.Parse(r.PathValue("version_id"))
+	if err != nil {
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	songVersion, err := h.service.DuplicateSongVersion(songID, versionID)
+	if err != nil {
+		if errors.Is(err, application.ErrInvalidSongID) {
+			writeError(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if errors.Is(err, application.ErrSongVersionNotFound) || errors.Is(err, application.ErrResourceNotFound) {
+			writeError(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		if errors.Is(err, application.ErrConflictingOperation) {
+			writeError(w, err.Error(), http.StatusConflict)
+			return
+		}
+
+		log.Printf("DuplicateSongVersion failed: %v", err)
+		writeError(w, "internal server error", http.StatusInternalServerError)
+		return
+
+	}
+
+	response := toSongVersionResponse(songVersion)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+
+	json.NewEncoder(w).Encode(response)
+}
+
 func (h *SongVersionHandler) Publish(w http.ResponseWriter, r *http.Request) {
 	songID, err := ulid.Parse(r.PathValue("song_id"))
 	if err != nil {
