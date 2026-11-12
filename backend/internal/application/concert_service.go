@@ -149,6 +149,9 @@ func getFileIDsFromSongs(songs []SongDetails) []ulid.ULID {
 		if currentVersion == nil {
 			continue
 		}
+
+		fileIDs = append(fileIDs, currentVersion.Score.File.ID)
+
 		for _, part := range currentVersion.Parts {
 			fileIDs = append(fileIDs, part.File.ID)
 		}
