@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/erikdsp/notbibliotek/backend/internal/application"
 
@@ -20,6 +21,7 @@ func Test_WhenRowContainsValidSongVersionThenToApplicationReturnsCorrectSongDeta
 	scoreID := ulid.Make()
 	fileID := ulid.Make()
 	fileName := "File Name"
+	now := time.Now()
 
 	row := dbSongDetailRow{
 		Song: dbSongDetail{
@@ -31,6 +33,7 @@ func Test_WhenRowContainsValidSongVersionThenToApplicationReturnsCorrectSongDeta
 				UUID:  uuid.UUID(versionID),
 				Valid: true,
 			},
+			CreatedAt: &now,
 		},
 		Score: dbScoreDetail{
 			ID: uuid.NullUUID{
@@ -101,6 +104,7 @@ func Test_WhenRowContainsPartThenToApplicationReturnsCorrectPart(t *testing.T) {
 	fileID := ulid.Make()
 	scoreFileName := "File Name"
 	partFileName := "Part File Name"
+	now := time.Now()
 
 	row := dbSongDetailRow{
 		Song: dbSongDetail{
@@ -112,6 +116,7 @@ func Test_WhenRowContainsPartThenToApplicationReturnsCorrectPart(t *testing.T) {
 				UUID:  uuid.UUID(versionID),
 				Valid: true,
 			},
+			CreatedAt: &now,
 		},
 		Score: dbScoreDetail{
 			ID: uuid.NullUUID{
@@ -180,6 +185,8 @@ func Test_WhenRowContainsPartThenToApplicationReturnsCorrectPart(t *testing.T) {
 }
 
 func Test_WhenRowIsMissingScoreThenToApplicationReturnsVersionWithoutScore(t *testing.T) {
+	now := time.Now()
+
 	row := dbSongDetailRow{
 		Song: dbSongDetail{
 			ID:    uuid.UUID(ulid.Make()),
@@ -190,6 +197,7 @@ func Test_WhenRowIsMissingScoreThenToApplicationReturnsVersionWithoutScore(t *te
 				UUID:  uuid.UUID(ulid.Make()),
 				Valid: true,
 			},
+			CreatedAt: &now,
 		},
 		Score: dbScoreDetail{
 			ID: uuid.NullUUID{
@@ -231,6 +239,7 @@ func Test_WhenRowIsMissingScoreThenToApplicationReturnsVersionWithoutScore(t *te
 }
 func Test_WhenRowHasIncompleteScoreThenToApplicationReturnsCorrectError(t *testing.T) {
 
+	now := time.Now()
 	row := dbSongDetailRow{
 		Song: dbSongDetail{
 			ID:    uuid.UUID(ulid.Make()),
@@ -241,6 +250,7 @@ func Test_WhenRowHasIncompleteScoreThenToApplicationReturnsCorrectError(t *testi
 				UUID:  uuid.UUID(ulid.Make()),
 				Valid: true,
 			},
+			CreatedAt: &now,
 		},
 		Score: dbScoreDetail{
 			ID: uuid.NullUUID{
@@ -263,6 +273,7 @@ func Test_WhenRowHasIncompleteScoreThenToApplicationReturnsCorrectError(t *testi
 
 func Test_WhenRowHasIncompletePartThenToApplicationReturnsCorrectError(t *testing.T) {
 
+	now := time.Now()
 	row := dbSongDetailRow{
 		Song: dbSongDetail{
 			ID:    uuid.UUID(ulid.Make()),
@@ -273,6 +284,7 @@ func Test_WhenRowHasIncompletePartThenToApplicationReturnsCorrectError(t *testin
 				UUID:  uuid.UUID(ulid.Make()),
 				Valid: true,
 			},
+			CreatedAt: &now,
 		},
 		Score: dbScoreDetail{
 			ID: uuid.NullUUID{

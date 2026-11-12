@@ -51,7 +51,9 @@ func buildConcertDetailsQuery() sq.SelectBuilder {
 		From("concerts c").
 		LeftJoin("concert_songs cs ON cs.concert_id = c.id").
 		LeftJoin("songs s ON s.id = cs.song_id").
-		OrderBy("c.date", "c.key")
+		OrderBy(
+			"c.date DESC",
+			"c.key ASC")
 }
 
 type PostgresConcertRepository struct {

@@ -25,6 +25,7 @@ type dbSongDetail struct {
 type dbSongVersionDetail struct {
 	ID          uuid.NullUUID
 	PublishedAt *time.Time
+	CreatedAt   *time.Time
 }
 
 type dbScoreDetail struct {
@@ -104,6 +105,7 @@ func (s dbSongDetailRow) toApplication() (application.SongDetails, application.P
 				Version: application.SongVersionDetails{
 					ID:          songVersionID,
 					PublishedAt: s.SongVersion.PublishedAt,
+					CreatedAt:   *s.SongVersion.CreatedAt,
 				},
 				Score: score,
 			},
@@ -161,6 +163,7 @@ func (r *PostgresSongQueryRepository) GetAll(query application.SongQuery) ([]app
 			&dbRow.Song.ArchivedAt,
 			&dbRow.SongVersion.ID,
 			&dbRow.SongVersion.PublishedAt,
+			&dbRow.SongVersion.CreatedAt,
 			&dbRow.Score.ID,
 			&dbRow.Score.FileID,
 			&dbRow.Score.FileName,
@@ -240,6 +243,7 @@ func (r *PostgresSongQueryRepository) GetByID(id ulid.ULID, query application.So
 			&dbRow.Song.ArchivedAt,
 			&dbRow.SongVersion.ID,
 			&dbRow.SongVersion.PublishedAt,
+			&dbRow.SongVersion.CreatedAt,
 			&dbRow.Score.ID,
 			&dbRow.Score.FileID,
 			&dbRow.Score.FileName,
@@ -318,6 +322,7 @@ func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
 			"s.archived_at",
 			"sv.id",
 			"sv.published_at",
+			"sv.created_at",
 		).
 		From("songs s").
 		JoinClause(joinCurrentVersion)
@@ -346,7 +351,9 @@ func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
 	}
 
 	sql = sql.
-		OrderBy("s.id",
+		OrderBy(
+			"s.title ASC",
+			"s.id",
 			"part_file.name ASC",
 		)
 
@@ -363,12 +370,13 @@ func buildSongByIDQuery(id ulid.ULID, query application.SongByIDQuery) sq.Select
 			"s.archived_at",
 			"sv.id",
 			"sv.published_at",
+			"sv.created_at",
 		).
 		From("songs s").
 		LeftJoin("song_versions sv ON sv.song_id = s.id").
 		OrderBy(
 			"sv.published_at DESC NULLS LAST",
-			"sv.id",
+			"sv.created_at DESC",
 			"part_file.name ASC",
 		)
 

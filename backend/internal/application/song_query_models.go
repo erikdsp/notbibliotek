@@ -25,6 +25,7 @@ type VersionDetails struct {
 type SongVersionDetails struct {
 	ID          ulid.ULID
 	PublishedAt *time.Time
+	CreatedAt   time.Time
 }
 
 // Internal type for score data used by VersionDetails

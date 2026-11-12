@@ -47,17 +47,8 @@ func (s *SongVersionService) CreateSongVersion(songID ulid.ULID) (domain.SongVer
 		return domain.SongVersion{}, err
 	}
 
-	songVersion := domain.SongVersion{
-		ID:          ulid.Make(),
-		SongID:      songID,
-		PublishedAt: nil,
-	}
-
-	if err := s.repository.Create(songVersion); err != nil {
-		return domain.SongVersion{}, err
-	}
-
-	return songVersion, nil
+	songVersionID := ulid.Make()
+	return s.repository.Create(songVersionID, songID)
 }
 
 func (s *SongVersionService) UploadScore(songID ulid.ULID, versionID ulid.ULID,
