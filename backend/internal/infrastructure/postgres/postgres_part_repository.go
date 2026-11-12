@@ -99,12 +99,12 @@ func (r *PostgresPartRepository) Create(part domain.Part) error {
 
 }
 
-func (r *PostgresPartRepository) GetByID(id ulid.ULID) (domain.Part, error) {
+func (r *PostgresPartRepository) GetByID(partID ulid.ULID) (domain.Part, error) {
 	var dbPart dbPart
 
 	err := r.db.QueryRow(
 		getPartByIDQuery,
-		uuid.UUID(id),
+		uuid.UUID(partID),
 	).Scan(
 		&dbPart.ID,
 		&dbPart.Key,
@@ -246,4 +246,60 @@ func (r *PostgresPartRepository) Delete(partID ulid.ULID) (ulid.ULID, error) {
 
 	return ulid.ULID(dbFileID), nil
 
+}
+
+func (r *PostgresPartRepository) CreatePartsAndConnections(
+	parts []domain.Part,
+	partInstruments []application.PartInstruments,
+) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	for _, part := range parts {
+		_, err := tx.Exec(
+			insertPartQuery,
+			uuid.UUID(part.ID),
+			part.Key,
+			part.Name,
+			uuid.UUID(part.SongVersionID),
+			uuid.UUID(part.FileID),
+		)
+		if err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && pgErr.Code == ErrUniqueViolation {
+				return application.ErrConflictingOperation
+			}
+			return err
+		}
+	}
+
+	for _, partInstrument := range partInstruments {
+		for _, instrument := range partInstrument.Instruments {
+			result, err := tx.Exec(
+				insertPartInstrumentQuery,
+				uuid.UUID(partInstrument.PartID),
+				uuid.UUID(instrument.ID),
+			)
+			if err != nil {
+				var pgErr *pgconn.PgError
+				if errors.As(err, &pgErr) && pgErr.Code == ErrForeignKeyViolation {
+					return application.ErrResourceNotFound
+				}
+				return err
+			}
+
+			rowsAffected, err := result.RowsAffected()
+			if err != nil {
+				return err
+			}
+			if rowsAffected == 0 {
+				return application.ErrConflictingOperation
+			}
+		}
+	}
+
+	return tx.Commit()
 }
