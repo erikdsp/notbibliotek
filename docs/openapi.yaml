@@ -1032,10 +1032,14 @@ components:
           type: string
           format: date-time
           nullable: true
+        created_at:
+          type: string
+          format: date-time
       required:
         - id
         - song_id
         - published_at
+        - created_at
     File:
       type: object
       properties: 
@@ -1129,6 +1133,9 @@ components:
           type: string
           format: date-time
           nullable: true
+        created_at:
+          type: string
+          format: date-time
         score:
           type: object
           nullable: true
@@ -1161,6 +1168,7 @@ components:
       required:
         - song_version_id
         - published_at
+        - created_at
         - score
         - parts
     Versions:
