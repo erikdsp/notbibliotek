@@ -54,12 +54,34 @@ func main() {
 
 	fileStorage := localfilestorage.NewLocalFileStorage(storagePath)
 
-	songService := application.NewSongService(songRepository, songQueryRepository)
-	songVersionService := application.NewSongVersionService(songVersionRepository,
-		songRepository, fileRepository, scoreRepository, partRepository, partInstrumentRepository, fileStorage)
-	fileService := application.NewFileService(fileRepository, fileStorage)
-	instrumentService := application.NewInstrumentService(instrumentRepository)
-	concertService := application.NewConcertService(concertRepository, concertSongRepository, songQueryRepository, fileService, instrumentRepository)
+	fileService := application.NewFileService(
+		fileRepository,
+		fileStorage,
+	)
+	songService := application.NewSongService(
+		songRepository,
+		songQueryRepository,
+		fileService,
+	)
+	songVersionService := application.NewSongVersionService(
+		songVersionRepository,
+		songRepository,
+		fileRepository,
+		scoreRepository,
+		partRepository,
+		partInstrumentRepository,
+		fileStorage,
+	)
+	instrumentService := application.NewInstrumentService(
+		instrumentRepository,
+	)
+	concertService := application.NewConcertService(
+		concertRepository,
+		concertSongRepository,
+		songQueryRepository,
+		fileService,
+		instrumentRepository,
+	)
 
 	songHandler := httpHandler.NewSongHandler(songService)
 	songVersionHandler := httpHandler.NewSongVersionHandler(songVersionService)

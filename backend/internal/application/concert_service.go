@@ -122,7 +122,7 @@ func (s *ConcertService) DownloadConcert(concertID ulid.ULID, query DownloadConc
 		return DownloadableFile{}, nil, err
 	}
 
-	fileIDs := getFileIDsFromSongs(songs)
+	fileIDs := getFileIDsFromPublishedSongs(songs)
 	if len(fileIDs) == 0 {
 		return DownloadableFile{}, nil, ErrNoFilesAvailable
 	}
@@ -139,7 +139,7 @@ func (s *ConcertService) DownloadConcert(concertID ulid.ULID, query DownloadConc
 	return downloadableFile, fileDownloadError, nil
 }
 
-func getFileIDsFromSongs(songs []SongDetails) []ulid.ULID {
+func getFileIDsFromPublishedSongs(songs []SongDetails) []ulid.ULID {
 	var fileIDs []ulid.ULID
 	for _, song := range songs {
 		if song.CurrentVersionID == nil {
@@ -149,6 +149,9 @@ func getFileIDsFromSongs(songs []SongDetails) []ulid.ULID {
 		if currentVersion == nil {
 			continue
 		}
+
+		fileIDs = append(fileIDs, currentVersion.Score.File.ID)
+
 		for _, part := range currentVersion.Parts {
 			fileIDs = append(fileIDs, part.File.ID)
 		}
@@ -183,7 +186,7 @@ func getLatestVersionDate(songs []SongDetails) time.Time {
 		}
 
 		version := song.Versions[*song.CurrentVersionID]
-		if version == nil || len(version.Parts) == 0 {
+		if version == nil || (version.Score == nil && len(version.Parts) == 0) {
 			continue
 		}
 

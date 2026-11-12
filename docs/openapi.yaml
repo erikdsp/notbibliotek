@@ -246,6 +246,38 @@ paths:
         - $ref: "#/components/parameters/includeUnconnectedPartsQuery"
       security:
         - libraryAccess: []
+  /songs/{song_id}/download:
+    get:
+      tags:
+        - Downloads
+      summary: Download song, score and all parts as zip
+      description: Download sheet music for a song, score and all parts as zip.
+      operationId: download-song
+      responses:
+        "200":
+          description: OK
+          content:
+            application/zip:
+              schema:
+                $ref: "#/components/schemas/ZipContent"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "404":
+          description: Song not found or no files available for download.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      parameters:
+        - name: song_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"
+      security:
+        - libraryAccess: []
   /songs/{song_id}/versions:
     post:
       tags:

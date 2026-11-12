@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -212,4 +213,45 @@ func (h *SongHandler) Update(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
+}
+
+func (h *SongHandler) DownloadSong(w http.ResponseWriter, r *http.Request) {
+	songID, err := ulid.Parse(r.PathValue("song_id"))
+	if err != nil {
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	response, fileDownloadErrors, err := h.service.DownloadSong(songID)
+
+	for _, downloadError := range fileDownloadErrors {
+		log.Printf(
+			"SongHandler.DownloadSong: failed to download file %s: %v",
+			downloadError.FileID,
+			downloadError.Err,
+		)
+	}
+
+	if err != nil {
+		if errors.Is(err, application.ErrSongNotFound) ||
+			errors.Is(err, application.ErrNoFilesAvailable) {
+			writeError(w, err.Error(), http.StatusNotFound)
+		} else {
+			log.Printf("SongHandler.DownloadSong failed: %v", err)
+			writeError(w, "internal server error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	defer response.File.Close()
+
+	setDownloadFileName(w, response.FileName)
+	w.Header().Set("Content-Type", "application/zip")
+
+	_, err = io.Copy(w, response.File)
+	if err != nil {
+		log.Printf("SongHandler.DownloadSong Copy failed: %v", err)
+		return
+	}
+
 }

@@ -363,6 +363,7 @@ type songServiceFixture struct {
 	service         *SongService
 	repository      *mockSongRepository
 	queryRepository *mockSongQueryRepository
+	fileZipper      *mockFileZipper
 }
 
 // Helper factory for test setup
@@ -370,13 +371,16 @@ func newSongServiceFixture() songServiceFixture {
 
 	repository := &mockSongRepository{}
 	queryRepository := &mockSongQueryRepository{}
+	fileZipper := &mockFileZipper{}
 
 	return songServiceFixture{
 		service: NewSongService(
 			repository,
 			queryRepository,
+			fileZipper,
 		),
 		repository:      repository,
 		queryRepository: queryRepository,
+		fileZipper:      fileZipper,
 	}
 }
