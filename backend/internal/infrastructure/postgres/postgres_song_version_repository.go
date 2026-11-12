@@ -15,10 +15,11 @@ import (
 const insertSongVersionQuery = `
 	INSERT INTO song_versions (id, song_id)
 	VALUES ($1, $2)
+	RETURNING created_at
 `
 
 const getSongVersionByIDQuery = `
-	SELECT id, song_id, published_at
+	SELECT id, song_id, published_at, created_at
 	FROM song_versions
 	WHERE id = $1
 `
@@ -58,6 +59,7 @@ type dbSongVersion struct {
 	ID          uuid.UUID
 	SongID      uuid.UUID
 	PublishedAt *time.Time
+	CreatedAt   time.Time
 }
 
 func (s dbSongVersion) toDomain() domain.SongVersion {
@@ -65,6 +67,7 @@ func (s dbSongVersion) toDomain() domain.SongVersion {
 		ID:          ulid.ULID(s.ID),
 		SongID:      ulid.ULID(s.SongID),
 		PublishedAt: s.PublishedAt,
+		CreatedAt:   s.CreatedAt,
 	}
 }
 
@@ -74,15 +77,25 @@ func NewPostgresSongVersionRepository(db *sql.DB) *PostgresSongVersionRepository
 	}
 }
 
-func (r *PostgresSongVersionRepository) Create(songVersion domain.SongVersion) error {
+func (r *PostgresSongVersionRepository) Create(songVersionID ulid.ULID, songID ulid.ULID) (domain.SongVersion, error) {
+	var createdAt time.Time
 
-	_, err := r.db.Exec(
+	err := r.db.QueryRow(
 		insertSongVersionQuery,
-		uuid.UUID(songVersion.ID),
-		uuid.UUID(songVersion.SongID),
-	)
+		uuid.UUID(songVersionID),
+		uuid.UUID(songID),
+	).Scan(&createdAt)
 
-	return err
+	if err != nil {
+		return domain.SongVersion{}, err
+	}
+
+	return domain.SongVersion{
+		ID:          songVersionID,
+		SongID:      songID,
+		PublishedAt: nil,
+		CreatedAt:   createdAt,
+	}, nil
 }
 
 func (r *PostgresSongVersionRepository) GetByID(songVersionID ulid.ULID) (domain.SongVersion, error) {
@@ -95,6 +108,7 @@ func (r *PostgresSongVersionRepository) GetByID(songVersionID ulid.ULID) (domain
 		&dbSongVersion.ID,
 		&dbSongVersion.SongID,
 		&dbSongVersion.PublishedAt,
+		&dbSongVersion.CreatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

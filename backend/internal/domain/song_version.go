@@ -10,4 +10,5 @@ type SongVersion struct {
 	ID          ulid.ULID
 	SongID      ulid.ULID
 	PublishedAt *time.Time
+	CreatedAt   time.Time
 }

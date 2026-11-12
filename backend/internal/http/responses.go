@@ -16,6 +16,7 @@ type SongVersionResponse struct {
 	ID          ulid.ULID  `json:"id"`
 	SongID      ulid.ULID  `json:"song_id"`
 	PublishedAt *time.Time `json:"published_at"`
+	CreatedAt   time.Time  `json:"created_at"`
 }
 
 type FileResponse struct {
@@ -52,6 +53,7 @@ type PartForVersion struct {
 type VersionResponse struct {
 	SongVersionID ulid.ULID        `json:"song_version_id"`
 	PublishedAt   *time.Time       `json:"published_at"`
+	CreatedAt     time.Time        `json:"created_at"`
 	Score         *ScoreForVersion `json:"score"`
 	Parts         []PartForVersion `json:"parts"`
 }

@@ -40,11 +40,3 @@ type DownloadFilesRequest struct {
 		FileID ulid.ULID `json:"file_id"`
 	} `json:"files"`
 }
-
-// type FileIDRequest struct {
-// 	FileID ulid.ULID `json:"file_id"`
-// }
-
-// type DownloadFilesRequest struct {
-// 	Files []FileIDRequest `json:"files"`
-// }

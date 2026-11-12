@@ -29,6 +29,7 @@ func toSongVersionResponse(songVersion domain.SongVersion) SongVersionResponse {
 		ID:          songVersion.ID,
 		SongID:      songVersion.SongID,
 		PublishedAt: songVersion.PublishedAt,
+		CreatedAt:   songVersion.CreatedAt,
 	}
 }
 
@@ -36,6 +37,7 @@ func toVersionResponse(version application.VersionDetails) VersionResponse {
 	response := VersionResponse{
 		SongVersionID: version.Version.ID,
 		PublishedAt:   version.Version.PublishedAt,
+		CreatedAt:     version.Version.CreatedAt,
 		Parts:         []PartForVersion{},
 	}
 

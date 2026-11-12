@@ -1135,13 +1135,20 @@ type mockSongVersionRepository struct {
 	deleteErr    error
 }
 
-func (m *mockSongVersionRepository) Create(songVersion domain.SongVersion) error {
+func (m *mockSongVersionRepository) Create(songVersionID ulid.ULID, songID ulid.ULID) (domain.SongVersion, error) {
 	if m.err != nil {
-		return m.err
+		return domain.SongVersion{}, m.err
+	}
+
+	songVersion := domain.SongVersion{
+		ID:        songVersionID,
+		SongID:    songID,
+		CreatedAt: time.Now(),
 	}
 
 	m.songVersions = append(m.songVersions, songVersion)
-	return nil
+
+	return songVersion, nil
 }
 
 func (m *mockSongVersionRepository) GetByID(id ulid.ULID) (domain.SongVersion, error) {
