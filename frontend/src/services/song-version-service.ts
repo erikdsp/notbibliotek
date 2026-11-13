@@ -6,8 +6,37 @@ import type {
   PartResponse,
   ScoreResponse,
 } from "@/core/types/song-version-responses";
+import type { SongVersion } from "@/core/types";
 
 const log = createLogger("songVersionService");
+
+
+/**
+ * Create a song version
+ * @returns Created song version
+ * @throws ApiError if the request fails
+ */
+export async function createSongVersion(songId: string): Promise<SongVersion> {
+  const url = new URL(`${API_BASE_URL}/songs/${songId}/versions`);
+
+  try {
+    const songVersion = await apiPost<SongVersion>(url.toString());
+
+    log.debug("url: ", url.toString(), "raw payload: ", songVersion);
+
+    return songVersion;
+  } catch (error: unknown) {
+    if (error instanceof ApiError) {
+      throw new ApiError(
+        `Failed to create song version: ${error.message}`,
+        url.toString(),
+        error.status,
+      );
+    }
+    throw error;
+  }
+}
+
 
 /**
  * Post score to the library

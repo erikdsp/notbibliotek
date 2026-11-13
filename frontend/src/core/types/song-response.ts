@@ -11,6 +11,7 @@ export type SongResponse = {
 export type Version = {
   song_version_id: string;
   published_at: string | null;
+  created_at: string;
   score: VersionScore | null;
   parts: VersionPart[];
 };

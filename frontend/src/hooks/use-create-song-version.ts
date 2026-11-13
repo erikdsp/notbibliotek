@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createSongVersion } from "@/services/songs-service";
+import { createSongVersion } from "@/services/song-version-service";
 
 export function useCreateSongVersion() {
   const queryClient = useQueryClient();

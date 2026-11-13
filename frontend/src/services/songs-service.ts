@@ -2,7 +2,7 @@ import { apiGet, apiPatch, apiPost } from "@/lib";
 import { ApiError } from "@/errors";
 import { API_BASE_URL } from "@/config";
 import { createLogger } from "@/utils/logger";
-import type { SongResponse, Song, SongVersion } from "@/core/types";
+import type { SongResponse, Song } from "@/core/types";
 
 const log = createLogger("songsService");
 
@@ -143,33 +143,6 @@ export async function updateSong(songId: string, title?: string, archive?: boole
     if (error instanceof ApiError) {
       throw new ApiError(
         `Failed to update song: ${error.message}`,
-        url.toString(),
-        error.status,
-      );
-    }
-    throw error;
-  }
-}
-
-
-/**
- * Create a song version
- * @returns Created song version
- * @throws ApiError if the request fails
- */
-export async function createSongVersion(songId: string): Promise<SongVersion> {
-  const url = new URL(`${API_BASE_URL}/songs/${songId}/versions`);
-
-  try {
-    const songVersion = await apiPost<SongVersion>(url.toString());
-
-    log.debug("url: ", url.toString(), "raw payload: ", songVersion);
-
-    return songVersion;
-  } catch (error: unknown) {
-    if (error instanceof ApiError) {
-      throw new ApiError(
-        `Failed to create song version: ${error.message}`,
         url.toString(),
         error.status,
       );

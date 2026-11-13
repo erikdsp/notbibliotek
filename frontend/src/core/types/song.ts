@@ -8,4 +8,5 @@ export type SongVersion = {
   id: string;
   song_id: string;
   published_at: string | null;
+  created_at: string;
 };
