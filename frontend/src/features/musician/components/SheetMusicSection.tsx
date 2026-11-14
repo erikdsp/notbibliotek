@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import type { ConcertDetailedResponse, SongResponse } from "@/core/types";
 import type { FileMetadata } from "@/core/types/file";
 import { SheetMusicTable } from "@/features/musician/components/SheetMusicTable";
+import { getCurrentVersion } from "@/features/musician/lib/get-current-version";
 import { formatDateTime } from "@/utils/format-time";
 import { Download } from "lucide-react";
 
@@ -14,7 +15,8 @@ type SheetMusicSectionProps = {
   selectedSongId: string | null;
   isDownloading: boolean;
   onDownload: (file: FileMetadata) => void;
- onPreview: (file: FileMetadata, title: string) => void;
+  onPreview: (file: FileMetadata, title: string) => void;
+  onDownloadAll: () => void;
 };
 
 export function SheetMusicSection({
@@ -27,9 +29,10 @@ export function SheetMusicSection({
   isDownloading,
   onDownload,
   onPreview,
+  onDownloadAll,
 }: SheetMusicSectionProps) {
-const selectedSong = songs.find((song) => song.id === selectedSongId);
-const currentVersion = selectedSong?.versions.find(version => version.song_version_id === selectedSong.current_version_id)
+  const selectedSong = songs.find((song) => song.id === selectedSongId);
+  const currentVersion = getCurrentVersion(selectedSong);
 
   return (
     <section
@@ -37,16 +40,21 @@ const currentVersion = selectedSong?.versions.find(version => version.song_versi
     >
       <div className={`w-full rounded-lg border p-6`}>
         <h2 className="text-2xl font-bold mb-4">
-          {selectedSong ? `${selectedSong.title}`:  
-          selectedConcertDetails
-            ? selectedConcertDetails.name
-            : "All Songs in the Library"}
+          {selectedSong
+            ? `${selectedSong.title}`
+            : selectedConcertDetails
+              ? selectedConcertDetails.name
+              : "All Songs in the Library"}
         </h2>
         {selectedConcertDetails && (
           <p className="mb-2">{selectedConcertDetails.date}</p>
         )}
         {selectedSong && (
-          <p className="mb-2 italic">{currentVersion ? `Current version: ${formatDateTime(currentVersion.published_at)}` : "No published version"}</p>
+          <p className="mb-2 italic">
+            {currentVersion
+              ? `Current version: ${formatDateTime(currentVersion.published_at)}`
+              : "No published version"}
+          </p>
         )}
 
         <SheetMusicTable
@@ -67,7 +75,7 @@ const currentVersion = selectedSong?.versions.find(version => version.song_versi
           </Button>
         )}
         {(showDetailedList || currentVersion) && (
-          <Button>
+          <Button onClick={onDownloadAll} disabled={isDownloading}>
             <Download /> Download Sheet Music{" "}
             {concertSelected && "and Set List"} (.zip)
           </Button>

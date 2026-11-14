@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { formatDateTime } from "@/utils/format-time";
 import { Download, Eye } from "lucide-react";
 import { previewTitleFromPartNames } from "@/utils/preview-title";
+import { getCurrentVersion } from "@/features/musician/lib/get-current-version";
 
 type SetlistTableRowsProps = {
   songs: SongResponse[];
@@ -26,9 +27,7 @@ export function SetlistTableRows({
   return (
     <>
       {songs.map((song) => {
-        const currentVersion = song.versions.find(
-          (version) => version.song_version_id === song.current_version_id,
-        );
+        const currentVersion = getCurrentVersion(song);
 
         if (!currentVersion) {
           return (
