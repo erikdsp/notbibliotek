@@ -2,7 +2,6 @@ import { apiGet, apiPost } from "@/lib";
 import { ApiError } from "@/errors";
 import { API_BASE_URL } from "@/config";
 import { createLogger } from "@/utils/logger";
-import type { DownloadFilesRequest } from "@/core/types/requests";
 import { parseFileResponse, type DownloadedFile } from "@/lib/parse-file-response";
 
 const log = createLogger("files-service");
@@ -37,9 +36,13 @@ export async function fetchFile(fileId: string): Promise<Blob> {
 }
 
 
+export type DownloadFilesRequest = {
+    files: { file_id: string }[]
+}
+
 /**
  * Fetch multiple files as a ZIP archive from the library
- * @returns Promise<Blob>
+ * @returns Promise<DownloadedFile>
  * @throws ApiError if the request fails
  */
 export async function fetchMultipleFiles(
