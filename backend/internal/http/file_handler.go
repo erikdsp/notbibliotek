@@ -45,7 +45,7 @@ func (h *FileHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	}
 	defer response.File.Close()
 
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, response.FileName))
+	setDownloadFileName(w, response.FileName)
 	w.Header().Set("Content-Type", "application/pdf")
 
 	_, err = io.Copy(w, response.File)
@@ -114,7 +114,7 @@ func (h *FileHandler) DownloadFiles(w http.ResponseWriter, r *http.Request) {
 	}
 	defer response.File.Close()
 
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, response.FileName))
+	setDownloadFileName(w, response.FileName)
 	w.Header().Set("Content-Type", "application/zip")
 
 	_, err = io.Copy(w, response.File)

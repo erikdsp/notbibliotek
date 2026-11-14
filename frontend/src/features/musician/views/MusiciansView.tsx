@@ -7,15 +7,16 @@ import { useState } from "react";
 import { SheetMusicFilters } from "@/features/musician/components/SheetMusicFilters";
 import type { SongFilters } from "@/services/songs-service";
 import { createLogger } from "@/utils/logger";
-import {
-  oddPartsValue,
-} from "@/features/musician/constants/select-options";
+import { oddPartsValue } from "@/features/musician/constants/select-options";
 import { useDownloadFile } from "@/hooks/use-download-file";
 import type { FileMetadata } from "@/core/types/file";
 import { SheetMusicSection } from "@/features/musician/components/SheetMusicSection";
 import { usePdfPreview } from "@/hooks/use-pdf-preview";
 import { PdfPreviewDialog } from "@/components/pdf-preview/PdfPreviewDialog";
 import { resetValue } from "@/types";
+import { useDownloadMultipleFiles } from "@/hooks/use-download-multiple-files";
+import { getDownloadFileRequest } from "@/features/musician/mappers/get-download-file-request";
+import { getSelectedInstrumentName } from "@/features/musician/lib/get-selected-instrument-name";
 
 const log = createLogger("MusiciansView");
 
@@ -107,6 +108,23 @@ export function MusiciansView() {
     });
   }
 
+  const downloadMultipleFiles = useDownloadMultipleFiles();
+
+  function handleDownloadAll() {
+    if (selectedSongId !== null) {
+      log.debug("Download song material");
+    } else if (selectedConcert !== null) {
+      log.debug("Download concert material");
+    } else {
+      const request = getDownloadFileRequest(songs);
+      const instrumentName = getSelectedInstrumentName(
+        selectedInstrument,
+        instruments,
+      );
+      downloadMultipleFiles.mutate({ request, instrumentName });
+    }
+  }
+
   if (
     songsIsLoading ||
     allSongsIsLoading ||
@@ -166,9 +184,12 @@ export function MusiciansView() {
             concertSelected={concertSelected}
             instrumentSelected={instrumentSelected}
             selectedSongId={selectedSongId}
-            isDownloading={downloadFile.isPending}
+            isDownloading={
+              downloadFile.isPending || downloadMultipleFiles.isPending
+            }
             onDownload={handleDownload}
             onPreview={handlePreview}
+            onDownloadAll={handleDownloadAll}
           />
 
           <PdfPreviewDialog

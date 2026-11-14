@@ -5,6 +5,7 @@ import { SetlistTableHeadRow } from "@/features/musician/components/SetlistTable
 import { SetlistTableRows } from "@/features/musician/components/SetlistTableRows";
 import { SongTableHeadRow } from "@/features/musician/components/SongTableHeadRow";
 import { SongTableRows } from "@/features/musician/components/SongTableRows";
+import { getCurrentVersion } from "@/features/musician/lib/get-current-version";
 
 type SheetMusicTableProps = {
   songs: SongResponse[];
@@ -27,9 +28,7 @@ export function SheetMusicTable({
 }: SheetMusicTableProps) {
   const isSongMode = selectedSongId !== null;
   const selectedSong = songs.find((song) => song.id === selectedSongId);
-  const currentVersion = selectedSong?.versions.find(
-    (version) => version.song_version_id === selectedSong.current_version_id,
-  );
+  const currentVersion = getCurrentVersion(selectedSong);
 
   if (isSongMode && !currentVersion) {
     return null;
