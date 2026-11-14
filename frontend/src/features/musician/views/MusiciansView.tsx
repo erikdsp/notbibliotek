@@ -8,7 +8,6 @@ import { SheetMusicFilters } from "@/features/musician/components/SheetMusicFilt
 import type { SongFilters } from "@/services/songs-service";
 import { createLogger } from "@/utils/logger";
 import {
-  allItemsValue,
   oddPartsValue,
 } from "@/features/musician/constants/select-options";
 import { useDownloadFile } from "@/hooks/use-download-file";
@@ -16,6 +15,7 @@ import type { FileMetadata } from "@/core/types/file";
 import { SheetMusicSection } from "@/features/musician/components/SheetMusicSection";
 import { usePdfPreview } from "@/hooks/use-pdf-preview";
 import { PdfPreviewDialog } from "@/components/pdf-preview/PdfPreviewDialog";
+import { resetValue } from "@/types";
 
 const log = createLogger("MusiciansView");
 
@@ -83,17 +83,17 @@ export function MusiciansView() {
   }
 
   function handleSelectInstrument(instrumentId: string | null) {
-    setSelectedInstrument(instrumentId !== allItemsValue ? instrumentId : null);
+    setSelectedInstrument(instrumentId !== resetValue ? instrumentId : null);
     setSelectedSongId(null);
   }
 
   function handleSelectConcert(concertId: string | null) {
-    setSelectedConcert(concertId !== allItemsValue ? concertId : null);
+    setSelectedConcert(concertId !== resetValue ? concertId : null);
     setSelectedSongId(null);
   }
 
   function handleSelectSong(selectedSongId: string | null) {
-    setSelectedSongId(selectedSongId !== allItemsValue ? selectedSongId : null);
+    setSelectedSongId(selectedSongId !== resetValue ? selectedSongId : null);
     setSelectedInstrument(null);
     setSelectedConcert(null);
   }
