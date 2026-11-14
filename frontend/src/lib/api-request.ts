@@ -4,12 +4,13 @@ import { createLogger } from "@/utils/logger";
 const log = createLogger("apiRequest");
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+export type ResponseParser<T> = (response: Response) => Promise<T>;
 
 interface ApiRequestOptions<T> {
   method?: HttpMethod;
   body?: unknown;
   headers?: HeadersInit;
-  parseResponse?: (response: Response) => Promise<T>;
+  parseResponse?: ResponseParser<T>;
 }
 
 /**
