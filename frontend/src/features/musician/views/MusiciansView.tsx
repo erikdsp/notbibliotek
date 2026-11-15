@@ -125,12 +125,12 @@ export function MusiciansView() {
         includeUnconnectedParts,
       );
       downloadConcert.mutate({ request });
-      log.debug("Download concert material: request: ", request);
     } else {
       const request = getDownloadFileRequest(songs);
       const instrumentName = getSelectedInstrumentName(
         selectedInstrument,
         instruments,
+        includeUnconnectedParts,
       );
       downloadMultipleFiles.mutate({ request, instrumentName });
     }
