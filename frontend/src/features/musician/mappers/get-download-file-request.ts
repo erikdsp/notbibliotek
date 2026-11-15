@@ -1,6 +1,6 @@
 import type { SongResponse } from "@/core/types";
-import type { DownloadFilesRequest } from "@/core/types/requests";
 import { getCurrentVersion } from "@/features/musician/lib/get-current-version";
+import type { DownloadFilesRequest } from "@/services/files-service";
 
 export function getDownloadFileRequest(songs: SongResponse[]): DownloadFilesRequest {
   const request: DownloadFilesRequest = { files: [] };

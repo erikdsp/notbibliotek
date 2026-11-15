@@ -58,7 +58,7 @@ func (h *FileHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 func generateDownloadFileName() string {
 	return fmt.Sprintf(
 		"DownloadedSheetMusic-%s.zip",
-		time.Now().Format("20060102-1504"),
+		time.Now().Format("2006-01-02-1504"),
 	)
 }
 

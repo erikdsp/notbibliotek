@@ -17,6 +17,8 @@ import { resetValue } from "@/types";
 import { useDownloadMultipleFiles } from "@/hooks/use-download-multiple-files";
 import { getDownloadFileRequest } from "@/features/musician/mappers/get-download-file-request";
 import { getSelectedInstrumentName } from "@/features/musician/lib/get-selected-instrument-name";
+import { useDownloadConcert } from "@/hooks/use-download-concert";
+import { getDownloadConcertRequest } from "@/features/musician/mappers/get-download-concert-request";
 
 const log = createLogger("MusiciansView");
 
@@ -79,6 +81,8 @@ export function MusiciansView() {
     error: previewError,
   } = usePdfPreview(preview?.file.id ?? null);
 
+  const selectedConcertDetails = concerts.find((c) => c.key == selectedConcert);
+
   function handlePreview(file: FileMetadata, title: string) {
     setPreview({ file, title });
   }
@@ -109,17 +113,24 @@ export function MusiciansView() {
   }
 
   const downloadMultipleFiles = useDownloadMultipleFiles();
+  const downloadConcert = useDownloadConcert();
 
   function handleDownloadAll() {
     if (selectedSongId !== null) {
       log.debug("Download song material");
-    } else if (selectedConcert !== null) {
-      log.debug("Download concert material");
+    } else if (selectedConcertDetails !== undefined) {
+      const request = getDownloadConcertRequest(
+        selectedConcertDetails,
+        filters.instrument,
+        includeUnconnectedParts,
+      );
+      downloadConcert.mutate({ request });
     } else {
       const request = getDownloadFileRequest(songs);
       const instrumentName = getSelectedInstrumentName(
         selectedInstrument,
         instruments,
+        includeUnconnectedParts,
       );
       downloadMultipleFiles.mutate({ request, instrumentName });
     }
@@ -145,8 +156,6 @@ export function MusiciansView() {
   if (instrumentsIsError) {
     return <div>Failed to load instruments.</div>;
   }
-
-  const selectedConcertDetails = concerts.find((c) => c.key == selectedConcert);
 
   return (
     <div className="min-h-screen bg-background">
