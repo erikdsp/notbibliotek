@@ -108,6 +108,6 @@ func generateSongDownloadFileName(songTitle string, lastUpdatedVersion time.Time
 	return fmt.Sprintf(
 		"%s-Version-%s.zip",
 		SanitizeFileName(songTitle),
-		lastUpdatedVersion.Format("20060102-1504"),
+		lastUpdatedVersion.Format("2006-01-02-1504"),
 	)
 }
