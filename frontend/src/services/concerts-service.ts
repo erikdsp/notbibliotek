@@ -3,6 +3,10 @@ import { ApiError } from "@/errors";
 import { API_BASE_URL } from "@/config";
 import { createLogger } from "@/utils/logger";
 import type { ConcertDetailedResponse, ConcertResponse } from "@/core/types";
+import {
+  parseFileResponse,
+  type DownloadedFile,
+} from "@/lib/parse-file-response";
 
 const log = createLogger("concerts-service");
 
@@ -113,6 +117,51 @@ export async function deleteConcert(concertId: string): Promise<void> {
     if (error instanceof ApiError) {
       throw new ApiError(
         `Failed to delete concert: ${error.message}`,
+        url.toString(),
+        error.status,
+      );
+    }
+    throw error;
+  }
+}
+
+export type DownloadConcertRequest = {
+  concertId: string;
+  instrumentKeys?: string[];
+  includeUnconnectedParts?: boolean;
+};
+
+export async function fetchConcertFilesAsZip(
+  request: DownloadConcertRequest,
+): Promise<DownloadedFile> {
+  const { concertId, instrumentKeys, includeUnconnectedParts } = request;
+  if (instrumentKeys === undefined && includeUnconnectedParts === undefined) {
+    throw new Error("At least one download filter must be specified");
+  }
+  const url = new URL(`${API_BASE_URL}/concerts/${concertId}/download`);
+
+  for (const instrumentKey of instrumentKeys ?? []) {
+    url.searchParams.append("instrument", instrumentKey);
+  }
+
+  if (includeUnconnectedParts !== undefined) {
+    url.searchParams.set(
+      "include_unconnected_parts",
+      String(includeUnconnectedParts),
+    );
+  }
+
+  try {
+    const file = await apiGet<DownloadedFile>(
+      url.toString(),
+      parseFileResponse,
+    );
+
+    return file;
+  } catch (error: unknown) {
+    if (error instanceof ApiError) {
+      throw new ApiError(
+        `Failed to fetch zip file: ${error.message}`,
         url.toString(),
         error.status,
       );
