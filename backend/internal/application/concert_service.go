@@ -150,7 +150,9 @@ func getFileIDsFromPublishedSongs(songs []SongDetails) []ulid.ULID {
 			continue
 		}
 
-		fileIDs = append(fileIDs, currentVersion.Score.File.ID)
+		if currentVersion.Score != nil {
+			fileIDs = append(fileIDs, currentVersion.Score.File.ID)
+		}
 
 		for _, part := range currentVersion.Parts {
 			fileIDs = append(fileIDs, part.File.ID)
@@ -203,9 +205,9 @@ func generateConcertDownloadFileName(concert domain.Concert, instrumentNames []s
 	return fmt.Sprintf(
 		"%s-%s-%s-Updated-%s.zip",
 		SanitizeFileName(concert.Name),
-		concert.Date.Format("20060102"),
+		concert.Date.Format("2006-01-02"),
 		SanitizeFileName(strings.Join(instrumentNames, "-")),
-		lastUpdatedVersion.Format("20060102-1504"),
+		lastUpdatedVersion.Format("2006-01-02-1504"),
 	)
 }
 
