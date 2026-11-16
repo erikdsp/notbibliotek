@@ -145,7 +145,8 @@ func getFileIDsFromPublishedSongs(songs []SongDetails) []ulid.ULID {
 		if song.CurrentVersionID == nil {
 			continue
 		}
-		currentVersion := song.Versions[*song.CurrentVersionID]
+
+		currentVersion := getVersionByID(song.Versions, *song.CurrentVersionID)
 		if currentVersion == nil {
 			continue
 		}
@@ -187,7 +188,7 @@ func getLatestVersionDate(songs []SongDetails) time.Time {
 			continue
 		}
 
-		version := song.Versions[*song.CurrentVersionID]
+		version := getVersionByID(song.Versions, *song.CurrentVersionID)
 		if version == nil || (version.Score == nil && len(version.Parts) == 0) {
 			continue
 		}

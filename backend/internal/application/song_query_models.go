@@ -11,7 +11,7 @@ import (
 type SongDetails struct {
 	Song             domain.Song
 	CurrentVersionID *ulid.ULID
-	Versions         map[ulid.ULID]*VersionDetails
+	Versions         []VersionDetails
 }
 
 // VersionDetails contains rich details about a song version
@@ -59,4 +59,13 @@ type SongByIDQuery struct {
 	Instruments             []string
 	IncludeUnconnectedParts bool
 	IncludeScore            bool
+}
+
+func getVersionByID(versions []VersionDetails, versionID ulid.ULID) *VersionDetails {
+	for i := range versions {
+		if versions[i].Version.ID == versionID {
+			return &versions[i]
+		}
+	}
+	return nil
 }
