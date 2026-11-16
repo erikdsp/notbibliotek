@@ -19,6 +19,7 @@ import { getDownloadFileRequest } from "@/features/musician/mappers/get-download
 import { getSelectedInstrumentName } from "@/features/musician/lib/get-selected-instrument-name";
 import { useDownloadConcert } from "@/hooks/use-download-concert";
 import { getDownloadConcertRequest } from "@/features/musician/mappers/get-download-concert-request";
+import { useDownloadSong } from "@/hooks/use-download-song";
 
 const log = createLogger("MusiciansView");
 
@@ -114,10 +115,11 @@ export function MusiciansView() {
 
   const downloadMultipleFiles = useDownloadMultipleFiles();
   const downloadConcert = useDownloadConcert();
+  const downloadSong = useDownloadSong();
 
   function handleDownloadAll() {
     if (selectedSongId !== null) {
-      log.debug("Download song material");
+      downloadSong.mutate(selectedSongId);
     } else if (selectedConcertDetails !== undefined) {
       const request = getDownloadConcertRequest(
         selectedConcertDetails,
