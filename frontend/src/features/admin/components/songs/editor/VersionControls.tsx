@@ -15,6 +15,7 @@ type VersionControlsProps = {
   versionOptions: SelectOptionSection[];
   onSelectVersion: (versionId: string | null) => void;
   onCreateEmptyDraft: () => void;
+  onCreateDuplicateDraft: () => void;
   isDirty: boolean;
   isCreatingVersion: boolean;
 };
@@ -24,6 +25,7 @@ export function VersionControls({
   versionOptions,
   onSelectVersion,
   onCreateEmptyDraft,
+  onCreateDuplicateDraft,
   isDirty,
   isCreatingVersion,
 }: VersionControlsProps) {
@@ -40,7 +42,12 @@ export function VersionControls({
           className="w-2/3"
         />
 
-        <Button variant="outline" disabled className="ml-auto">
+        <Button
+          variant="outline"
+          disabled={isDirty || isCreatingVersion || versionId === null}
+          onClick={onCreateDuplicateDraft}
+          className="ml-auto"
+        >
           <CopyPlus />
           New Duplicate Draft
         </Button>

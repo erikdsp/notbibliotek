@@ -52,6 +52,7 @@ import {
 } from "@/features/admin/lib";
 import { PdfPreviewDialog } from "@/components/pdf-preview";
 import type { Preview } from "@/types";
+import { useDuplicateSongVersion } from "@/hooks/use-duplicate-song-version";
 
 const log = createLogger("SongEditorForm");
 
@@ -78,6 +79,7 @@ export function SongEditorForm({
   const [versionId, setVersionId] = useState<string | null>(() =>
     initialVersionId(song),
   );
+
   const {
     data: partInstruments,
     isPending: instrumentsPending,
@@ -180,6 +182,23 @@ export function SongEditorForm({
       switchVersion(createdVersion.id);
     } catch (error) {
       log.error("Failed to create song version:", error);
+    }
+  }
+
+  const duplicateSongVersionMutation = useDuplicateSongVersion();
+
+  async function handleCreateDuplicateDraft() {
+    if (song === null || versionId === null) return;
+
+    try {
+      const createdVersion = await duplicateSongVersionMutation.mutateAsync({
+        songId: song.id,
+        songVersionId: versionId,
+      });
+
+      switchVersion(createdVersion.id);
+    } catch (error) {
+      log.error("Failed to duplicate song version:", error);
     }
   }
 
@@ -488,8 +507,12 @@ export function SongEditorForm({
                     versionOptions={versionOptions}
                     onSelectVersion={handleSelectVersion}
                     onCreateEmptyDraft={handleCreateEmptyDraft}
+                    onCreateDuplicateDraft={handleCreateDuplicateDraft}
                     isDirty={isDirty}
-                    isCreatingVersion={createSongVersionMutation.isPending}
+                    isCreatingVersion={
+                      createSongVersionMutation.isPending ||
+                      duplicateSongVersionMutation.isPending
+                    }
                   />
 
                   {versionId === null ? (
