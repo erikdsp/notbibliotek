@@ -42,17 +42,25 @@ export function VersionControls({
           className="w-2/3"
         />
 
-        <Button
-          variant="outline"
-          disabled={isDirty || isCreatingVersion || versionId === null}
-          onClick={onCreateDuplicateDraft}
-          className="ml-auto"
-        >
-          <CopyPlus />
-          New Duplicate Draft
-        </Button>
+        <Tooltip disabled={!isDirty || versionId === null}>
+          <TooltipTrigger render={<span />}>
+            <Button
+              variant="outline"
+              disabled={isDirty || isCreatingVersion || versionId === null}
+              onClick={onCreateDuplicateDraft}
+              className="ml-auto"
+            >
+              <CopyPlus />
+              New Duplicate Draft
+            </Button>
+          </TooltipTrigger>
 
-        <Tooltip>
+          <TooltipContent>
+            Save or discard changes before duplicating draft.
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip disabled={!isDirty}>
           <TooltipTrigger render={<span />}>
             <Button
               variant="outline"
@@ -64,11 +72,9 @@ export function VersionControls({
             </Button>
           </TooltipTrigger>
 
-          {isDirty && (
-            <TooltipContent>
-              Save or discard changes before creating a new draft.
-            </TooltipContent>
-          )}
+          <TooltipContent>
+            Save or discard changes before creating a new draft.
+          </TooltipContent>
         </Tooltip>
       </div>
     </div>

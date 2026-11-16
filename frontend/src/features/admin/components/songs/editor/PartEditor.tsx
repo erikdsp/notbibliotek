@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/toast";
 import type { Instrument } from "@/core/types";
 import {
   AddPartInstrumentsPopover,
@@ -46,6 +47,31 @@ export function PartEditor({
 }: PartEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  function handlePreviewFile() {
+    onPreviewFile(
+      part.file,
+      part.file_id,
+      previewTitleFromPartNames(part.file_name, part.name),
+    );
+  }
+
+  function handleReplaceFileDrop(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+
+    const files = event.dataTransfer.files;
+
+    if (files.length !== 1) {
+      toast.add({
+        type: "error",
+        description: "Oops! You dropped several files. Only one PDF please.",
+        priority: "high",
+      });
+      return;
+    }
+
+    onReplaceFile(part.local_id, files[0]);
+  }
+
   function handleReplaceFileClick() {
     fileInputRef.current?.click();
   }
@@ -59,6 +85,12 @@ export function PartEditor({
     }
 
     input.value = "";
+  }
+
+  function handlePartNameChange(event: React.ChangeEvent<HTMLInputElement>) {
+    onUpdatePart(part.local_id, {
+      name: event.currentTarget.value,
+    });
   }
 
   const handleAddInstrumentConnection = (instrumentId: string) => {
@@ -80,13 +112,7 @@ export function PartEditor({
           variant="ghost"
           size="icon-sm"
           aria-label={`Preview ${part.name}`}
-          onClick={() =>
-            onPreviewFile(
-              part.file,
-              part.file_id,
-              previewTitleFromPartNames(part.file_name, part.name),
-            )
-          }
+          onClick={handlePreviewFile}
         >
           <Eye className="size-4" />
         </Button>
@@ -95,22 +121,30 @@ export function PartEditor({
 
         {!isPublished && (
           <>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="h-7 mr-4"
-              onClick={handleReplaceFileClick}
+            <div
+              className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed py-1 px-10 text-center mr-6"
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={handleReplaceFileDrop}
             >
-              <FileUp /> Replace file
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="application/pdf,.pdf"
-              className="hidden"
-              onChange={handleReplaceFileChange}
-            />
-
+              <div className="flex items-center justify-center gap-2">
+                <FileUp className="size-4 text-muted-foreground" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7"
+                  onClick={handleReplaceFileClick}
+                >
+                  Replace file
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  className="hidden"
+                  onChange={handleReplaceFileChange}
+                />
+              </div>
+            </div>
             <Button
               variant="ghost"
               size="icon-sm"
@@ -129,11 +163,7 @@ export function PartEditor({
           <Input
             value={part.name}
             disabled={isPublished}
-            onChange={(event) =>
-              onUpdatePart(part.local_id, {
-                name: event.target.value,
-              })
-            }
+            onChange={handlePartNameChange}
             aria-invalid={!!partErrors?.name}
           />
           {partErrors?.name && (

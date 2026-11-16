@@ -16,7 +16,10 @@ type PartsSectionProps = {
   onRemovePart: (localId: string) => void;
   onReplaceFile: (localId: string, file: File) => void;
   onAddInstrumentConnection: (part: EditablePart, instrumentId: string) => void;
-  onRemoveInstrumentConnection: (part: EditablePart, instrumentId: string) => void;
+  onRemoveInstrumentConnection: (
+    part: EditablePart,
+    instrumentId: string,
+  ) => void;
   onPreviewFile: (
     file: File | null,
     fileId: string | null,
@@ -39,6 +42,25 @@ export function PartsSection({
 }: PartsSectionProps) {
   const partsInputRef = useRef<HTMLInputElement>(null);
 
+  function handleDropPartFiles(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    onAddPartFiles(event.dataTransfer.files);
+  }
+
+  function handleSelectPartFiles() {
+    partsInputRef.current?.click();
+  }
+
+  function handlePartFilesChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const input = event.currentTarget;
+
+    if (input.files) {
+      onAddPartFiles(input.files);
+    }
+
+    input.value = "";
+  }
+
   return (
     <section className="space-y-3">
       <h3 className="font-semibold">Parts</h3>
@@ -47,20 +69,13 @@ export function PartsSection({
         <div
           className="flex min-h-28 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-4 text-center"
           onDragOver={(event) => event.preventDefault()}
-          onDrop={(event) => {
-            event.preventDefault();
-            onAddPartFiles(event.dataTransfer.files);
-          }}
+          onDrop={handleDropPartFiles}
         >
           <Upload className="size-5 text-muted-foreground" />
 
           <p className="text-sm text-muted-foreground">Drop Part PDFs here</p>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => partsInputRef.current?.click()}
-          >
+          <Button variant="outline" size="sm" onClick={handleSelectPartFiles}>
             Select Parts
           </Button>
 
@@ -70,12 +85,7 @@ export function PartsSection({
             accept="application/pdf,.pdf"
             multiple
             className="hidden"
-            onChange={(event) => {
-              if (event.target.files) {
-                onAddPartFiles(event.target.files);
-              }
-              event.target.value = "";
-            }}
+            onChange={handlePartFilesChange}
           />
         </div>
       )}
