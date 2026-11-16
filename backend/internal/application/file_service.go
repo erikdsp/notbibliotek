@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/erikdsp/notbibliotek/backend/internal/utils/set"
 
@@ -53,6 +54,31 @@ func (s *FileService) GetFileByID(id ulid.ULID) (DownloadableFile, error) {
 		FileName: domainFile.Name,
 		File:     file,
 	}, nil
+}
+
+func (s *FileService) DownloadFiles(ids []ulid.ULID) (DownloadableFile, []FileDownloadError, error) {
+	latestVersionDate, err := s.repository.GetLatestPublishedAt(ids)
+	if err != nil {
+		return DownloadableFile{}, nil, err
+	}
+	fileName := generateDownloadFileName(latestVersionDate)
+
+	return s.GetFilesAsZip(ids, fileName)
+}
+
+func generateDownloadFileName(versionDate *time.Time) string {
+
+	if versionDate != nil {
+		return fmt.Sprintf(
+			"Sheet Music-Updated-%s.zip",
+			versionDate.Format("2006-01-02-1504"),
+		)
+	} else {
+		return fmt.Sprintf(
+			"Sheet Music-Downloaded-%s.zip",
+			time.Now().Format("2006-01-02-1504"),
+		)
+	}
 }
 
 func (s *FileService) GetFilesAsZip(ids []ulid.ULID, outputFileName string) (DownloadableFile, []FileDownloadError, error) {

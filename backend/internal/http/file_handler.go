@@ -3,11 +3,9 @@ package http
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/erikdsp/notbibliotek/backend/internal/application"
 	"github.com/erikdsp/notbibliotek/backend/internal/utils/set"
@@ -55,13 +53,6 @@ func (h *FileHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func generateDownloadFileName() string {
-	return fmt.Sprintf(
-		"DownloadedSheetMusic-%s.zip",
-		time.Now().Format("2006-01-02-1504"),
-	)
-}
-
 func (h *FileHandler) DownloadFiles(w http.ResponseWriter, r *http.Request) {
 	var request DownloadFilesRequest
 
@@ -92,7 +83,7 @@ func (h *FileHandler) DownloadFiles(w http.ResponseWriter, r *http.Request) {
 		fileIDs = append(fileIDs, file.FileID)
 	}
 
-	response, fileDownloadErrors, err := h.service.GetFilesAsZip(fileIDs, generateDownloadFileName())
+	response, fileDownloadErrors, err := h.service.DownloadFiles(fileIDs)
 
 	for _, downloadError := range fileDownloadErrors {
 		log.Printf(
