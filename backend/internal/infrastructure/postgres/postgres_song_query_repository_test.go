@@ -65,7 +65,15 @@ func Test_WhenRowContainsValidSongVersionThenToApplicationReturnsCorrectSongDeta
 		t.Error("expected CurrentVersionID to be nil")
 	}
 
-	if songDetails.Versions[versionID].Score.ID != scoreID {
+	if len(songDetails.Versions) != 1 {
+		t.Fatalf("expected 1 version, got %d", len(songDetails.Versions))
+	}
+
+	if songDetails.Versions[0].Version.ID != versionID {
+		t.Error("expected version ID to match")
+	}
+
+	if songDetails.Versions[0].Score.ID != scoreID {
 		t.Error("expected scoreIDs to match")
 	}
 
@@ -225,13 +233,11 @@ func Test_WhenRowIsMissingScoreThenToApplicationReturnsVersionWithoutScore(t *te
 		t.Error("expected CurrentVersionID to be nil")
 	}
 
-	versionID := ulid.ULID(row.SongVersion.ID.UUID)
-
-	version, exists := songDetails.Versions[versionID]
-	if !exists {
-		t.Fatal("expected version to exist")
+	if len(songDetails.Versions) != 1 {
+		t.Fatalf("expected 1 version, got %d", len(songDetails.Versions))
 	}
 
+	version := songDetails.Versions[0]
 	if version.Score != nil {
 		t.Error("expected score to be nil")
 	}

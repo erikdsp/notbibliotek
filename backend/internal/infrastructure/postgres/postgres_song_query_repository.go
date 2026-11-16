@@ -68,7 +68,7 @@ func (s dbSongDetailRow) toApplication() (application.SongDetails, application.P
 		return application.SongDetails{
 			Song:             song,
 			CurrentVersionID: nil,
-			Versions:         map[ulid.ULID]*application.VersionDetails{},
+			Versions:         []application.VersionDetails{},
 		}, application.PartDetails{}, nil
 	}
 
@@ -100,8 +100,8 @@ func (s dbSongDetailRow) toApplication() (application.SongDetails, application.P
 			ArchivedAt: s.Song.ArchivedAt,
 		},
 		CurrentVersionID: nil,
-		Versions: map[ulid.ULID]*application.VersionDetails{
-			songVersionID: {
+		Versions: []application.VersionDetails{
+			{
 				Version: application.SongVersionDetails{
 					ID:          songVersionID,
 					PublishedAt: s.SongVersion.PublishedAt,
@@ -196,8 +196,7 @@ func (r *PostgresSongQueryRepository) GetAll(query application.SongQuery) ([]app
 			prevSongID = &currentSongID
 		}
 		if dbRow.SongVersion.ID.Valid && part.ID != (ulid.ULID{}) {
-			versionID := ulid.ULID(dbRow.SongVersion.ID.UUID)
-			version := songs[currentSongID].Versions[versionID]
+			version := &songs[currentSongID].Versions[0]
 			version.Parts = append(version.Parts, part)
 		}
 
@@ -232,7 +231,7 @@ func (r *PostgresSongQueryRepository) GetByID(id ulid.ULID, query application.So
 	defer rows.Close()
 
 	result := application.SongDetails{}
-	first := true
+	firstRow := true
 
 	for rows.Next() {
 		var dbRow dbSongDetailRow
@@ -262,27 +261,36 @@ func (r *PostgresSongQueryRepository) GetByID(id ulid.ULID, query application.So
 			return application.SongDetails{}, err
 		}
 
-		if first {
+		if firstRow {
 			result = song
-			first = false
+			firstRow = false
 		}
 
-		if dbRow.SongVersion.ID.Valid {
+		rowHasSongVersion := dbRow.SongVersion.ID.Valid
+		if rowHasSongVersion {
 			versionID := ulid.ULID(dbRow.SongVersion.ID.UUID)
 
-			if result.CurrentVersionID == nil && dbRow.SongVersion.PublishedAt != nil {
+			isFirstPublishedVersionEncountered := result.CurrentVersionID == nil &&
+				dbRow.SongVersion.PublishedAt != nil
+			if isFirstPublishedVersionEncountered {
 				result.CurrentVersionID = &versionID
 			}
 
-			if _, exists := result.Versions[versionID]; !exists {
-				result.Versions[versionID] = song.Versions[versionID]
+			previousVersion := &result.Versions[len(result.Versions)-1]
+			rowIsNewSongVersion := previousVersion.Version.ID != versionID
+
+			if rowIsNewSongVersion {
+				versionInCurrentRow := song.Versions[0]
+				result.Versions = append(result.Versions, versionInCurrentRow)
 			}
 
-			if part.ID != (ulid.ULID{}) {
-				version := result.Versions[versionID]
-				version.Parts = append(version.Parts, part)
+			rowHasPart := part.ID != (ulid.ULID{})
+			if rowHasPart {
+				currentVersion := &result.Versions[len(result.Versions)-1]
+				currentVersion.Parts = append(currentVersion.Parts, part)
 
 			}
+
 		}
 	}
 
@@ -290,7 +298,7 @@ func (r *PostgresSongQueryRepository) GetByID(id ulid.ULID, query application.So
 		return application.SongDetails{}, err
 	}
 
-	if first {
+	if firstRow {
 		return application.SongDetails{}, application.ErrSongNotFound
 	}
 
@@ -377,6 +385,7 @@ func buildSongByIDQuery(id ulid.ULID, query application.SongByIDQuery) sq.Select
 		OrderBy(
 			"sv.published_at DESC NULLS LAST",
 			"sv.created_at DESC",
+			"sv.id",
 			"part_file.name ASC",
 		)
 
