@@ -26,6 +26,49 @@ export function ScoreSection({
 }: ScoreSectionProps) {
   const scoreInputRef = useRef<HTMLInputElement>(null);
 
+  function handlePreviewScore() {
+    if (score === null) return;
+
+    onPreviewFile(
+      score.file,
+      score.file_id,
+      previewTitleFromScoreName(score.file_name),
+    );
+  }
+
+  function handleDropScoreFile(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+
+    const files = event.dataTransfer.files;
+
+    if (files.length !== 1) {
+      toast.add({
+        type: "error",
+        description:
+          "Oops! You dropped several files. Only one score PDF please.",
+        priority: "high",
+      });
+      return;
+    }
+
+    onAddScoreFile(files[0]);
+  }
+
+  function handleSelectScoreFile() {
+    scoreInputRef.current?.click();
+  }
+
+  function handleScoreFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+
+    if (file) {
+      onAddScoreFile(file);
+    }
+
+    input.value = "";
+  }
+
   return (
     <section className="space-y-3">
       <h3 className="font-semibold">Score</h3>
@@ -40,13 +83,7 @@ export function ScoreSection({
             variant="ghost"
             size="icon-sm"
             aria-label="Preview score"
-            onClick={() =>
-              onPreviewFile(
-                score.file,
-                score.file_id,
-                previewTitleFromScoreName(score.file_name),
-              )
-            }
+            onClick={handlePreviewScore}
           >
             <Eye className="size-4" />
           </Button>
@@ -70,31 +107,12 @@ export function ScoreSection({
         <div
           className="flex min-h-28 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-4 text-center"
           onDragOver={(event) => event.preventDefault()}
-          onDrop={(event) => {
-            event.preventDefault();
-            const files = event.dataTransfer.files;
-
-            if (files.length !== 1) {
-              toast.add({
-                type: "error",
-                description:
-                  "Oops! You dropped several files. Only one score PDF please.",
-                priority: "high",
-              });
-              return;
-            }
-
-            onAddScoreFile(files[0]);
-          }}
+          onDrop={handleDropScoreFile}
         >
           <Upload className="size-5 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">Drop a Score PDF here</p>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => scoreInputRef.current?.click()}
-          >
+          <Button variant="outline" size="sm" onClick={handleSelectScoreFile}>
             Select Score
           </Button>
 
@@ -103,11 +121,7 @@ export function ScoreSection({
             type="file"
             accept="application/pdf,.pdf"
             className="hidden"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) onAddScoreFile(file);
-              event.target.value = "";
-            }}
+            onChange={handleScoreFileChange}
           />
         </div>
       )}
