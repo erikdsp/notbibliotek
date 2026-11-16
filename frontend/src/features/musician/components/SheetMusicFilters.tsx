@@ -107,7 +107,7 @@ export function SheetMusicFilters({
       <CollapsibleContent>
         <div className="flex flex-col gap-4 mt-4 md:flex-row md:gap-15">
           <div className="flex shrink-0 flex-col gap-2">
-            <div className="flex items-center text-sm text-muted-foreground gap-1 mt-2 w-66">
+            <div className="flex items-center text-sm text-muted-foreground gap-1 mt-2 w-66 invisible">
               <div>Include score</div>
               <div className="flex h-9 pl-3 items-center">
                 <Checkbox

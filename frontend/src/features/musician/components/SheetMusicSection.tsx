@@ -23,7 +23,6 @@ export function SheetMusicSection({
   songs,
   selectedConcertDetails,
   showDetailedList,
-  concertSelected,
   instrumentSelected,
   selectedSongId,
   isDownloading,
@@ -33,6 +32,7 @@ export function SheetMusicSection({
 }: SheetMusicSectionProps) {
   const selectedSong = songs.find((song) => song.id === selectedSongId);
   const currentVersion = getCurrentVersion(selectedSong);
+  const showSetlistButtons = false;
 
   return (
     <section
@@ -69,7 +69,7 @@ export function SheetMusicSection({
       </div>
 
       <div className="pt-6 flex flex-1 flex-col items-center gap-4">
-        {concertSelected && (
+        {showSetlistButtons && (
           <Button variant="outline" disabled>
             <Download /> Download Set List
           </Button>
@@ -77,7 +77,7 @@ export function SheetMusicSection({
         {(showDetailedList || currentVersion) && (
           <Button onClick={onDownloadAll} disabled={isDownloading}>
             <Download /> Download Sheet Music{" "}
-            {concertSelected && "and Set List"} (.zip)
+            {showSetlistButtons && "and Set List"} (.zip)
           </Button>
         )}
       </div>
