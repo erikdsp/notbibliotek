@@ -235,6 +235,30 @@ export async function deletePart(partId: string): Promise<void> {
   }
 }
 
+
+
+export async function duplicateSongVersion(songId: string, songVersionId: string): Promise<SongVersion> {
+  const url = new URL(`${API_BASE_URL}/songs/${songId}/versions/${songVersionId}/duplicate`);
+
+  try {
+    const songVersion = await apiPost<SongVersion>(url.toString());
+
+    log.debug("url: ", url.toString(), "raw payload: ", songVersion);
+
+    return songVersion;
+  } catch (error: unknown) {
+    if (error instanceof ApiError) {
+      throw new ApiError(
+        `Failed to duplicate song version: ${error.message}`,
+        url.toString(),
+        error.status,
+      );
+    }
+    throw error;
+  }
+}
+
+
 /**
  * Publish Song Version
  * @returns Promise<void>
