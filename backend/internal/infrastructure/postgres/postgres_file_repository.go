@@ -3,6 +3,7 @@ package postgres
 import (
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/erikdsp/notbibliotek/backend/internal/application"
 	"github.com/erikdsp/notbibliotek/backend/internal/domain"
@@ -41,6 +42,26 @@ const deleteUnreferencedFileQuery = `
       )
 `
 
+const getLatestPublishedAtQuery = `
+	SELECT MAX(sv.published_at)
+	FROM song_versions sv
+	WHERE sv.published_at IS NOT NULL
+	AND (
+		EXISTS (
+		SELECT 1
+		FROM parts p
+		WHERE p.song_version_id = sv.id
+			AND p.file_id = ANY($1)
+		)
+		OR EXISTS (
+		SELECT 1
+		FROM scores s
+		WHERE s.song_version_id = sv.id
+			AND s.file_id = ANY($1)
+		)
+	);
+`
+
 type PostgresFileRepository struct {
 	db *sql.DB
 }
@@ -74,12 +95,12 @@ func (r *PostgresFileRepository) Create(file domain.File) error {
 	return err
 }
 
-func (r *PostgresFileRepository) GetByID(id ulid.ULID) (domain.File, error) {
+func (r *PostgresFileRepository) GetByID(fileID ulid.ULID) (domain.File, error) {
 	var dbFile dbFile
 
 	err := r.db.QueryRow(
 		getFileByIDQuery,
-		uuid.UUID(id),
+		uuid.UUID(fileID),
 	).Scan(
 		&dbFile.ID,
 		&dbFile.Name,
@@ -106,8 +127,8 @@ func (r *PostgresFileRepository) Update(file domain.File) error {
 	return err
 }
 
-func (r *PostgresFileRepository) DeleteIfUnreferenced(id ulid.ULID) (deleted bool, err error) {
-	result, err := r.db.Exec(deleteUnreferencedFileQuery, uuid.UUID(id))
+func (r *PostgresFileRepository) DeleteIfUnreferenced(fileID ulid.ULID) (deleted bool, err error) {
+	result, err := r.db.Exec(deleteUnreferencedFileQuery, uuid.UUID(fileID))
 	if err != nil {
 		return false, err
 	}
@@ -119,4 +140,25 @@ func (r *PostgresFileRepository) DeleteIfUnreferenced(id ulid.ULID) (deleted boo
 
 	return affectedRows > 0, nil
 
+}
+
+func (r *PostgresFileRepository) GetLatestPublishedAt(fileIDs []ulid.ULID) (*time.Time, error) {
+	var latestPublishedAt *time.Time
+	dbFileIDs := make([]uuid.UUID, len(fileIDs))
+
+	for i, fileID := range fileIDs {
+		dbFileIDs[i] = uuid.UUID(fileID)
+	}
+
+	err := r.db.QueryRow(
+		getLatestPublishedAtQuery,
+		dbFileIDs,
+	).Scan(
+		&latestPublishedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return latestPublishedAt, nil
 }
