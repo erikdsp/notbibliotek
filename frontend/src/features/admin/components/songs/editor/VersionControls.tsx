@@ -52,7 +52,7 @@ export function VersionControls({
           New Duplicate Draft
         </Button>
 
-        <Tooltip>
+        <Tooltip disabled={!isDirty}>
           <TooltipTrigger render={<span />}>
             <Button
               variant="outline"
@@ -64,11 +64,9 @@ export function VersionControls({
             </Button>
           </TooltipTrigger>
 
-          {isDirty && (
-            <TooltipContent>
-              Save or discard changes before creating a new draft.
-            </TooltipContent>
-          )}
+          <TooltipContent>
+            Save or discard changes before creating a new draft.
+          </TooltipContent>
         </Tooltip>
       </div>
     </div>
