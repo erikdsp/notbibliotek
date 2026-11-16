@@ -3,6 +3,10 @@ import { ApiError } from "@/errors";
 import { API_BASE_URL } from "@/config";
 import { createLogger } from "@/utils/logger";
 import type { SongResponse, Song } from "@/core/types";
+import {
+  parseFileResponse,
+  type DownloadedFile,
+} from "@/lib/parse-file-response";
 
 const log = createLogger("songsService");
 
@@ -12,7 +16,7 @@ export interface SongFilters {
   concert?: string;
   part?: string[];
   instrument?: string[];
-  include_unconnected_parts?: boolean
+  include_unconnected_parts?: boolean;
   include_score?: boolean;
 }
 
@@ -47,7 +51,10 @@ export async function fetchSongs(
   });
 
   if (filters.include_unconnected_parts !== undefined) {
-    url.searchParams.set("include_unconnected_parts", String(filters.include_unconnected_parts));
+    url.searchParams.set(
+      "include_unconnected_parts",
+      String(filters.include_unconnected_parts),
+    );
   }
 
   if (filters.include_score !== undefined) {
@@ -124,13 +131,16 @@ export async function createSong(title: string): Promise<Song> {
   }
 }
 
-
 /**
  * Update a song in the library
  * @returns Updated song
  * @throws ApiError if the request fails
  */
-export async function updateSong(songId: string, title?: string, archive?: boolean): Promise<Song> {
+export async function updateSong(
+  songId: string,
+  title?: string,
+  archive?: boolean,
+): Promise<Song> {
   const url = new URL(`${API_BASE_URL}/songs/${songId}`);
 
   try {
@@ -143,6 +153,30 @@ export async function updateSong(songId: string, title?: string, archive?: boole
     if (error instanceof ApiError) {
       throw new ApiError(
         `Failed to update song: ${error.message}`,
+        url.toString(),
+        error.status,
+      );
+    }
+    throw error;
+  }
+}
+
+export async function fetchSongFilesAsZip(
+  songId: string,
+): Promise<DownloadedFile> {
+  const url = new URL(`${API_BASE_URL}/songs/${songId}/download`);
+
+  try {
+    const file = await apiGet<DownloadedFile>(
+      url.toString(),
+      parseFileResponse,
+    );
+
+    return file;
+  } catch (error: unknown) {
+    if (error instanceof ApiError) {
+      throw new ApiError(
+        `Failed to fetch zip file for song ${songId}: ${error.message}`,
         url.toString(),
         error.status,
       );

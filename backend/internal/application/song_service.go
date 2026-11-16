@@ -106,7 +106,7 @@ func (s *SongService) DownloadSong(songID ulid.ULID) (DownloadableFile, []FileDo
 
 func generateSongDownloadFileName(songTitle string, lastUpdatedVersion time.Time) string {
 	return fmt.Sprintf(
-		"%s-Version-%s.zip",
+		"%s-Updated-%s.zip",
 		SanitizeFileName(songTitle),
 		lastUpdatedVersion.Format("2006-01-02-1504"),
 	)

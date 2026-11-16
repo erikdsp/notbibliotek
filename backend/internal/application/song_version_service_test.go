@@ -1184,6 +1184,9 @@ type mockFileRepository struct {
 	files []domain.File
 	err   error
 
+	latestVersionDate *time.Time
+	versionErr        error
+
 	deletedFileIDs             []ulid.ULID
 	deleteIfUnreferencedCalled bool
 	deleteIfUnreferencedResult bool
@@ -1199,13 +1202,13 @@ func (m *mockFileRepository) Create(file domain.File) error {
 	return nil
 }
 
-func (m *mockFileRepository) GetByID(id ulid.ULID) (domain.File, error) {
+func (m *mockFileRepository) GetByID(fileID ulid.ULID) (domain.File, error) {
 	if m.err != nil {
 		return domain.File{}, m.err
 	}
 
 	for _, file := range m.files {
-		if file.ID == id {
+		if file.ID == fileID {
 			return file, nil
 		}
 	}
@@ -1217,10 +1220,17 @@ func (m *mockFileRepository) Update(file domain.File) error {
 	return nil
 }
 
-func (m *mockFileRepository) DeleteIfUnreferenced(id ulid.ULID) (deleted bool, err error) {
+func (m *mockFileRepository) DeleteIfUnreferenced(fileID ulid.ULID) (deleted bool, err error) {
 	m.deleteIfUnreferencedCalled = true
-	m.deletedFileIDs = append(m.deletedFileIDs, id)
+	m.deletedFileIDs = append(m.deletedFileIDs, fileID)
 	return m.deleteIfUnreferencedResult, m.deleteIfUnreferencedErr
+}
+
+func (m *mockFileRepository) GetLatestPublishedAt(fileIDs []ulid.ULID) (*time.Time, error) {
+	if m.versionErr != nil {
+		return nil, m.versionErr
+	}
+	return m.latestVersionDate, nil
 }
 
 type mockScoreRepository struct {
