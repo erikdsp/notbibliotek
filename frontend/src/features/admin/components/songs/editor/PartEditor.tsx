@@ -47,19 +47,12 @@ export function PartEditor({
 }: PartEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  function handleReplaceFileClick() {
-    fileInputRef.current?.click();
-  }
-
-  function handleReplaceFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const input = event.currentTarget;
-    const file = input.files?.[0];
-
-    if (file) {
-      onReplaceFile(part.local_id, file);
-    }
-
-    input.value = "";
+  function handlePreviewFile() {
+    onPreviewFile(
+      part.file,
+      part.file_id,
+      previewTitleFromPartNames(part.file_name, part.name),
+    );
   }
 
   function handleReplaceFileDrop(event: React.DragEvent<HTMLDivElement>) {
@@ -77,6 +70,27 @@ export function PartEditor({
     }
 
     onReplaceFile(part.local_id, files[0]);
+  }
+
+  function handleReplaceFileClick() {
+    fileInputRef.current?.click();
+  }
+
+  function handleReplaceFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+
+    if (file) {
+      onReplaceFile(part.local_id, file);
+    }
+
+    input.value = "";
+  }
+
+  function handlePartNameChange(event: React.ChangeEvent<HTMLInputElement>) {
+    onUpdatePart(part.local_id, {
+      name: event.currentTarget.value,
+    });
   }
 
   const handleAddInstrumentConnection = (instrumentId: string) => {
@@ -98,13 +112,7 @@ export function PartEditor({
           variant="ghost"
           size="icon-sm"
           aria-label={`Preview ${part.name}`}
-          onClick={() =>
-            onPreviewFile(
-              part.file,
-              part.file_id,
-              previewTitleFromPartNames(part.file_name, part.name),
-            )
-          }
+          onClick={handlePreviewFile}
         >
           <Eye className="size-4" />
         </Button>
@@ -155,11 +163,7 @@ export function PartEditor({
           <Input
             value={part.name}
             disabled={isPublished}
-            onChange={(event) =>
-              onUpdatePart(part.local_id, {
-                name: event.target.value,
-              })
-            }
+            onChange={handlePartNameChange}
             aria-invalid={!!partErrors?.name}
           />
           {partErrors?.name && (
