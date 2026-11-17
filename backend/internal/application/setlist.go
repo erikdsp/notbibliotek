@@ -7,10 +7,11 @@ import (
 )
 
 type Setlist struct {
-	Title     string
-	Subtitle  string
-	ShowParts bool
-	Songs     []SetlistSong
+	Title           string
+	Subtitle        string
+	InstrumentLabel string
+	ShowParts       bool
+	Songs           []SetlistSong
 }
 
 type SetlistSong struct {
@@ -27,14 +28,16 @@ func createSetlist(
 	concert *domain.Concert,
 	songs []SongDetails,
 	showParts bool,
+	instrumentLabel string,
 ) Setlist {
 	title, subtitle := getSetlistHeader(concert, songs)
 
 	setlist := Setlist{
-		Title:     title,
-		Subtitle:  subtitle,
-		ShowParts: showParts,
-		Songs:     make([]SetlistSong, 0, len(songs)),
+		Title:           title,
+		Subtitle:        subtitle,
+		InstrumentLabel: instrumentLabel,
+		ShowParts:       showParts,
+		Songs:           make([]SetlistSong, 0, len(songs)),
 	}
 
 	for _, song := range songs {
