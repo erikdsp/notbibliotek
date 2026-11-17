@@ -20,7 +20,7 @@ type SetlistSong struct {
 }
 
 type SetlistGenerator interface {
-	Generate(setlist Setlist) ([]byte, error)
+	Generate(setlist Setlist) (pdfData []byte, err error)
 }
 
 func createSetlist(
