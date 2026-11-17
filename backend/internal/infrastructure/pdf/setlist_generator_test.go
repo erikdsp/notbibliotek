@@ -13,8 +13,8 @@ func TestGenerateSetlist(t *testing.T) {
 	generator := NewSetlistGenerator()
 
 	setlist := application.Setlist{
-		ConcertName: "Höstkonsert 2026",
-		ConcertDate: time.Date(2026, 11, 21, 0, 0, 0, 0, time.Local),
+		Title:    "Höstkonsert 2026",
+		Subtitle: time.Date(2026, 11, 21, 0, 0, 0, 0, time.Local).Format("2006-01-02"),
 	}
 
 	data, err := generator.Generate(setlist)

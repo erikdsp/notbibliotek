@@ -7,10 +7,10 @@ import (
 )
 
 type Setlist struct {
-	ConcertName string
-	ConcertDate time.Time
-	ShowParts   bool
-	Songs       []SetlistSong
+	Title     string
+	Subtitle  string
+	ShowParts bool
+	Songs     []SetlistSong
 }
 
 type SetlistSong struct {
@@ -24,15 +24,17 @@ type SetlistGenerator interface {
 }
 
 func createSetlist(
-	concert domain.Concert,
+	concert *domain.Concert,
 	songs []SongDetails,
 	showParts bool,
 ) Setlist {
+	title, subtitle := getSetlistHeader(concert, songs)
+
 	setlist := Setlist{
-		ConcertName: concert.Name,
-		ConcertDate: concert.Date,
-		ShowParts:   showParts,
-		Songs:       make([]SetlistSong, 0, len(songs)),
+		Title:     title,
+		Subtitle:  subtitle,
+		ShowParts: showParts,
+		Songs:     make([]SetlistSong, 0, len(songs)),
 	}
 
 	for _, song := range songs {
@@ -61,4 +63,40 @@ func createSetlist(
 	}
 
 	return setlist
+}
+
+func getSetlistHeader(
+	concert *domain.Concert,
+	songs []SongDetails,
+) (title string, subtitle string) {
+	if concert != nil {
+		return concert.Name, concert.Date.Format("2 Jan 2006")
+	}
+
+	title = "All Songs in the Library"
+
+	var lastUpdated *time.Time
+
+	for _, song := range songs {
+		if song.CurrentVersionID == nil {
+			continue
+		}
+
+		version := getVersionByID(song.Versions, *song.CurrentVersionID)
+		if version == nil || version.Version.PublishedAt == nil {
+			continue
+		}
+
+		publishedAt := version.Version.PublishedAt
+
+		if lastUpdated == nil || publishedAt.After(*lastUpdated) {
+			lastUpdated = publishedAt
+		}
+	}
+
+	if lastUpdated != nil {
+		subtitle = "Last Updated: " + lastUpdated.Format("2 Jan 2006, 15:04")
+	}
+
+	return title, subtitle
 }

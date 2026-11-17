@@ -57,19 +57,19 @@ func drawHeader(
 
 	document.SetXY(pageMargin, startY)
 
-	if err := document.Cell(nil, setlist.ConcertName); err != nil {
+	if err := document.Cell(nil, setlist.Title); err != nil {
 		return 0, err
 	}
 
 	dateY := startY + titleLineHeight + titleDateSpacing
 
-	if err := document.SetFont("titleDate", "", dateFontSize); err != nil {
+	if err := document.SetFont("subtitle", "", dateFontSize); err != nil {
 		return 0, err
 	}
 
 	document.SetXY(pageMargin, dateY)
 
-	if err := document.Cell(nil, setlist.ConcertDate.Format("2006-01-02")); err != nil {
+	if err := document.Cell(nil, setlist.Subtitle); err != nil {
 		return 0, err
 	}
 

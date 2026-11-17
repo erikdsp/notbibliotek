@@ -27,7 +27,7 @@ func registerFonts(document *gopdf.GoPdf) error {
 		data []byte
 	}{
 		{"title", josefinSansRegular},
-		{"titleDate", josefinSansThin},
+		{"subtitle", josefinSansThin},
 		{"bold", openSansBold},
 		{"regular", openSansRegular},
 		{"italic", openSansLightItalic},
