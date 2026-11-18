@@ -135,9 +135,13 @@ export async function fetchConcertFilesAsZip(
   request: DownloadConcertRequest,
 ): Promise<DownloadedFile> {
   const { concertId, instrumentKeys, includeUnconnectedParts } = request;
-  if (instrumentKeys === undefined && includeUnconnectedParts === undefined) {
+
+  const hasInstruments =
+    instrumentKeys !== undefined && instrumentKeys.length > 0;
+  if (!hasInstruments && includeUnconnectedParts !== true) {
     throw new Error("At least one download filter must be specified");
   }
+
   const url = new URL(`${API_BASE_URL}/concerts/${concertId}/download`);
 
   for (const instrumentKey of instrumentKeys ?? []) {

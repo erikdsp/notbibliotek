@@ -5,6 +5,9 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"strconv"
+
+	"github.com/erikdsp/notbibliotek/backend/internal/application"
 )
 
 func setDownloadFileName(w http.ResponseWriter, fileName string) {
@@ -18,4 +21,25 @@ func setDownloadFileName(w http.ResponseWriter, fileName string) {
 			url.PathEscape(fileName),
 		),
 	)
+}
+
+func parseDownloadQuery(rawQuery string) (application.DownloadQuery, error) {
+	queryValues, err := url.ParseQuery(rawQuery)
+	if err != nil {
+		return application.DownloadQuery{}, err
+	}
+
+	query := application.DownloadQuery{
+		Instruments: queryValues["instrument"],
+	}
+
+	if includeUnconnectedParts := queryValues.Get("include_unconnected_parts"); includeUnconnectedParts != "" {
+		queryValue, err := strconv.ParseBool(includeUnconnectedParts)
+		if err != nil {
+			return application.DownloadQuery{}, fmt.Errorf("invalid include_unconnected_parts: %w", err)
+		}
+		query.IncludeUnconnectedParts = queryValue
+	}
+
+	return query, nil
 }

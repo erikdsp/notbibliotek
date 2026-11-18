@@ -39,33 +39,3 @@ export async function fetchFile(fileId: string): Promise<Blob> {
 export type DownloadFilesRequest = {
     files: { file_id: string }[]
 }
-
-/**
- * Fetch multiple files as a ZIP archive from the library
- * @returns Promise<DownloadedFile>
- * @throws ApiError if the request fails
- */
-export async function fetchMultipleFiles(
-  request: DownloadFilesRequest,
-): Promise<DownloadedFile> {
-  const url = new URL(`${API_BASE_URL}/files/download`);
-
-  try {
-    const file = await apiPost<DownloadedFile>(
-      url.toString(),
-      request,
-      parseFileResponse,
-    );
-
-    return file;
-  } catch (error: unknown) {
-    if (error instanceof ApiError) {
-      throw new ApiError(
-        `Failed to fetch zip file: ${error.message}`,
-        url.toString(),
-        error.status,
-      );
-    }
-    throw error;
-  }
-}

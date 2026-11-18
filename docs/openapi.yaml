@@ -209,6 +209,39 @@ paths:
               $ref: "#/components/schemas/DownloadRequest"
       security:
         - libraryAccess: []
+  /download:
+    get:
+      tags:
+        - Downloads
+      summary: Download all sheet music with one or more filters
+      description: >
+        Downloads a ZIP archive containing all sheet music in the library
+        matching the specified filters.
+        At least one instrument must be specified, or include_unconnected_parts
+        must be true. 
+      operationId: download-all
+      responses:
+        "200":
+          description: OK
+          content:
+            application/zip:
+              schema:
+                $ref: "#/components/schemas/ZipContent"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "404":
+          description: Resource not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      parameters:
+        - $ref: "#/components/parameters/instrumentQuery"
+        - $ref: "#/components/parameters/includeUnconnectedPartsQuery"
+      security:
+        - libraryAccess: []
   /concerts/{concert_id}/download:
     get:
       tags:

@@ -40,6 +40,7 @@ func NewRouter(
 	// Downloads
 	mux.HandleFunc("GET /api/v1/files/{file_id}/download", fileHandler.GetByID)
 	mux.HandleFunc("POST /api/v1/files/download", fileHandler.DownloadFiles)
+	mux.HandleFunc("GET /api/v1/download", songHandler.DownloadAllSongs)
 	mux.HandleFunc("GET /api/v1/concerts/{concert_id}/download", concertHandler.DownloadConcert)
 	mux.HandleFunc("GET /api/v1/songs/{song_id}/download", songHandler.DownloadSong)
 
