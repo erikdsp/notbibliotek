@@ -2,6 +2,7 @@ package application
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/erikdsp/notbibliotek/backend/internal/domain"
@@ -10,20 +11,23 @@ import (
 )
 
 type SongService struct {
-	repository      SongRepository
-	queryRepository SongQueryRepository
-	fileZipper      FileZipper
+	repository       SongRepository
+	queryRepository  SongQueryRepository
+	fileZipper       FileZipper
+	instrumentLookup InstrumentLookup
 }
 
 func NewSongService(
 	repository SongRepository,
 	queryRepository SongQueryRepository,
 	fileZipper FileZipper,
+	instrumentLookup InstrumentLookup,
 ) *SongService {
 	return &SongService{
-		repository:      repository,
-		queryRepository: queryRepository,
-		fileZipper:      fileZipper,
+		repository:       repository,
+		queryRepository:  queryRepository,
+		fileZipper:       fileZipper,
+		instrumentLookup: instrumentLookup,
 	}
 }
 
@@ -92,7 +96,7 @@ func (s *SongService) DownloadSong(songID ulid.ULID) (DownloadableFile, []FileDo
 		return DownloadableFile{}, nil, ErrNoFilesAvailable
 	}
 
-	lastUpdatedVersion := getLatestVersionDate(songs)
+	lastUpdatedVersion := getLatestIncludedVersionDate(songs)
 	outputFileName := generateSongDownloadFileName(song.Song.Title, lastUpdatedVersion)
 
 	downloadableFile, fileDownloadError, err := s.fileZipper.GetFilesAsZip(fileIDs, outputFileName)
@@ -108,6 +112,49 @@ func generateSongDownloadFileName(songTitle string, lastUpdatedVersion time.Time
 	return fmt.Sprintf(
 		"%s-Updated-%s.zip",
 		SanitizeFileName(songTitle),
+		lastUpdatedVersion.Format("2006-01-02-1504"),
+	)
+}
+
+func (s *SongService) DownloadAllSongs(query DownloadQuery) (DownloadableFile, []FileDownloadError, error) {
+	if err := validateDownloadQuery(query); err != nil {
+		return DownloadableFile{}, nil, err
+	}
+
+	instruments, err := s.instrumentLookup.GetByKeys(query.Instruments)
+	if err != nil {
+		return DownloadableFile{}, nil, err
+	}
+	if err := validateInstrumentKeys(query.Instruments, len(instruments)); err != nil {
+		return DownloadableFile{}, nil, err
+	}
+
+	songs, err := s.queryRepository.GetAll(query.ToSongQuery())
+	if err != nil {
+		return DownloadableFile{}, nil, err
+	}
+
+	fileIDs := getFileIDsFromPublishedSongs(songs)
+	if len(fileIDs) == 0 {
+		return DownloadableFile{}, nil, ErrNoFilesAvailable
+	}
+
+	lastUpdatedVersion := getLatestIncludedVersionDate(songs)
+	instrumentNames := getDownloadInstrumentNames(instruments, query.IncludeUnconnectedParts)
+	outputFileName := generateAllSongsDownloadFileName(instrumentNames, lastUpdatedVersion)
+
+	downloadableFile, fileDownloadErrors, err := s.fileZipper.GetFilesAsZip(fileIDs, outputFileName)
+	if err != nil {
+		return DownloadableFile{}, fileDownloadErrors, err
+	}
+
+	return downloadableFile, fileDownloadErrors, nil
+}
+
+func generateAllSongsDownloadFileName(instrumentNames []string, lastUpdatedVersion time.Time) string {
+	return fmt.Sprintf(
+		"All-Songs-%s-Updated-%s.zip",
+		SanitizeFileName(strings.Join(instrumentNames, "-")),
 		lastUpdatedVersion.Format("2006-01-02-1504"),
 	)
 }

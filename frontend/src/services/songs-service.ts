@@ -184,3 +184,51 @@ export async function fetchSongFilesAsZip(
     throw error;
   }
 }
+
+export type DownloadAllSongsRequest = {
+  instrumentKeys?: string[];
+  includeUnconnectedParts?: boolean;
+};
+
+export async function fetchAllSongFilesAsZip(
+  request: DownloadAllSongsRequest,
+): Promise<DownloadedFile> {
+  const { instrumentKeys, includeUnconnectedParts } = request;
+
+  const hasInstruments =
+    instrumentKeys !== undefined && instrumentKeys.length > 0;
+  if (!hasInstruments && includeUnconnectedParts !== true) {
+    throw new Error("At least one download filter must be specified");
+  }
+
+  const url = new URL(`${API_BASE_URL}/download`);
+
+  for (const instrumentKey of instrumentKeys ?? []) {
+    url.searchParams.append("instrument", instrumentKey);
+  }
+
+  if (includeUnconnectedParts !== undefined) {
+    url.searchParams.set(
+      "include_unconnected_parts",
+      String(includeUnconnectedParts),
+    );
+  }
+
+  try {
+    const file = await apiGet<DownloadedFile>(
+      url.toString(),
+      parseFileResponse,
+    );
+
+    return file;
+  } catch (error: unknown) {
+    if (error instanceof ApiError) {
+      throw new ApiError(
+        `Failed to fetch zip file: ${error.message}`,
+        url.toString(),
+        error.status,
+      );
+    }
+    throw error;
+  }
+}

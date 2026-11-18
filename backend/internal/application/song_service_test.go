@@ -360,10 +360,11 @@ func (m *mockSongQueryRepository) GetByID(id ulid.ULID, query SongByIDQuery) (So
 }
 
 type songServiceFixture struct {
-	service         *SongService
-	repository      *mockSongRepository
-	queryRepository *mockSongQueryRepository
-	fileZipper      *mockFileZipper
+	service          *SongService
+	repository       *mockSongRepository
+	queryRepository  *mockSongQueryRepository
+	fileZipper       *mockFileZipper
+	instrumentLookup *mockInstrumentLookup
 }
 
 // Helper factory for test setup
@@ -372,15 +373,18 @@ func newSongServiceFixture() songServiceFixture {
 	repository := &mockSongRepository{}
 	queryRepository := &mockSongQueryRepository{}
 	fileZipper := &mockFileZipper{}
+	instrumentLookup := &mockInstrumentLookup{}
 
 	return songServiceFixture{
 		service: NewSongService(
 			repository,
 			queryRepository,
 			fileZipper,
+			instrumentLookup,
 		),
-		repository:      repository,
-		queryRepository: queryRepository,
-		fileZipper:      fileZipper,
+		repository:       repository,
+		queryRepository:  queryRepository,
+		fileZipper:       fileZipper,
+		instrumentLookup: instrumentLookup,
 	}
 }

@@ -14,12 +14,11 @@ import { SheetMusicSection } from "@/features/musician/components/SheetMusicSect
 import { usePdfPreview } from "@/hooks/use-pdf-preview";
 import { PdfPreviewDialog } from "@/components/pdf-preview/PdfPreviewDialog";
 import { resetValue } from "@/types";
-import { useDownloadMultipleFiles } from "@/hooks/use-download-multiple-files";
-import { getDownloadFileRequest } from "@/features/musician/mappers/get-download-file-request";
-import { getSelectedInstrumentName } from "@/features/musician/lib/get-selected-instrument-name";
 import { useDownloadConcert } from "@/hooks/use-download-concert";
 import { getDownloadConcertRequest } from "@/features/musician/mappers/get-download-concert-request";
 import { useDownloadSong } from "@/hooks/use-download-song";
+import { useDownloadAllSongs } from "@/hooks/use-download-all-songs";
+import { getDownloadAllSongsRequest } from "@/features/musician/mappers/get-download-all-songs-request";
 
 const log = createLogger("MusiciansView");
 
@@ -113,8 +112,8 @@ export function MusiciansView() {
     });
   }
 
-  const downloadMultipleFiles = useDownloadMultipleFiles();
   const downloadConcert = useDownloadConcert();
+  const downloadAllSongs = useDownloadAllSongs();
   const downloadSong = useDownloadSong();
 
   function handleDownloadAll() {
@@ -128,13 +127,11 @@ export function MusiciansView() {
       );
       downloadConcert.mutate({ request });
     } else {
-      const request = getDownloadFileRequest(songs);
-      const instrumentName = getSelectedInstrumentName(
-        selectedInstrument,
-        instruments,
+      const request = getDownloadAllSongsRequest(
+        filters.instrument,
         includeUnconnectedParts,
       );
-      downloadMultipleFiles.mutate({ request, instrumentName });
+      downloadAllSongs.mutate({ request });
     }
   }
 
@@ -196,7 +193,7 @@ export function MusiciansView() {
             instrumentSelected={instrumentSelected}
             selectedSongId={selectedSongId}
             isDownloading={
-              downloadFile.isPending || downloadMultipleFiles.isPending
+              downloadFile.isPending || downloadAllSongs.isPending
             }
             onDownload={handleDownload}
             onPreview={handlePreview}

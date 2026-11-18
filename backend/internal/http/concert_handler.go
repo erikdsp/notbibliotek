@@ -3,12 +3,9 @@ package http
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/erikdsp/notbibliotek/backend/internal/application"
@@ -240,9 +237,9 @@ func (h *ConcertHandler) DownloadConcert(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	query, err := parseDownloadConcertQuery(r.URL.RawQuery)
+	query, err := parseDownloadQuery(r.URL.RawQuery)
 	if err != nil {
-		log.Printf("parseDownloadConcertQuery failed: %v", err)
+		log.Printf("parseDownloadQuery failed: %v", err)
 		writeError(w, "bad request", http.StatusBadRequest)
 		return
 	}
@@ -285,25 +282,4 @@ func (h *ConcertHandler) DownloadConcert(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-}
-
-func parseDownloadConcertQuery(rawQuery string) (application.DownloadConcertQuery, error) {
-	queryValues, err := url.ParseQuery(rawQuery)
-	if err != nil {
-		return application.DownloadConcertQuery{}, err
-	}
-
-	query := application.DownloadConcertQuery{
-		Instruments: queryValues["instrument"],
-	}
-
-	if includeUnconnectedParts := queryValues.Get("include_unconnected_parts"); includeUnconnectedParts != "" {
-		queryValue, err := strconv.ParseBool(includeUnconnectedParts)
-		if err != nil {
-			return application.DownloadConcertQuery{}, fmt.Errorf("invalid include_unconnected_parts: %w", err)
-		}
-		query.IncludeUnconnectedParts = queryValue
-	}
-
-	return query, nil
 }

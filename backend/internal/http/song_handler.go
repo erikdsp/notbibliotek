@@ -255,3 +255,49 @@ func (h *SongHandler) DownloadSong(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
+
+func (h *SongHandler) DownloadAllSongs(w http.ResponseWriter, r *http.Request) {
+	query, err := parseDownloadQuery(r.URL.RawQuery)
+	if err != nil {
+		log.Printf("parseDownloadQuery failed: %v", err)
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	response, fileDownloadErrors, err := h.service.DownloadAllSongs(query)
+
+	for _, downloadError := range fileDownloadErrors {
+		log.Printf(
+			"SongHandler.DownloadAllSongs: failed to download file %s: %v",
+			downloadError.FileID,
+			downloadError.Err,
+		)
+	}
+
+	if err != nil {
+		switch {
+		case errors.Is(err, application.ErrInvalidOperation):
+			writeError(w, err.Error(), http.StatusBadRequest)
+
+		case errors.Is(err, application.ErrInstrumentNotFound),
+			errors.Is(err, application.ErrNoFilesAvailable):
+			writeError(w, err.Error(), http.StatusNotFound)
+
+		default:
+			log.Printf("SongHandler.DownloadAllSongs failed: %v", err)
+			writeError(w, "internal server error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	defer response.File.Close()
+
+	setDownloadFileName(w, response.FileName)
+	w.Header().Set("Content-Type", "application/zip")
+
+	_, err = io.Copy(w, response.File)
+	if err != nil {
+		log.Printf("SongHandler.DownloadAllSongs Copy failed: %v", err)
+		return
+	}
+}
