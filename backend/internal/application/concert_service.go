@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/erikdsp/notbibliotek/backend/internal/domain"
-	"github.com/erikdsp/notbibliotek/backend/internal/utils/set"
 
 	"github.com/oklog/ulid/v2"
 )
@@ -99,13 +98,13 @@ func (s *ConcertService) DeleteConnection(concertID ulid.ULID, songID ulid.ULID)
 	return s.concertSongRepository.Delete(concertID, songID)
 }
 
-func (s *ConcertService) DownloadConcert(concertID ulid.ULID, query DownloadConcertQuery) (DownloadableFile, []FileDownloadError, error) {
+func (s *ConcertService) DownloadConcert(concertID ulid.ULID, query DownloadQuery) (DownloadableFile, []FileDownloadError, error) {
 	concert, err := s.GetConcertByID(concertID)
 	if err != nil {
 		return DownloadableFile{}, nil, err
 	}
 
-	if err := validateDownloadConcertQuery(query); err != nil {
+	if err := validateDownloadQuery(query); err != nil {
 		return DownloadableFile{}, nil, err
 	}
 
@@ -117,7 +116,9 @@ func (s *ConcertService) DownloadConcert(concertID ulid.ULID, query DownloadConc
 		return DownloadableFile{}, nil, err
 	}
 
-	songs, err := s.songQueryRepository.GetAll(query.ToSongQuery(concert.Concert.Key))
+	songs, err := s.songQueryRepository.GetAll(
+		query.ToSongQueryWithConcert(concert.Concert.Key),
+	)
 	if err != nil {
 		return DownloadableFile{}, nil, err
 	}
@@ -127,7 +128,7 @@ func (s *ConcertService) DownloadConcert(concertID ulid.ULID, query DownloadConc
 		return DownloadableFile{}, nil, ErrNoFilesAvailable
 	}
 
-	lastUpdatedVersion := getLatestVersionDate(songs)
+	lastUpdatedVersion := getLatestIncludedVersionDate(songs)
 	instrumentNames := getDownloadInstrumentNames(instruments, query.IncludeUnconnectedParts)
 	outputFileName := generateConcertDownloadFileName(concert.Concert, instrumentNames, lastUpdatedVersion)
 
@@ -139,69 +140,6 @@ func (s *ConcertService) DownloadConcert(concertID ulid.ULID, query DownloadConc
 	return downloadableFile, fileDownloadError, nil
 }
 
-func getFileIDsFromPublishedSongs(songs []SongDetails) []ulid.ULID {
-	var fileIDs []ulid.ULID
-	for _, song := range songs {
-		if song.CurrentVersionID == nil {
-			continue
-		}
-
-		currentVersion := getVersionByID(song.Versions, *song.CurrentVersionID)
-		if currentVersion == nil {
-			continue
-		}
-
-		if currentVersion.Score != nil {
-			fileIDs = append(fileIDs, currentVersion.Score.File.ID)
-		}
-
-		for _, part := range currentVersion.Parts {
-			fileIDs = append(fileIDs, part.File.ID)
-		}
-	}
-
-	return fileIDs
-}
-
-func getDownloadInstrumentNames(
-	instruments []domain.Instrument,
-	includeUnconnectedParts bool,
-) []string {
-	var names []string
-
-	if includeUnconnectedParts {
-		names = append(names, "Odd Parts")
-	}
-
-	for _, instrument := range instruments {
-		names = append(names, instrument.Name)
-	}
-
-	return names
-}
-
-func getLatestVersionDate(songs []SongDetails) time.Time {
-	var latestVersion time.Time
-
-	for _, song := range songs {
-		if song.CurrentVersionID == nil {
-			continue
-		}
-
-		version := getVersionByID(song.Versions, *song.CurrentVersionID)
-		if version == nil || (version.Score == nil && len(version.Parts) == 0) {
-			continue
-		}
-
-		if publishedAt := version.Version.PublishedAt; publishedAt != nil &&
-			publishedAt.After(latestVersion) {
-			latestVersion = *publishedAt
-		}
-	}
-
-	return latestVersion
-}
-
 func generateConcertDownloadFileName(concert domain.Concert, instrumentNames []string, lastUpdatedVersion time.Time) string {
 	return fmt.Sprintf(
 		"%s-%s-%s-Updated-%s.zip",
@@ -210,25 +148,4 @@ func generateConcertDownloadFileName(concert domain.Concert, instrumentNames []s
 		SanitizeFileName(strings.Join(instrumentNames, "-")),
 		lastUpdatedVersion.Format("2006-01-02-1504"),
 	)
-}
-
-func validateDownloadConcertQuery(query DownloadConcertQuery) error {
-	if len(query.Instruments) == 0 && !query.IncludeUnconnectedParts {
-		return fmt.Errorf("%w: instrument or include_unconnected_parts is required", ErrInvalidOperation)
-	}
-	return nil
-}
-
-func validateInstrumentKeys(keys []string, instrumentCount int) error {
-	uniqueKeys := set.NewSet[string]()
-
-	for _, key := range keys {
-		uniqueKeys.Insert(key)
-	}
-
-	if instrumentCount != uniqueKeys.Len() {
-		return ErrInstrumentNotFound
-	}
-
-	return nil
 }
