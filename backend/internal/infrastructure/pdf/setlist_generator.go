@@ -252,25 +252,29 @@ func drawTableRow(
 
 	if rowIndex == 0 {
 		version := "No published version"
+		versionFont := "italic"
 
 		if song.PublishedAt != nil {
 			version = song.PublishedAt.Format("2 Jan 2006, 15:04")
+			versionFont = "regular"
 		}
 
 		if err := drawTableText(
-			document, "italic", version, layout.versionX, y, versionColumnWidth,
+			document, versionFont, version, layout.versionX, y, versionColumnWidth,
 		); err != nil {
 			return err
 		}
 	}
 
 	if layout.showParts {
-		part := "Missing"
+		var part string
 		partFont := "italic"
 
 		if len(song.Parts) > 0 {
 			part = song.Parts[rowIndex]
 			partFont = "regular"
+		} else if song.PublishedAt != nil {
+			part = "Missing"
 		}
 
 		if err := drawTableText(
