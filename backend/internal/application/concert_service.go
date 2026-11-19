@@ -16,6 +16,7 @@ type ConcertService struct {
 	songQueryRepository   SongQueryRepository
 	fileZipper            FileZipper
 	instrumentLookup      InstrumentLookup
+	setlistGenerator      SetlistGenerator
 }
 
 func NewConcertService(
@@ -24,6 +25,7 @@ func NewConcertService(
 	songQueryRepository SongQueryRepository,
 	fileZipper FileZipper,
 	instrumentLookup InstrumentLookup,
+	setlistGenerator SetlistGenerator,
 ) *ConcertService {
 	return &ConcertService{
 		repository:            repository,
@@ -31,6 +33,7 @@ func NewConcertService(
 		songQueryRepository:   songQueryRepository,
 		fileZipper:            fileZipper,
 		instrumentLookup:      instrumentLookup,
+		setlistGenerator:      setlistGenerator,
 	}
 }
 
@@ -131,9 +134,18 @@ func (s *ConcertService) DownloadConcert(concertID ulid.ULID, query DownloadQuer
 	lastUpdatedVersion := getLatestIncludedVersionDate(songs)
 	instrumentNames := getDownloadInstrumentNames(instruments, query.IncludeUnconnectedParts)
 	outputFileName := generateConcertDownloadFileName(concert.Concert, instrumentNames, lastUpdatedVersion)
+	setlistData, err := s.setlistGenerator.Generate(
+		createSetlist(&concert.Concert, songs, true, strings.Join(instrumentNames, ", ")))
+	if err != nil {
+		return DownloadableFile{}, nil, err
+	}
+	setlistName := generateConcertSetlistName(concert.Concert, instrumentNames)
 
 	downloadableFile, fileDownloadError, err := s.fileZipper.GetFilesAsZip(
-		ZipRequest{FileIDs: fileIDs, OutputFileName: outputFileName},
+		ZipRequest{
+			Files:          []ZipEntry{{FileName: setlistName, Data: setlistData}},
+			FileIDs:        fileIDs,
+			OutputFileName: outputFileName},
 	)
 	if err != nil {
 		return DownloadableFile{}, fileDownloadError, err
@@ -149,5 +161,13 @@ func generateConcertDownloadFileName(concert domain.Concert, instrumentNames []s
 		concert.Date.Format("2006-01-02"),
 		SanitizeFileName(strings.Join(instrumentNames, "-")),
 		lastUpdatedVersion.Format("2006-01-02-1504"),
+	)
+}
+
+func generateConcertSetlistName(concert domain.Concert, instrumentNames []string) string {
+	return fmt.Sprintf(
+		"Setlist - %s - %s.pdf",
+		SanitizeFileName(strings.Join(instrumentNames, "-")),
+		SanitizeFileName(concert.Name),
 	)
 }

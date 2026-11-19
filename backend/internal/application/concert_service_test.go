@@ -359,6 +359,12 @@ func (m *mockInstrumentLookup) GetByKeys(keys []string) ([]domain.Instrument, er
 	return m.instruments, nil
 }
 
+type mockSetlistGenerator struct{}
+
+func (m *mockSetlistGenerator) Generate(setlist Setlist) ([]byte, error) {
+	return nil, nil
+}
+
 type concertServiceFixture struct {
 	service               *ConcertService
 	repository            *mockConcertRepository
@@ -366,6 +372,7 @@ type concertServiceFixture struct {
 	songQueryRepository   *mockSongQueryRepository
 	fileZipper            *mockFileZipper
 	instrumentLookup      *mockInstrumentLookup
+	setlistGenerator      *mockSetlistGenerator
 }
 
 func newConcertServiceFixture() concertServiceFixture {
@@ -375,6 +382,7 @@ func newConcertServiceFixture() concertServiceFixture {
 	songQueryRepository := &mockSongQueryRepository{}
 	fileZipper := &mockFileZipper{}
 	instrumentLookup := &mockInstrumentLookup{}
+	setlistGenerator := &mockSetlistGenerator{}
 
 	return concertServiceFixture{
 		service: NewConcertService(
@@ -383,11 +391,13 @@ func newConcertServiceFixture() concertServiceFixture {
 			songQueryRepository,
 			fileZipper,
 			instrumentLookup,
+			setlistGenerator,
 		),
 		repository:            repository,
 		concertSongRepository: concertSongRepository,
 		songQueryRepository:   songQueryRepository,
 		fileZipper:            fileZipper,
 		instrumentLookup:      instrumentLookup,
+		setlistGenerator:      setlistGenerator,
 	}
 }

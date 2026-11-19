@@ -9,6 +9,7 @@ import (
 	httpHandler "github.com/erikdsp/notbibliotek/backend/internal/http"
 
 	"github.com/erikdsp/notbibliotek/backend/internal/infrastructure/localfilestorage"
+	"github.com/erikdsp/notbibliotek/backend/internal/infrastructure/pdf"
 	"github.com/erikdsp/notbibliotek/backend/internal/infrastructure/postgres"
 	"github.com/joho/godotenv"
 )
@@ -54,6 +55,8 @@ func main() {
 
 	fileStorage := localfilestorage.NewLocalFileStorage(storagePath)
 
+	pdfGenerator := pdf.NewSetlistGenerator()
+
 	fileService := application.NewFileService(
 		fileRepository,
 		fileStorage,
@@ -82,6 +85,7 @@ func main() {
 		songQueryRepository,
 		fileService,
 		instrumentRepository,
+		pdfGenerator,
 	)
 
 	songHandler := httpHandler.NewSongHandler(songService)
