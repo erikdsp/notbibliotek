@@ -132,7 +132,9 @@ func (s *ConcertService) DownloadConcert(concertID ulid.ULID, query DownloadQuer
 	instrumentNames := getDownloadInstrumentNames(instruments, query.IncludeUnconnectedParts)
 	outputFileName := generateConcertDownloadFileName(concert.Concert, instrumentNames, lastUpdatedVersion)
 
-	downloadableFile, fileDownloadError, err := s.fileZipper.GetFilesAsZip(fileIDs, outputFileName)
+	downloadableFile, fileDownloadError, err := s.fileZipper.GetFilesAsZip(
+		ZipRequest{FileIDs: fileIDs, OutputFileName: outputFileName},
+	)
 	if err != nil {
 		return DownloadableFile{}, fileDownloadError, err
 	}

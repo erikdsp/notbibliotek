@@ -99,7 +99,9 @@ func (s *SongService) DownloadSong(songID ulid.ULID) (DownloadableFile, []FileDo
 	lastUpdatedVersion := getLatestIncludedVersionDate(songs)
 	outputFileName := generateSongDownloadFileName(song.Song.Title, lastUpdatedVersion)
 
-	downloadableFile, fileDownloadError, err := s.fileZipper.GetFilesAsZip(fileIDs, outputFileName)
+	downloadableFile, fileDownloadError, err := s.fileZipper.GetFilesAsZip(
+		ZipRequest{FileIDs: fileIDs, OutputFileName: outputFileName},
+	)
 	if err != nil {
 		return DownloadableFile{}, fileDownloadError, err
 	}
@@ -143,7 +145,9 @@ func (s *SongService) DownloadAllSongs(query DownloadQuery) (DownloadableFile, [
 	instrumentNames := getDownloadInstrumentNames(instruments, query.IncludeUnconnectedParts)
 	outputFileName := generateAllSongsDownloadFileName(instrumentNames, lastUpdatedVersion)
 
-	downloadableFile, fileDownloadErrors, err := s.fileZipper.GetFilesAsZip(fileIDs, outputFileName)
+	downloadableFile, fileDownloadErrors, err := s.fileZipper.GetFilesAsZip(
+		ZipRequest{FileIDs: fileIDs, OutputFileName: outputFileName},
+	)
 	if err != nil {
 		return DownloadableFile{}, fileDownloadErrors, err
 	}

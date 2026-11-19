@@ -343,7 +343,7 @@ type mockFileZipper struct {
 	err error
 }
 
-func (m *mockFileZipper) GetFilesAsZip(ids []ulid.ULID, outputFileName string) (DownloadableFile, []FileDownloadError, error) {
+func (m *mockFileZipper) GetFilesAsZip(request ZipRequest) (DownloadableFile, []FileDownloadError, error) {
 	return DownloadableFile{}, nil, nil
 }
 

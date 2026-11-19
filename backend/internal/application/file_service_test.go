@@ -127,8 +127,7 @@ func Test_WhenAllFilesAreAvailableThenGetFilesAsZipReturnsZipContainingAllFiles(
 	}
 
 	response, downloadErrors, err := f.service.GetFilesAsZip(
-		[]ulid.ULID{firstFileID, secondFileID},
-		"test-download.zip",
+		ZipRequest{FileIDs: []ulid.ULID{firstFileID, secondFileID}, OutputFileName: "test-download.zip"},
 	)
 	if err != nil {
 		t.Fatalf("GetFilesAsZip returned unexpected error: %v", err)
@@ -170,8 +169,7 @@ func Test_WhenSomeFilesAreUnavailableThenGetFilesAsZipReturnsPartialZipAndDownlo
 	}
 
 	response, downloadErrors, err := fixture.service.GetFilesAsZip(
-		[]ulid.ULID{firstFileID, missingFileID, thirdFileID},
-		"test-download.zip",
+		ZipRequest{FileIDs: []ulid.ULID{firstFileID, missingFileID, thirdFileID}, OutputFileName: "test-download.zip"},
 	)
 	if err != nil {
 		t.Fatalf("GetFilesAsZip returned unexpected error: %v", err)
@@ -208,8 +206,7 @@ func Test_WhenNoFilesAreAvailableThenGetFilesAsZipReturnsErrNoFilesAvailable(t *
 	secondFileID := ulid.Make()
 
 	response, downloadErrors, err := fixture.service.GetFilesAsZip(
-		[]ulid.ULID{firstFileID, secondFileID},
-		"test-download.zip",
+		ZipRequest{FileIDs: []ulid.ULID{firstFileID, secondFileID}, OutputFileName: "test-download.zip"},
 	)
 
 	if !errors.Is(err, ErrNoFilesAvailable) {
@@ -260,8 +257,7 @@ func Test_WhenFilesHaveDuplicateNamesThenGetFilesAsZipUsesUniqueFileNames(t *tes
 	}
 
 	response, downloadErrors, err := fixture.service.GetFilesAsZip(
-		[]ulid.ULID{firstFileID, secondFileID},
-		"test-download.zip",
+		ZipRequest{FileIDs: []ulid.ULID{firstFileID, secondFileID}, OutputFileName: "test-download.zip"},
 	)
 	if err != nil {
 		t.Fatalf("GetFilesAsZip returned unexpected error: %v", err)
@@ -291,8 +287,7 @@ func Test_WhenDownloadableFileIsClosedThenTemporaryZipFileIsRemoved(t *testing.T
 	fixture.storage.file = "Violin PDF content"
 
 	response, _, err := fixture.service.GetFilesAsZip(
-		[]ulid.ULID{fileID},
-		"test-download.zip",
+		ZipRequest{FileIDs: []ulid.ULID{fileID}, OutputFileName: "test-download.zip"},
 	)
 	if err != nil {
 		t.Fatalf("GetFilesAsZip returned unexpected error: %v", err)
