@@ -20,16 +20,6 @@ type FileService struct {
 	storage    FileStorage
 }
 
-type DownloadableFile struct {
-	FileName string
-	File     io.ReadCloser
-}
-
-type FileDownloadError struct {
-	FileID ulid.ULID
-	Err    error
-}
-
 const maxPDFFileSize = 20 << 20 // 20 MiB per PDF
 
 func NewFileService(repository FileRepository, storage FileStorage) *FileService {
@@ -63,7 +53,8 @@ func (s *FileService) DownloadFiles(ids []ulid.ULID) (DownloadableFile, []FileDo
 	}
 	fileName := generateDownloadFileName(latestVersionDate)
 
-	return s.GetFilesAsZip(ids, fileName)
+	return s.GetFilesAsZip(ZipRequest{FileIDs: ids, OutputFileName: fileName})
+
 }
 
 func generateDownloadFileName(versionDate *time.Time) string {
@@ -81,7 +72,7 @@ func generateDownloadFileName(versionDate *time.Time) string {
 	}
 }
 
-func (s *FileService) GetFilesAsZip(ids []ulid.ULID, outputFileName string) (DownloadableFile, []FileDownloadError, error) {
+func (s *FileService) GetFilesAsZip(request ZipRequest) (DownloadableFile, []FileDownloadError, error) {
 	tempFile, err := newTemporaryFile("", "download-*.zip")
 	if err != nil {
 		return DownloadableFile{}, nil, err
@@ -97,25 +88,14 @@ func (s *FileService) GetFilesAsZip(ids []ulid.ULID, outputFileName string) (Dow
 	zipWriter := zip.NewWriter(tempFile)
 
 	usedFileNames := set.NewSet[string]()
-	var fileDownloadErrors []FileDownloadError
 
-	for _, fileID := range ids {
-		originalFileName, data, err := s.readFile(fileID)
-		if err != nil {
-			fileDownloadErrors = append(fileDownloadErrors, FileDownloadError{
-				FileID: fileID,
-				Err:    err,
-			})
-			continue
-		}
+	if err := addProvidedFilesToZip(zipWriter, request.Files, &usedFileNames); err != nil {
+		return DownloadableFile{}, nil, err
+	}
 
-		uniqueFileName := getUniqueFileName(originalFileName, usedFileNames)
-
-		if err := addFileToZip(zipWriter, uniqueFileName, data); err != nil {
-			return DownloadableFile{}, fileDownloadErrors, err
-		}
-
-		usedFileNames.Insert(uniqueFileName)
+	fileDownloadErrors, err := s.addStoredFilesToZip(zipWriter, request.FileIDs, &usedFileNames)
+	if err != nil {
+		return DownloadableFile{}, fileDownloadErrors, err
 	}
 
 	if usedFileNames.Len() == 0 {
@@ -126,16 +106,63 @@ func (s *FileService) GetFilesAsZip(ids []ulid.ULID, outputFileName string) (Dow
 		return DownloadableFile{}, fileDownloadErrors, err
 	}
 
-	if _, err := tempFile.Seek(0, io.SeekStart); err != nil {
+	if err := tempFile.Rewind(); err != nil {
 		return DownloadableFile{}, fileDownloadErrors, err
 	}
 
 	fileOwnershipTransferred = true
 
 	return DownloadableFile{
-		FileName: outputFileName,
+		FileName: request.OutputFileName,
 		File:     tempFile,
 	}, fileDownloadErrors, nil
+}
+
+func addProvidedFilesToZip(
+	zipWriter *zip.Writer,
+	files []ZipEntry,
+	usedFileNames *set.Set[string],
+) error {
+	for _, file := range files {
+		uniqueFileName := getUniqueFileName(file.FileName, *usedFileNames)
+
+		if err := addFileToZip(zipWriter, uniqueFileName, file.Data); err != nil {
+			return err
+		}
+
+		usedFileNames.Insert(uniqueFileName)
+	}
+
+	return nil
+}
+
+func (s *FileService) addStoredFilesToZip(
+	zipWriter *zip.Writer,
+	fileIDs []ulid.ULID,
+	usedFileNames *set.Set[string],
+) ([]FileDownloadError, error) {
+	var fileDownloadErrors []FileDownloadError
+
+	for _, fileID := range fileIDs {
+		originalFileName, data, err := s.readFile(fileID)
+		if err != nil {
+			fileDownloadErrors = append(fileDownloadErrors, FileDownloadError{
+				FileID: fileID,
+				Err:    err,
+			})
+			continue
+		}
+
+		uniqueFileName := getUniqueFileName(originalFileName, *usedFileNames)
+
+		if err := addFileToZip(zipWriter, uniqueFileName, data); err != nil {
+			return fileDownloadErrors, err
+		}
+
+		usedFileNames.Insert(uniqueFileName)
+	}
+
+	return fileDownloadErrors, nil
 }
 
 type temporaryFile struct {
@@ -147,6 +174,11 @@ func (f *temporaryFile) Close() error {
 		f.File.Close(),
 		os.Remove(f.Name()),
 	)
+}
+
+func (f *temporaryFile) Rewind() error {
+	_, err := f.Seek(0, io.SeekStart)
+	return err
 }
 
 func newTemporaryFile(dir string, pattern string) (*temporaryFile, error) {

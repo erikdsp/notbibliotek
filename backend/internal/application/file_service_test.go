@@ -127,8 +127,7 @@ func Test_WhenAllFilesAreAvailableThenGetFilesAsZipReturnsZipContainingAllFiles(
 	}
 
 	response, downloadErrors, err := f.service.GetFilesAsZip(
-		[]ulid.ULID{firstFileID, secondFileID},
-		"test-download.zip",
+		ZipRequest{FileIDs: []ulid.ULID{firstFileID, secondFileID}, OutputFileName: "test-download.zip"},
 	)
 	if err != nil {
 		t.Fatalf("GetFilesAsZip returned unexpected error: %v", err)
@@ -170,8 +169,7 @@ func Test_WhenSomeFilesAreUnavailableThenGetFilesAsZipReturnsPartialZipAndDownlo
 	}
 
 	response, downloadErrors, err := fixture.service.GetFilesAsZip(
-		[]ulid.ULID{firstFileID, missingFileID, thirdFileID},
-		"test-download.zip",
+		ZipRequest{FileIDs: []ulid.ULID{firstFileID, missingFileID, thirdFileID}, OutputFileName: "test-download.zip"},
 	)
 	if err != nil {
 		t.Fatalf("GetFilesAsZip returned unexpected error: %v", err)
@@ -208,8 +206,7 @@ func Test_WhenNoFilesAreAvailableThenGetFilesAsZipReturnsErrNoFilesAvailable(t *
 	secondFileID := ulid.Make()
 
 	response, downloadErrors, err := fixture.service.GetFilesAsZip(
-		[]ulid.ULID{firstFileID, secondFileID},
-		"test-download.zip",
+		ZipRequest{FileIDs: []ulid.ULID{firstFileID, secondFileID}, OutputFileName: "test-download.zip"},
 	)
 
 	if !errors.Is(err, ErrNoFilesAvailable) {
@@ -260,8 +257,7 @@ func Test_WhenFilesHaveDuplicateNamesThenGetFilesAsZipUsesUniqueFileNames(t *tes
 	}
 
 	response, downloadErrors, err := fixture.service.GetFilesAsZip(
-		[]ulid.ULID{firstFileID, secondFileID},
-		"test-download.zip",
+		ZipRequest{FileIDs: []ulid.ULID{firstFileID, secondFileID}, OutputFileName: "test-download.zip"},
 	)
 	if err != nil {
 		t.Fatalf("GetFilesAsZip returned unexpected error: %v", err)
@@ -291,8 +287,7 @@ func Test_WhenDownloadableFileIsClosedThenTemporaryZipFileIsRemoved(t *testing.T
 	fixture.storage.file = "Violin PDF content"
 
 	response, _, err := fixture.service.GetFilesAsZip(
-		[]ulid.ULID{fileID},
-		"test-download.zip",
+		ZipRequest{FileIDs: []ulid.ULID{fileID}, OutputFileName: "test-download.zip"},
 	)
 	if err != nil {
 		t.Fatalf("GetFilesAsZip returned unexpected error: %v", err)
@@ -325,6 +320,143 @@ func Test_WhenDownloadableFileIsClosedThenTemporaryZipFileIsRemoved(t *testing.T
 	if _, err := os.Stat(tempFilePath); !errors.Is(err, os.ErrNotExist) {
 		t.Errorf("Expected temporary ZIP file to be removed, got %v", err)
 	}
+}
+
+func Test_WhenOnlyProvidedFilesAreSpecifiedThenGetFilesAsZipReturnsZipContainingAllFiles(t *testing.T) {
+	fixture := newFileServiceFixture()
+
+	expectedFiles := map[string]string{
+		"Setlist.pdf": "Setlist PDF content",
+		"Notes.pdf":   "Notes PDF content",
+	}
+
+	request := ZipRequest{
+		OutputFileName: "test-download.zip",
+		Files: []ZipEntry{
+			{FileName: "Setlist.pdf", Data: []byte(expectedFiles["Setlist.pdf"])},
+			{FileName: "Notes.pdf", Data: []byte(expectedFiles["Notes.pdf"])},
+		},
+	}
+
+	response, downloadErrors, err := fixture.service.GetFilesAsZip(request)
+	if err != nil {
+		t.Fatalf("GetFilesAsZip returned unexpected error: %v", err)
+	}
+	defer response.File.Close()
+
+	if len(downloadErrors) != 0 {
+		t.Errorf("Expected no download errors, got %v", downloadErrors)
+	}
+
+	if response.FileName != "test-download.zip" {
+		t.Errorf("Expected filename test-download.zip, got %s", response.FileName)
+	}
+
+	assertZipContainsFiles(t, response.File, expectedFiles)
+}
+
+func Test_WhenProvidedAndStoredFilesAreRequestedThenGetFilesAsZipReturnsZipContainingAllFiles(t *testing.T) {
+	fixture := newFileServiceFixture()
+
+	storedFileID := ulid.Make()
+
+	expectedFiles := map[string]string{
+		"Setlist.pdf":  "Setlist PDF content",
+		"Violin 1.pdf": "Violin PDF content",
+	}
+
+	fixture.repository.files = []domain.File{
+		{ID: storedFileID, Name: "Violin 1.pdf"},
+	}
+
+	fixture.storage.files = map[ulid.ULID]string{
+		storedFileID: expectedFiles["Violin 1.pdf"],
+	}
+
+	request := ZipRequest{
+		OutputFileName: "test-download.zip",
+		FileIDs:        []ulid.ULID{storedFileID},
+		Files: []ZipEntry{
+			{FileName: "Setlist.pdf", Data: []byte(expectedFiles["Setlist.pdf"])},
+		},
+	}
+
+	response, downloadErrors, err := fixture.service.GetFilesAsZip(request)
+	if err != nil {
+		t.Fatalf("GetFilesAsZip returned unexpected error: %v", err)
+	}
+	defer response.File.Close()
+
+	if len(downloadErrors) != 0 {
+		t.Errorf("Expected no download errors, got %v", downloadErrors)
+	}
+
+	if response.FileName != "test-download.zip" {
+		t.Errorf("Expected filename test-download.zip, got %s", response.FileName)
+	}
+
+	assertZipContainsFiles(t, response.File, expectedFiles)
+}
+
+func Test_WhenProvidedAndStoredFilesHaveDuplicateNamesThenGetFilesAsZipUsesUniqueFileNames(t *testing.T) {
+	fixture := newFileServiceFixture()
+
+	storedFileID := ulid.Make()
+
+	fixture.repository.files = []domain.File{
+		{ID: storedFileID, Name: "Setlist.pdf"},
+	}
+
+	fixture.storage.files = map[ulid.ULID]string{
+		storedFileID: "Stored PDF content",
+	}
+
+	request := ZipRequest{
+		OutputFileName: "test-download.zip",
+		FileIDs:        []ulid.ULID{storedFileID},
+		Files: []ZipEntry{
+			{FileName: "Setlist.pdf", Data: []byte("Provided PDF content")},
+		},
+	}
+
+	response, downloadErrors, err := fixture.service.GetFilesAsZip(request)
+	if err != nil {
+		t.Fatalf("GetFilesAsZip returned unexpected error: %v", err)
+	}
+	defer response.File.Close()
+
+	if len(downloadErrors) != 0 {
+		t.Errorf("Expected no download errors, got %v", downloadErrors)
+	}
+
+	zipData, err := io.ReadAll(response.File)
+	if err != nil {
+		t.Fatalf("Failed to read ZIP file: %v", err)
+	}
+
+	zipReader, err := zip.NewReader(bytes.NewReader(zipData), int64(len(zipData)))
+	if err != nil {
+		t.Fatalf("Failed to open ZIP file: %v", err)
+	}
+
+	if len(zipReader.File) != 2 {
+		t.Fatalf("Expected 2 files in ZIP, got %d", len(zipReader.File))
+	}
+
+	if zipReader.File[0].Name != "Setlist.pdf" {
+		t.Errorf("Expected provided file to keep its name, got %q", zipReader.File[0].Name)
+	}
+
+	if zipReader.File[0].Name == zipReader.File[1].Name {
+		t.Fatalf("Expected unique filenames, got %q", zipReader.File[0].Name)
+	}
+
+	expectedFiles := map[string]string{
+		zipReader.File[0].Name: "Provided PDF content",
+		zipReader.File[1].Name: "Stored PDF content",
+	}
+
+	assertZipContainsFiles(t, bytes.NewReader(zipData), expectedFiles)
 }
 
 // test helpers

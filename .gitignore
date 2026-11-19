@@ -21,6 +21,9 @@ backend/.credentials/
 # Local file storage
 backend/data/files/
 
+# Test output
+backend/internal/infrastructure/pdf/test_output
+
 # Dependency/vendor directories
 vendor/
 

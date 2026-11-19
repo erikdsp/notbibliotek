@@ -15,6 +15,7 @@ type SongService struct {
 	queryRepository  SongQueryRepository
 	fileZipper       FileZipper
 	instrumentLookup InstrumentLookup
+	setlistGenerator SetlistGenerator
 }
 
 func NewSongService(
@@ -22,12 +23,14 @@ func NewSongService(
 	queryRepository SongQueryRepository,
 	fileZipper FileZipper,
 	instrumentLookup InstrumentLookup,
+	setlistGenerator SetlistGenerator,
 ) *SongService {
 	return &SongService{
 		repository:       repository,
 		queryRepository:  queryRepository,
 		fileZipper:       fileZipper,
 		instrumentLookup: instrumentLookup,
+		setlistGenerator: setlistGenerator,
 	}
 }
 
@@ -99,7 +102,9 @@ func (s *SongService) DownloadSong(songID ulid.ULID) (DownloadableFile, []FileDo
 	lastUpdatedVersion := getLatestIncludedVersionDate(songs)
 	outputFileName := generateSongDownloadFileName(song.Song.Title, lastUpdatedVersion)
 
-	downloadableFile, fileDownloadError, err := s.fileZipper.GetFilesAsZip(fileIDs, outputFileName)
+	downloadableFile, fileDownloadError, err := s.fileZipper.GetFilesAsZip(
+		ZipRequest{FileIDs: fileIDs, OutputFileName: outputFileName},
+	)
 	if err != nil {
 		return DownloadableFile{}, fileDownloadError, err
 	}
@@ -142,8 +147,20 @@ func (s *SongService) DownloadAllSongs(query DownloadQuery) (DownloadableFile, [
 	lastUpdatedVersion := getLatestIncludedVersionDate(songs)
 	instrumentNames := getDownloadInstrumentNames(instruments, query.IncludeUnconnectedParts)
 	outputFileName := generateAllSongsDownloadFileName(instrumentNames, lastUpdatedVersion)
+	setlistData, err := s.setlistGenerator.Generate(
+		createSetlist(nil, songs, true, strings.Join(instrumentNames, ", ")))
+	if err != nil {
+		return DownloadableFile{}, nil, err
+	}
+	setlistName := generateAllSongsSetlistName(instrumentNames)
 
-	downloadableFile, fileDownloadErrors, err := s.fileZipper.GetFilesAsZip(fileIDs, outputFileName)
+	downloadableFile, fileDownloadErrors, err := s.fileZipper.GetFilesAsZip(
+		ZipRequest{
+			Files:          []ZipEntry{{FileName: setlistName, Data: setlistData}},
+			FileIDs:        fileIDs,
+			OutputFileName: outputFileName,
+		},
+	)
 	if err != nil {
 		return DownloadableFile{}, fileDownloadErrors, err
 	}
@@ -156,5 +173,13 @@ func generateAllSongsDownloadFileName(instrumentNames []string, lastUpdatedVersi
 		"All-Songs-%s-Updated-%s.zip",
 		SanitizeFileName(strings.Join(instrumentNames, "-")),
 		lastUpdatedVersion.Format("2006-01-02-1504"),
+	)
+}
+
+func generateAllSongsSetlistName(instrumentNames []string) string {
+	return fmt.Sprintf(
+		"All Songs - %s - %s.pdf",
+		SanitizeFileName(strings.Join(instrumentNames, "-")),
+		time.Now().Format("2006-01-02-1504"),
 	)
 }

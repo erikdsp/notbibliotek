@@ -365,6 +365,7 @@ type songServiceFixture struct {
 	queryRepository  *mockSongQueryRepository
 	fileZipper       *mockFileZipper
 	instrumentLookup *mockInstrumentLookup
+	setlistGenerator *mockSetlistGenerator
 }
 
 // Helper factory for test setup
@@ -374,6 +375,7 @@ func newSongServiceFixture() songServiceFixture {
 	queryRepository := &mockSongQueryRepository{}
 	fileZipper := &mockFileZipper{}
 	instrumentLookup := &mockInstrumentLookup{}
+	setlistGenerator := &mockSetlistGenerator{}
 
 	return songServiceFixture{
 		service: NewSongService(
@@ -381,10 +383,12 @@ func newSongServiceFixture() songServiceFixture {
 			queryRepository,
 			fileZipper,
 			instrumentLookup,
+			setlistGenerator,
 		),
 		repository:       repository,
 		queryRepository:  queryRepository,
 		fileZipper:       fileZipper,
 		instrumentLookup: instrumentLookup,
+		setlistGenerator: setlistGenerator,
 	}
 }
