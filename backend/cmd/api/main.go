@@ -66,6 +66,7 @@ func main() {
 		songQueryRepository,
 		fileService,
 		instrumentRepository,
+		pdfGenerator,
 	)
 	songVersionService := application.NewSongVersionService(
 		songVersionRepository,
