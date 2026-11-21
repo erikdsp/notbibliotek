@@ -86,7 +86,7 @@ export function ConcertsTab() {
   const deletingSongCount = deletingConcert?.songs.length ?? 0;
 
   return (
-    <section className="mx-auto max-w-4xl rounded-lg">
+    <section className="mx-auto max-w-2xl rounded-lg">
       <Button variant="outline" className="mx-auto flex" onClick={handleAdd}>
         <Plus />
         Add Concert

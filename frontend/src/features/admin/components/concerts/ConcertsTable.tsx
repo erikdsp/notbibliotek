@@ -26,14 +26,13 @@ export function ConcertsTable({
           <TableRow className="text-base">
             <TableHead className="font-normal">Name</TableHead>
             <TableHead className="font-normal">Date</TableHead>
-            <TableHead className="font-normal w-50">Songs</TableHead>
             <TableHead className="font-normal w-2"></TableHead>
             <TableHead className="font-normal w-2"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {concerts.map((concert) => (
-            <ConcertRow concert={concert} onEdit={onEdit} onDelete={onDelete} />
+            <ConcertRow key={concert.id} concert={concert} onEdit={onEdit} onDelete={onDelete} />
           ))}
         </TableBody>
       </Table>
