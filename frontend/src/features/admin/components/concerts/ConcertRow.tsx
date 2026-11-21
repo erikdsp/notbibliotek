@@ -1,6 +1,6 @@
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Pencil, Trash } from "lucide-react";
+import { Pencil, Trash } from "lucide-react";
 import type { ConcertDetailedResponse } from "@/core/types";
 
 type ConcertRowProps = {
@@ -22,9 +22,6 @@ export function ConcertRow({ concert, onEdit, onDelete }: ConcertRowProps) {
     <TableRow>
       <TableCell>{concert.name}</TableCell>
       <TableCell>{concert.date}</TableCell>
-      <TableCell>
-        <ChevronDown className="ml-2 size-5" />
-      </TableCell>
       <TableCell>
         <Button
           variant="ghost"
