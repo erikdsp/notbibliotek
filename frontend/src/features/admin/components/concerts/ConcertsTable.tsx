@@ -33,7 +33,7 @@ export function ConcertsTable({
         </TableHeader>
         <TableBody>
           {concerts.map((concert) => (
-            <ConcertRow concert={concert} onEdit={onEdit} onDelete={onDelete} />
+            <ConcertRow key={concert.id} concert={concert} onEdit={onEdit} onDelete={onDelete} />
           ))}
         </TableBody>
       </Table>

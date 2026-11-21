@@ -19,7 +19,7 @@ export function ConcertRow({ concert, onEdit, onDelete }: ConcertRowProps) {
   }
 
   return (
-    <TableRow key={concert.id}>
+    <TableRow>
       <TableCell>{concert.name}</TableCell>
       <TableCell>{concert.date}</TableCell>
       <TableCell>
