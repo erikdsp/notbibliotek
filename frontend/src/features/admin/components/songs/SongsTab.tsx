@@ -1,18 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { createLogger, formatSongVersion } from "@/utils";
-import { Pencil, Plus } from "lucide-react";
+import { createLogger } from "@/utils";
+import { Plus } from "lucide-react";
 import { SongEditor } from "./SongEditor";
 import { useInstruments, useSongs } from "@/hooks";
-
+import { SongsTable } from "@/features/admin/components/songs/table/SongsTable";
+import type { SongFilters } from "@/services/songs-service";
 
 const log = createLogger("SongsTab");
 
@@ -26,11 +19,15 @@ export function SongsTab() {
     isLoading: instrumentsIsLoading,
     error: instrumentsError,
   } = useInstruments();
+
+  const songFilters: SongFilters = {
+    include_archived: true,
+  };
   const {
     data: songs,
     isLoading: songsIsLoading,
     error: songsError,
-  } = useSongs();
+  } = useSongs(songFilters);
 
   function openEditor(songId: string | null) {
     setIsAddingSong(songId === null);
@@ -54,9 +51,13 @@ export function SongsTab() {
 
   const safeInstruments = instruments ?? [];
   const safeSongs = songs ?? [];
+  const activeSongs = safeSongs.filter(
+    (song) => song.archived_at === null,
+  );
+  const archivedSongs = safeSongs.filter((song) => song.archived_at !== null);
 
   return (
-    <section className="mx-auto max-w-4xl rounded-lg">
+    <section className="mx-auto max-w-3xl rounded-lg">
       <Button
         variant="outline"
         className="mx-auto flex"
@@ -66,38 +67,16 @@ export function SongsTab() {
         Add Song
       </Button>
 
-      <div className="mt-4 rounded-lg border p-1">
-        <Table>
-          <TableHeader className="border-b-2">
-            <TableRow className="text-base">
-              <TableHead className="font-normal">Title</TableHead>
-              <TableHead className="font-normal">Current Version</TableHead>
-              <TableHead className="font-normal w-20 text-right">Edit</TableHead>
-            </TableRow>
-          </TableHeader>
+      <SongsTable songs={activeSongs} openEditor={openEditor} />
 
-          <TableBody>
-            {safeSongs.map((song) => (
-              <TableRow key={song.id}>
-                <TableCell className="font-medium">{song.title}</TableCell>
-                <TableCell>
-                  {formatSongVersion(song, song.current_version_id) ?? "—"}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`Edit ${song.title}`}
-                    onClick={() => openEditor(song.id)}
-                  >
-                    <Pencil className="size-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      {archivedSongs.length > 0 && (
+        <>
+          <h3 className="ml-4 mt-12 mb-2 text-base font-normal ">
+            Archived Songs
+          </h3>
+          <SongsTable songs={archivedSongs} openEditor={openEditor} />
+        </>
+      )}
 
       {editorOpen && (
         <SongEditor

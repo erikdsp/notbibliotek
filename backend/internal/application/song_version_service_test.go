@@ -1472,7 +1472,6 @@ type songVersionServiceFixture struct {
 	fileStorage              *mockFileStorage
 }
 
-// Helper factory for test setup
 func newSongVersionServiceFixture(songID *ulid.ULID, title string, versionID *ulid.ULID) songVersionServiceFixture {
 
 	repository := &mockSongVersionRepository{}

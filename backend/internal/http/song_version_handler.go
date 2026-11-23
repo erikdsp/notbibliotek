@@ -63,7 +63,7 @@ func (h *SongVersionHandler) UploadScore(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := parseMultipartForm(w, r); err != nil {
+	if err := parseLimitedMultipartForm(w, r); err != nil {
 		writeError(w, "parse error", http.StatusBadRequest)
 		return
 	}
@@ -112,7 +112,7 @@ func (h *SongVersionHandler) UpdateScore(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := parseMultipartForm(w, r); err != nil {
+	if err := parseLimitedMultipartForm(w, r); err != nil {
 		writeError(w, "parse error", http.StatusBadRequest)
 		return
 	}
@@ -195,7 +195,7 @@ func (h *SongVersionHandler) UploadPart(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if err := parseMultipartForm(w, r); err != nil {
+	if err := parseLimitedMultipartForm(w, r); err != nil {
 		writeError(w, "parse error", http.StatusBadRequest)
 		return
 	}
@@ -252,7 +252,7 @@ func (h *SongVersionHandler) UpdatePart(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if err := parseMultipartForm(w, r); err != nil {
+	if err := parseLimitedMultipartForm(w, r); err != nil {
 		writeError(w, "parse error", http.StatusBadRequest)
 		return
 	}
@@ -487,8 +487,7 @@ func (h *SongVersionHandler) DeletePartInstrumentConnection(w http.ResponseWrite
 
 }
 
-// Sets maximum upload size and parses multipart form
-func parseMultipartForm(w http.ResponseWriter, r *http.Request) error {
+func parseLimitedMultipartForm(w http.ResponseWriter, r *http.Request) error {
 	r.Body = http.MaxBytesReader(w, r.Body, maxUploadFileSize)
 	return r.ParseMultipartForm(maxUploadFileSize)
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
-// Internal type for Concert with Song Details
 type PartInstruments struct {
 	PartID      ulid.ULID
 	Instruments []domain.Instrument

@@ -16,6 +16,7 @@ import { useCreateInstrument, useUpdateInstrument } from "@/hooks";
 import { createLogger } from "@/utils/logger";
 import { nameToKey } from "@/features/admin/lib/name-to-key";
 import { DuplicateInstrumentDialog } from "@/features/admin/components/instruments/DuplicateInstrumentDialog";
+import { UnsavedChangesOnCloseDialog } from "@/features/admin/components/shared/dialogs";
 
 const log = createLogger("InstrumentEditor");
 
@@ -34,17 +35,33 @@ export function InstrumentEditor({
 }: InstrumentEditorProps) {
   const originalName = editingInstrument?.name ?? "";
   const [name, setName] = useState(originalName);
+  const [duplicateWarningOpen, setDuplicateWarningOpen] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
+
   const isEditing = editingInstrument !== null;
   const instrumentKeys = new Set(instruments.map((i) => i.key));
   const isDirty = name.trim() !== originalName;
   const isValid = name.trim().length > 0;
-  const [duplicateWarningOpen, setDuplicateWarningOpen] = useState(false);
 
   const duplicateInstrument = instruments.find(
     (instrument) =>
       instrument.id !== editingInstrument?.id &&
       instrument.name.trim().toLowerCase() === name.trim().toLowerCase(),
   );
+
+  function requestClose() {
+    if (isEditing && isDirty) {
+      setConfirmClose(true);
+    } else {
+      onOpenChange(false);
+    }
+  }
+
+  function handleOpenChange(open: boolean) {
+    if (!open) {
+      requestClose();
+    }
+  }
 
   function handleSetName(newName: string) {
     setName(newName);
@@ -101,7 +118,7 @@ export function InstrumentEditor({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
@@ -135,11 +152,7 @@ export function InstrumentEditor({
             )}
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={requestClose}>
                 Cancel
               </Button>
               <Button
@@ -158,6 +171,15 @@ export function InstrumentEditor({
         </DialogContent>
       </Dialog>
 
+      <UnsavedChangesOnCloseDialog
+        open={confirmClose}
+        onOpenChange={setConfirmClose}
+        onDiscardAndClose={() => {
+          setConfirmClose(false);
+          onOpenChange(false);
+        }}
+      />
+
       <DuplicateInstrumentDialog
         open={duplicateWarningOpen}
         onOpenChange={setDuplicateWarningOpen}
@@ -168,7 +190,6 @@ export function InstrumentEditor({
         }
         onSaveAnyway={saveInstrument}
       />
-
     </>
   );
 }

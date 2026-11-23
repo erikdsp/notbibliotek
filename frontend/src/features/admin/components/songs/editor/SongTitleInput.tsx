@@ -6,6 +6,7 @@ type SongTitleInputProps = {
   onSetTitle: (value: string) => void
   hasSong: boolean;
   titleError: string | undefined;
+  disabled: boolean;
 };
 
 export function SongTitleInput({
@@ -13,6 +14,7 @@ export function SongTitleInput({
   onSetTitle,
   hasSong,
   titleError,
+  disabled,
 }: SongTitleInputProps) {
   return (
     <div className="space-y-2">
@@ -23,6 +25,7 @@ export function SongTitleInput({
         onChange={(event) => onSetTitle(event.target.value)}
         placeholder="Song title"
         className={hasSong ? "w-[66%]" : "w-full"}
+        disabled={disabled}
       />
 
       {titleError && (

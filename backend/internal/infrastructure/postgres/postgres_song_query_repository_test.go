@@ -325,9 +325,9 @@ func Test_WhenRowHasIncompletePartThenToApplicationReturnsCorrectError(t *testin
 	}
 }
 
-func Test_WhenArchivedIsTrueThenSongDetailsQueryFiltersForArchivedSongs(t *testing.T) {
+func Test_WhenIncludeArchivedIsTrueThenSongDetailsQueryDoesNotFilterArchivedSongs(t *testing.T) {
 	query := application.SongQuery{
-		Archived: true,
+		IncludeArchived: true,
 	}
 
 	builder := buildSongDetailsQuery(query)
@@ -337,14 +337,14 @@ func Test_WhenArchivedIsTrueThenSongDetailsQueryFiltersForArchivedSongs(t *testi
 		t.Fatalf("failed to build SQL: %v", err)
 	}
 
-	if !strings.Contains(sql, "s.archived_at IS NOT NULL") {
-		t.Errorf("expected archived filter, got query: %s", sql)
+	if strings.Contains(sql, "s.archived_at IS") {
+		t.Errorf("expected no archived filter, got query: %s", sql)
 	}
 }
 
 func Test_WhenArchivedIsFalseThenSongDetailsQueryFiltersForNonArchivedSongs(t *testing.T) {
 	query := application.SongQuery{
-		Archived: false,
+		IncludeArchived: false,
 	}
 
 	builder := buildSongDetailsQuery(query)
@@ -363,7 +363,7 @@ func Test_WhenIncludeScoreIsTrueThenAddScoreColumnsIncludesScore(t *testing.T) {
 
 	includeScore := true
 
-	sqlBuilder := psql.Select("Test")
+	sqlBuilder := postgresBaseBuilder.Select("Test")
 	sqlBuilder = addScoreColumns(sqlBuilder, includeScore)
 	sql, _, err := sqlBuilder.ToSql()
 
@@ -388,7 +388,7 @@ func Test_WhenIncludeScoreIsFalseThenAddScoreColumnsExcludesScore(t *testing.T) 
 
 	includeScore := false
 
-	sqlBuilder := psql.Select("Test")
+	sqlBuilder := postgresBaseBuilder.Select("Test")
 	sqlBuilder = addScoreColumns(sqlBuilder, includeScore)
 	sql, _, err := sqlBuilder.ToSql()
 
@@ -415,7 +415,7 @@ func Test_WhenPartsAreProvidedThenAddJoinPartsFiltersJoinedParts(t *testing.T) {
 		Parts: []string{"violin1", "violin2"},
 	}
 
-	sqlBuilder := psql.Select("Test")
+	sqlBuilder := postgresBaseBuilder.Select("Test")
 	sqlBuilder = addJoinParts(sqlBuilder, query.Parts, query.Instruments, query.IncludeUnconnectedParts)
 	sql, args, err := sqlBuilder.ToSql()
 
@@ -441,7 +441,7 @@ func Test_WhenPartsAreProvidedThenAddJoinPartsFiltersJoinedParts(t *testing.T) {
 func Test_WhenPartsAreNotProvidedThenAddJoinPartsIncludesAllParts(t *testing.T) {
 	query := application.SongQuery{}
 
-	sqlBuilder := psql.Select("Test")
+	sqlBuilder := postgresBaseBuilder.Select("Test")
 	sqlBuilder = addJoinParts(sqlBuilder, query.Parts, query.Instruments, query.IncludeUnconnectedParts)
 	sql, args, err := sqlBuilder.ToSql()
 
@@ -469,7 +469,7 @@ func Test_WhenInstrumentsAreProvidedThenAddJoinPartsAddsExistsClause(t *testing.
 		Instruments: []string{"violin1", "violin2"},
 	}
 
-	sqlBuilder := psql.Select("Test")
+	sqlBuilder := postgresBaseBuilder.Select("Test")
 	sqlBuilder = addJoinParts(sqlBuilder, query.Parts, query.Instruments, query.IncludeUnconnectedParts)
 	sql, args, err := sqlBuilder.ToSql()
 
@@ -514,7 +514,7 @@ func Test_WhenIncludeUnconnectedPartsIsTrueThenAddJoinPartsAddsNotExistsClause(t
 		IncludeUnconnectedParts: true,
 	}
 
-	sqlBuilder := psql.Select("Test")
+	sqlBuilder := postgresBaseBuilder.Select("Test")
 	sqlBuilder = addJoinParts(sqlBuilder, query.Parts, query.Instruments, query.IncludeUnconnectedParts)
 	sql, args, err := sqlBuilder.ToSql()
 
@@ -551,7 +551,7 @@ func Test_WhenInstrumentsAndUnconnectedPartsAreBothProvidedThenConditionsAreComb
 	}
 
 	sqlBuilder := addJoinParts(
-		psql.Select("Test"),
+		postgresBaseBuilder.Select("Test"),
 		query.Parts,
 		query.Instruments,
 		query.IncludeUnconnectedParts,
@@ -578,7 +578,7 @@ func Test_WhenConcertsAreProvidedThenbuildSongDetailsQueryAddsExistsClause(t *te
 		Concerts: []string{"gig1", "gig2"},
 	}
 
-	sqlBuilder := psql.Select("Test")
+	sqlBuilder := postgresBaseBuilder.Select("Test")
 	sqlBuilder = buildSongDetailsQuery(query)
 	sql, args, err := sqlBuilder.ToSql()
 

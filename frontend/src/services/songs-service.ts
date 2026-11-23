@@ -11,7 +11,7 @@ import {
 const log = createLogger("songsService");
 
 export interface SongFilters {
-  archived?: boolean;
+  include_archived?: boolean;
   search?: string;
   concert?: string;
   part?: string[];
@@ -30,8 +30,8 @@ export async function fetchSongs(
 ): Promise<SongResponse[]> {
   const url = new URL(`${API_BASE_URL}/songs`);
 
-  if (filters.archived !== undefined) {
-    url.searchParams.set("archived", String(filters.archived));
+  if (filters.include_archived !== undefined) {
+    url.searchParams.set("include_archived", String(filters.include_archived));
   }
 
   if (filters.search) {
@@ -139,12 +139,12 @@ export async function createSong(title: string): Promise<Song> {
 export async function updateSong(
   songId: string,
   title?: string,
-  archive?: boolean,
+  archived?: boolean,
 ): Promise<Song> {
   const url = new URL(`${API_BASE_URL}/songs/${songId}`);
 
   try {
-    const song = await apiPatch<Song>(url.toString(), { title, archive });
+    const song = await apiPatch<Song>(url.toString(), { title, archived });
 
     log.debug("url: ", url.toString(), "raw payload: ", song);
 

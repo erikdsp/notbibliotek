@@ -39,7 +39,7 @@ paths:
         "401":
           $ref: "#/components/responses/AuthenticationRequired"
       parameters:
-        - $ref: "#/components/parameters/archivedQuery"
+        - $ref: "#/components/parameters/includeArchivedQuery"
         - $ref: "#/components/parameters/searchQuery"
         - $ref: "#/components/parameters/concertQuery"
         - $ref: "#/components/parameters/partQuery"
@@ -1297,7 +1297,8 @@ components:
           type: string
           format: date
     UpdateSongRequest:
-      type: object
+      type: object  
+      minProperties: 1
       properties:
         title:
           type: string
@@ -1377,11 +1378,13 @@ components:
       required: true
       schema:
         $ref: "#/components/schemas/ULID"
-    archivedQuery:
-      name: archived
+    includeArchivedQuery:
+      name: include_archived
       in: query
       required: false
-      description: Filter songs by archive status. When true, only archived songs are returned. When false, only non-archived songs are returned.
+      description: >
+        Filter songs by archive status. When true, archived songs are included 
+        in the result. Otherwise only non-archived songs are returned.
       schema:
         type: boolean
         default: false
@@ -1389,14 +1392,18 @@ components:
       name: search
       in: query
       required: false
-      description: Free text search on title, part, instrument and concert. When present, only songs matching the search are returned.
+      description: >
+        Free text search on title, part, instrument and concert. 
+        When present, only songs matching the search are returned.
       schema:
         type: string
     partQuery:
       name: part
       in: query
       required: false
-      description: When present, only parts with a key matching one of the provided values are returned; otherwise all parts are returned.
+      description: >
+        When present, only parts with a key matching one of the provided values 
+        are returned; otherwise all parts are returned.
       style: form
       explode: true
       schema:
@@ -1427,7 +1434,9 @@ components:
       name: concert
       in: query
       required: false
-      description: When present, only songs included in the provided concert(s) are returned; otherwise all songs are returned.
+      description: >
+        When present, only songs included in the provided concert(s) are returned; 
+        Archived songs are included in the result when present. 
       schema:
         type: array
         items: 

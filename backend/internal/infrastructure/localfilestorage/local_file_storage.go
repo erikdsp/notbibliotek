@@ -18,7 +18,6 @@ func NewLocalFileStorage(baseDir string) *LocalFileStorage {
 	}
 }
 
-// construct a local file path
 // Note .pdf suffix added for convenient inspecting of uploaded files locally
 func constructFilePath(baseDir string, fileID ulid.ULID) string {
 	return filepath.Join(baseDir, fileID.String()+".pdf")

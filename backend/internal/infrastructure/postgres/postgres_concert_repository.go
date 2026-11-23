@@ -38,7 +38,7 @@ const deleteConcertQuery = `
 `
 
 func buildConcertDetailsQuery() sq.SelectBuilder {
-	return psql.
+	return postgresBaseBuilder.
 		Select(
 			"c.id",
 			"c.key",
