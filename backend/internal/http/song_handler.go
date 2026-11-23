@@ -181,7 +181,15 @@ func (h *SongHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *SongHandler) Update(w http.ResponseWriter, r *http.Request) {
 	var request UpdateSongRequest
 
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&request); err != nil {
+		writeError(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	if request.Title == nil && request.Archived == nil {
 		writeError(w, "bad request", http.StatusBadRequest)
 		return
 	}
