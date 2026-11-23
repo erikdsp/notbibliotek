@@ -11,6 +11,7 @@ type PartsSectionProps = {
   instruments: Instrument[];
   partErrors: Record<string, PartErrors>;
   isPublished: boolean;
+  isArchived: boolean;
   onAddPartFiles: (files: FileList | File[]) => void;
   onUpdatePart: (localId: string, update: Partial<EditablePart>) => void;
   onRemovePart: (localId: string) => void;
@@ -32,6 +33,7 @@ export function PartsSection({
   instruments,
   partErrors,
   isPublished,
+  isArchived,
   onAddPartFiles,
   onUpdatePart,
   onRemovePart,
@@ -40,6 +42,8 @@ export function PartsSection({
   onRemoveInstrumentConnection,
   onPreviewFile,
 }: PartsSectionProps) {
+  const filesReadOnly = isPublished || isArchived;
+
   const partsInputRef = useRef<HTMLInputElement>(null);
 
   function handleDropPartFiles(event: React.DragEvent<HTMLDivElement>) {
@@ -65,7 +69,7 @@ export function PartsSection({
     <section className="space-y-3">
       <h3 className="font-semibold">Parts</h3>
 
-      {!isPublished && (
+      {!filesReadOnly && (
         <div
           className="flex min-h-28 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-4 text-center"
           onDragOver={(event) => event.preventDefault()}
@@ -100,6 +104,7 @@ export function PartsSection({
                 instruments={instruments}
                 partErrors={partErrors[part.local_id]}
                 isPublished={isPublished}
+                isArchived={isArchived}
                 onUpdatePart={onUpdatePart}
                 onRemovePart={onRemovePart}
                 onAddInstrumentConnection={onAddInstrumentConnection}

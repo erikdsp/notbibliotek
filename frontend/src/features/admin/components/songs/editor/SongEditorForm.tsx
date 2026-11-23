@@ -53,6 +53,8 @@ import {
 import { PdfPreviewDialog } from "@/components/pdf-preview";
 import type { Preview } from "@/types";
 import { useDuplicateSongVersion } from "@/hooks/use-duplicate-song-version";
+import { ConfirmArchiveDialog } from "@/features/admin/components/songs/editor/dialogs/ConfirmArchiveDialog";
+import { updateSongArchiveStatus } from "@/features/admin/services/update-song-archive-status";
 
 const log = createLogger("SongEditorForm");
 
@@ -79,13 +81,6 @@ export function SongEditorForm({
   const [versionId, setVersionId] = useState<string | null>(() =>
     initialVersionId(song),
   );
-
-  const {
-    data: partInstruments,
-    isPending: instrumentsPending,
-    isError: instrumentsError,
-  } = usePartInstruments(song?.id ?? null, versionId);
-
   const [editedScore, setEditedScore] = useState<ScoreEdits | null>(null);
   const [editedParts, setEditedParts] = useState<PartsEdits | null>(null);
   const [pendingPartUpload, setPendingPartUpload] =
@@ -94,14 +89,37 @@ export function SongEditorForm({
   const [confirmClose, setConfirmClose] = useState(false);
   const [saveErrorOpen, setSaveErrorOpen] = useState(false);
   const [confirmPublish, setConfirmPublish] = useState(false);
+  const [confirmArchive, setConfirmArchive] = useState(false);
   const [preview, setPreview] = useState<Preview | null>(null);
 
   const previewFileId = preview?.type === "saved" ? preview.fileId : null;
+
   const {
     data: savedPreviewFile,
     isFetching: previewIsLoading,
     error: previewError,
   } = usePdfPreview(previewFileId);
+  const {
+    data: partInstruments,
+    isPending: instrumentsPending,
+    isError: instrumentsError,
+  } = usePartInstruments(song?.id ?? null, versionId);
+
+  const saveDraftMutation = useMutation({
+    mutationFn: saveSongDraft,
+    onSuccess: handleSaveDraftSuccess,
+    onError: handleSaveDraftError,
+  });
+  const archiveMutation = useMutation({
+    mutationFn: updateSongArchiveStatus,
+    onSuccess: handleArchiveSuccess,
+    onError: handleArchiveError,
+  });
+  const createSongMutation = useCreateSong();
+  const createSongVersionMutation = useCreateSongVersion();
+  const duplicateSongVersionMutation = useDuplicateSongVersion();
+  const publishSongVersionMutation = usePublishSongVersion();
+
   const previewFile =
     preview?.type === "local" ? preview.file : (savedPreviewFile ?? null);
 
@@ -124,17 +142,25 @@ export function SongEditorForm({
   const partsAreDirty = partsHaveChanged(parts, originalParts);
   const versionIsDirty = scoreIsDirty || partsAreDirty;
   const isDirty = titleIsDirty || versionIsDirty;
-
   const validationErrors = validateSongDraft(title, parts);
+
+  const selectedVersion = song?.versions.find(
+    (version) => version.song_version_id === versionId,
+  );
+
   const isValid =
     validationErrors.title === undefined &&
     Object.keys(validationErrors.parts).length === 0;
 
   const hasScore = score !== null;
-  const selectedVersion = song?.versions.find(
-    (version) => version.song_version_id === versionId,
-  );
   const isPublished = selectedVersion?.published_at != null;
+  const isArchived = song?.archived_at != null;
+
+  const saveDisabled = !isDirty || saveDraftMutation.isPending || !isValid;
+
+  const publishDisabled =
+    versionId === null || !isValid || !hasScore || saveDraftMutation.isPending;
+
   const versionOptions = createVersionOptions(song);
 
   function requestClose() {
@@ -150,9 +176,6 @@ export function SongEditorForm({
       requestClose();
     }
   }
-
-  const createSongMutation = useCreateSong();
-  const createSongVersionMutation = useCreateSongVersion();
 
   async function handleCreateSong() {
     try {
@@ -184,8 +207,6 @@ export function SongEditorForm({
       log.error("Failed to create song version:", error);
     }
   }
-
-  const duplicateSongVersionMutation = useDuplicateSongVersion();
 
   async function handleCreateDuplicateDraft() {
     if (song === null || versionId === null) return;
@@ -411,12 +432,6 @@ export function SongEditorForm({
     await refetchSongQueries(queryClient, song.id, versionId);
   }
 
-  const saveDraftMutation = useMutation({
-    mutationFn: saveSongDraft,
-    onSuccess: handleSaveDraftSuccess,
-    onError: handleSaveDraftError,
-  });
-
   function handleSaveDraft() {
     if (song === null) {
       return Promise.resolve();
@@ -435,8 +450,6 @@ export function SongEditorForm({
       originalParts,
     });
   }
-
-  const publishSongVersionMutation = usePublishSongVersion();
 
   async function handlePublishVersion() {
     if (
@@ -474,6 +487,55 @@ export function SongEditorForm({
     }
   }
 
+  function handleArchiveDialogOpenChange(open: boolean) {
+    setConfirmArchive(open);
+
+    if (!open) {
+      archiveMutation.reset();
+    }
+  }
+
+  function handleOpenArchiveDialog() {
+    setConfirmArchive(true);
+  }
+
+  function handleConfirmArchiveStatusChange() {
+    if (isArchived) {
+      handleUnarchive();
+    } else {
+      handleArchive();
+    }
+  }
+
+  function handleArchive() {
+    if (song === null) return;
+
+    archiveMutation.mutate({
+      songId: song.id,
+      shouldBeArchived: true,
+    });
+  }
+
+  function handleUnarchive() {
+    if (song === null) return;
+
+    archiveMutation.mutate({
+      songId: song.id,
+      shouldBeArchived: false,
+    });
+  }
+
+  async function handleArchiveSuccess() {
+    if (song === null) return;
+
+    await refetchSongQueries(queryClient, song.id, versionId);
+    handleArchiveDialogOpenChange(false);
+  }
+
+  function handleArchiveError(error: Error) {
+    log.error("Failed to update song archive status", error);
+  }
+
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -498,6 +560,7 @@ export function SongEditorForm({
                 onSetTitle={setTitle}
                 hasSong={song !== null}
                 titleError={validationErrors.title}
+                disabled={isArchived}
               />
 
               {song !== null && (
@@ -513,6 +576,7 @@ export function SongEditorForm({
                       createSongVersionMutation.isPending ||
                       duplicateSongVersionMutation.isPending
                     }
+                    isArchived={isArchived}
                   />
 
                   {versionId === null ? (
@@ -523,14 +587,20 @@ export function SongEditorForm({
                     <p>Failed to load instruments.</p>
                   ) : (
                     <>
-                      {isPublished && (
+                      {isArchived && (
+                        <p className="text-sm text-muted-foreground">
+                          Archived song. All fields are read-only. Unarchive if
+                          you need to make changes.
+                        </p>
+                      )}
+                      {!isArchived && isPublished && (
                         <p className="text-sm text-muted-foreground">
                           Published version. PDFs are read-only.
                         </p>
                       )}
                       <ScoreSection
                         score={score}
-                        isPublished={isPublished}
+                        disabled={isPublished || isArchived}
                         onAddScoreFile={addScoreFile}
                         onRemoveScore={handleRemoveScore}
                         onPreviewFile={handlePreviewFile}
@@ -541,6 +611,7 @@ export function SongEditorForm({
                         instruments={instruments}
                         partErrors={validationErrors.parts}
                         isPublished={isPublished}
+                        isArchived={isArchived}
                         onAddPartFiles={addPartFiles}
                         onUpdatePart={updateEditablePart}
                         onRemovePart={handleRemovePart}
@@ -569,19 +640,15 @@ export function SongEditorForm({
               ) : (
                 <EditSongFooter
                   isPublished={isPublished}
+                  isArchived={isArchived}
+                  publishDisabled={publishDisabled}
+                  archiveDisabled={isDirty}
+                  saveDisabled={saveDisabled}
                   isSaving={saveDraftMutation.isPending}
-                  saveDisabled={
-                    !isDirty || saveDraftMutation.isPending || !isValid
-                  }
-                  publishDisabled={
-                    versionId === null ||
-                    !isValid ||
-                    !hasScore ||
-                    saveDraftMutation.isPending
-                  }
                   onClose={requestClose}
                   onSave={handleSaveDraft}
                   onPublish={() => setConfirmPublish(true)}
+                  onOpenArchiveDialog={handleOpenArchiveDialog}
                 />
               )}
             </div>
@@ -643,6 +710,15 @@ export function SongEditorForm({
         isSaving={saveDraftMutation.isPending}
         isPublishing={publishSongVersionMutation.isPending}
         publishError={publishSongVersionMutation.isError}
+      />
+
+      <ConfirmArchiveDialog
+        open={confirmArchive}
+        onOpenChange={handleArchiveDialogOpenChange}
+        isArchived={isArchived}
+        onConfirm={handleConfirmArchiveStatusChange}
+        isArchiving={archiveMutation.isPending}
+        archiveError={archiveMutation.isError}
       />
 
       {pendingPartUpload !== null && (

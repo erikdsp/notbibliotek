@@ -7,7 +7,7 @@ import { useRef } from "react";
 
 type ScoreSectionProps = {
   score: EditableScore | null;
-  isPublished: boolean;
+  disabled: boolean;
   onAddScoreFile: (file: File) => void;
   onRemoveScore: () => void;
   onPreviewFile: (
@@ -19,7 +19,7 @@ type ScoreSectionProps = {
 
 export function ScoreSection({
   score,
-  isPublished,
+  disabled,
   onAddScoreFile,
   onRemoveScore,
   onPreviewFile,
@@ -90,7 +90,7 @@ export function ScoreSection({
 
           <div className="flex-1" />
 
-          {!isPublished && (
+          {!disabled && (
             <Button
               variant="ghost"
               size="icon-sm"
@@ -103,7 +103,7 @@ export function ScoreSection({
         </div>
       )}
 
-      {!isPublished && (
+      {!disabled && (
         <div
           className="flex min-h-28 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-4 text-center"
           onDragOver={(event) => event.preventDefault()}

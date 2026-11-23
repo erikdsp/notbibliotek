@@ -18,6 +18,7 @@ type VersionControlsProps = {
   onCreateDuplicateDraft: () => void;
   isDirty: boolean;
   isCreatingVersion: boolean;
+  isArchived: boolean;
 };
 
 export function VersionControls({
@@ -28,6 +29,7 @@ export function VersionControls({
   onCreateDuplicateDraft,
   isDirty,
   isCreatingVersion,
+  isArchived,
 }: VersionControlsProps) {
   return (
     <div className="space-y-2">
@@ -42,11 +44,11 @@ export function VersionControls({
           className="w-2/3"
         />
 
-        <Tooltip disabled={!isDirty || versionId === null}>
+        <Tooltip disabled={!isDirty || versionId === null || isArchived}>
           <TooltipTrigger render={<span />}>
             <Button
               variant="outline"
-              disabled={isDirty || isCreatingVersion || versionId === null}
+              disabled={isDirty || isCreatingVersion || versionId === null || isArchived}
               onClick={onCreateDuplicateDraft}
               className="ml-auto"
             >
@@ -60,11 +62,11 @@ export function VersionControls({
           </TooltipContent>
         </Tooltip>
 
-        <Tooltip disabled={!isDirty}>
+        <Tooltip disabled={!isDirty || isArchived}>
           <TooltipTrigger render={<span />}>
             <Button
               variant="outline"
-              disabled={isDirty || isCreatingVersion}
+              disabled={isDirty || isCreatingVersion || isArchived}
               onClick={onCreateEmptyDraft}
             >
               <Plus />

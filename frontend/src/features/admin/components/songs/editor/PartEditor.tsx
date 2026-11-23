@@ -18,6 +18,7 @@ type PartEditorProps = {
   instruments: Instrument[];
   partErrors: PartErrors;
   isPublished: boolean;
+  isArchived: boolean;
   onUpdatePart: (localId: string, update: Partial<EditablePart>) => void;
   onRemovePart: (localId: string) => void;
   onReplaceFile: (localId: string, file: File) => void;
@@ -38,6 +39,7 @@ export function PartEditor({
   instruments,
   partErrors,
   isPublished,
+  isArchived,
   onUpdatePart,
   onRemovePart,
   onReplaceFile,
@@ -45,6 +47,8 @@ export function PartEditor({
   onRemoveInstrumentConnection,
   onPreviewFile,
 }: PartEditorProps) {
+  const readOnly = isPublished || isArchived;
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handlePreviewFile() {
@@ -119,7 +123,7 @@ export function PartEditor({
 
         <div className="flex-1" />
 
-        {!isPublished && (
+        {!readOnly && (
           <>
             <div
               className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed py-1 px-10 text-center mr-6"
@@ -162,7 +166,7 @@ export function PartEditor({
           <Label>Part Name</Label>
           <Input
             value={part.name}
-            disabled={isPublished}
+            disabled={readOnly}
             onChange={handlePartNameChange}
             aria-invalid={!!partErrors?.name}
           />
@@ -179,14 +183,17 @@ export function PartEditor({
               instrumentIds={part.instrument_ids}
               instruments={instruments}
               onRemoveInstrumentConnection={handleRemoveInstrumentConnection}
+              readOnly={isArchived}
             />
 
-            <AddPartInstrumentsPopover
-              instrumentIds={part.instrument_ids}
-              instruments={instruments}
-              onAddInstrumentConnection={handleAddInstrumentConnection}
-              onRemoveInstrumentConnection={handleRemoveInstrumentConnection}
-            />
+            {!isArchived && (
+              <AddPartInstrumentsPopover
+                instrumentIds={part.instrument_ids}
+                instruments={instruments}
+                onAddInstrumentConnection={handleAddInstrumentConnection}
+                onRemoveInstrumentConnection={handleRemoveInstrumentConnection}
+              />
+            )}
           </div>
         </div>
       </div>
