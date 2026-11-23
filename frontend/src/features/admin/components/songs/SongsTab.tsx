@@ -1,18 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { createLogger, formatSongVersion } from "@/utils";
-import { Pencil, Plus } from "lucide-react";
+import { createLogger } from "@/utils";
+import { Plus } from "lucide-react";
 import { SongEditor } from "./SongEditor";
 import { useInstruments, useSongs } from "@/hooks";
-
+import { SongsTable } from "@/features/admin/components/songs/table/SongsTable";
 
 const log = createLogger("SongsTab");
 
@@ -66,38 +58,7 @@ export function SongsTab() {
         Add Song
       </Button>
 
-      <div className="mt-4 rounded-lg border p-1">
-        <Table>
-          <TableHeader className="border-b-2">
-            <TableRow className="text-base">
-              <TableHead className="font-normal">Title</TableHead>
-              <TableHead className="font-normal">Current Version</TableHead>
-              <TableHead className="font-normal w-20 text-right">Edit</TableHead>
-            </TableRow>
-          </TableHeader>
-
-          <TableBody>
-            {safeSongs.map((song) => (
-              <TableRow key={song.id}>
-                <TableCell className="font-medium">{song.title}</TableCell>
-                <TableCell>
-                  {formatSongVersion(song, song.current_version_id) ?? "—"}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`Edit ${song.title}`}
-                    onClick={() => openEditor(song.id)}
-                  >
-                    <Pencil className="size-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      <SongsTable songs={safeSongs} openEditor={openEditor} />
 
       {editorOpen && (
         <SongEditor
