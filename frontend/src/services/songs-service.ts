@@ -139,12 +139,12 @@ export async function createSong(title: string): Promise<Song> {
 export async function updateSong(
   songId: string,
   title?: string,
-  archive?: boolean,
+  archived?: boolean,
 ): Promise<Song> {
   const url = new URL(`${API_BASE_URL}/songs/${songId}`);
 
   try {
-    const song = await apiPatch<Song>(url.toString(), { title, archive });
+    const song = await apiPatch<Song>(url.toString(), { title, archived });
 
     log.debug("url: ", url.toString(), "raw payload: ", song);
 
