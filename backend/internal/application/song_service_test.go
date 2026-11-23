@@ -368,7 +368,6 @@ type songServiceFixture struct {
 	setlistGenerator *mockSetlistGenerator
 }
 
-// Helper factory for test setup
 func newSongServiceFixture() songServiceFixture {
 
 	repository := &mockSongRepository{}

@@ -305,10 +305,8 @@ func (r *PostgresSongQueryRepository) GetByID(id ulid.ULID, query application.So
 	return result, nil
 }
 
-// Base builder for SQL queries
-var psql = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+var postgresBaseBuilder = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-// SQL string that left joins the current version through a select subquery
 const joinCurrentVersion = `
 LEFT JOIN song_versions sv ON sv.id = (
 	SELECT sv2.id
@@ -320,10 +318,9 @@ LEFT JOIN song_versions sv ON sv.id = (
 )
 `
 
-// Builds SQL with args for GetAll query
 func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
 
-	sql := psql.
+	sql := postgresBaseBuilder.
 		Select(
 			"s.id",
 			"s.title",
@@ -366,10 +363,9 @@ func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
 	return sql
 }
 
-// Builds SQL with args for GetByID query
 func buildSongByIDQuery(id ulid.ULID, query application.SongByIDQuery) sq.SelectBuilder {
 
-	sql := psql.
+	sql := postgresBaseBuilder.
 		Select(
 			"s.id",
 			"s.title",
@@ -405,7 +401,6 @@ func buildSongByIDQuery(id ulid.ULID, query application.SongByIDQuery) sq.Select
 	return sql
 }
 
-// adds score columns and conditional left join
 func addScoreColumns(sql sq.SelectBuilder, includeScore bool) sq.SelectBuilder {
 	if includeScore {
 		return sql.
@@ -430,8 +425,6 @@ func addScoreColumns(sql sq.SelectBuilder, includeScore bool) sq.SelectBuilder {
 	}
 }
 
-// adds left join for parts and conditional filtering by part key(s) and instrument key(s).
-// When both filters are provided, parts matching either filter are included.
 func addJoinParts(sql sq.SelectBuilder, parts []string, instruments []string, includeUnassignedParts bool) sq.SelectBuilder {
 
 	conditions := sq.Or{}
@@ -462,8 +455,6 @@ func addJoinParts(sql sq.SelectBuilder, parts []string, instruments []string, in
 	return sql.LeftJoin("files part_file ON part_file.id = part.file_id")
 }
 
-// partMatchesInstrumentCondition returns an EXISTS condition that checks
-// whether a part is linked to at least one of the specified instruments.
 func partMatchesInstrumentCondition(instruments []string) sq.Sqlizer {
 	return sq.Expr(`
 		EXISTS (
@@ -476,8 +467,6 @@ func partMatchesInstrumentCondition(instruments []string) sq.Sqlizer {
 	`, sq.Eq{"i.key": instruments})
 }
 
-// noInstrumentCondition returns a NOT EXISTS condition that checks
-// whether a part has no instrument connections.
 func noInstrumentCondition() sq.Sqlizer {
 	return sq.Expr(`
             NOT EXISTS (
@@ -488,8 +477,6 @@ func noInstrumentCondition() sq.Sqlizer {
         `)
 }
 
-// songMatchesConcertCondition returns an EXISTS condition that checks
-// whether a song is linked to at least one of the specified concerts.
 func songMatchesConcertCondition(concerts []string) sq.Sqlizer {
 	return sq.Expr(`
 			EXISTS (

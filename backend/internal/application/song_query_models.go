@@ -7,34 +7,29 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
-// SongDetails contains a song and rich version data.
 type SongDetails struct {
 	Song             domain.Song
 	CurrentVersionID *ulid.ULID
 	Versions         []VersionDetails
 }
 
-// VersionDetails contains rich details about a song version
 type VersionDetails struct {
 	Version SongVersionDetails
 	Score   *ScoreDetails
 	Parts   []PartDetails
 }
 
-// Internal type for song version data used by VersionDetails
 type SongVersionDetails struct {
 	ID          ulid.ULID
 	PublishedAt *time.Time
 	CreatedAt   time.Time
 }
 
-// Internal type for score data used by VersionDetails
 type ScoreDetails struct {
 	ID   ulid.ULID
 	File domain.File
 }
 
-// Internal type for part data used by VersionDetails
 type PartDetails struct {
 	ID   ulid.ULID
 	Key  string
@@ -42,7 +37,6 @@ type PartDetails struct {
 	File domain.File
 }
 
-// type for handling query parameters for multiple songs
 type SongQuery struct {
 	IncludeArchived         bool
 	Search                  string
@@ -53,7 +47,6 @@ type SongQuery struct {
 	IncludeScore            bool
 }
 
-// type for handling query parameters for a single song
 type SongByIDQuery struct {
 	Parts                   []string
 	Instruments             []string

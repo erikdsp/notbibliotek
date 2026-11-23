@@ -54,7 +54,6 @@ func NewDriveFileStorage(credentialsPath string, tokenPath string, folderID stri
 	}, nil
 }
 
-// construct a file name
 func constructFileName(fileID ulid.ULID) string {
 	return fileID.String() + ".pdf"
 }
