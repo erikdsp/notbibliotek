@@ -36,10 +36,10 @@ import {
 import {
   PartUploadDuplicatesDialog,
   UnsavedChangesOnVersionSwitchDialog,
-  UnsavedChangesOnCloseDialog,
   SaveDraftErrorDialog,
   ConfirmPublishDialog,
 } from "@/features/admin/components/songs/editor/dialogs";
+import { UnsavedChangesOnCloseDialog } from "@/features/admin/components/shared/dialogs";
 import {
   initialVersionId,
   partsHaveChanged,
