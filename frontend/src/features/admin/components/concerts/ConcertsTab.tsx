@@ -8,6 +8,7 @@ import { Plus } from "lucide-react";
 import { useState } from "react";
 import { DeleteConcertDialog } from "@/features/admin/components/concerts/DeleteConcertDialog";
 import { ConcertsTable } from "@/features/admin/components/concerts/ConcertsTable";
+import type { SongFilters } from "@/services/songs-service";
 
 const log = createLogger("ConcertsTab");
 
@@ -23,11 +24,15 @@ export function ConcertsTab() {
     error: concertsError,
   } = useConcerts();
 
+  const songsFilter: SongFilters = {
+    include_archived: true
+  }
+
   const {
     data: songs,
     isLoading: songsIsLoading,
     error: songsError,
-  } = useSongs();
+  } = useSongs(songsFilter);
 
   function handleAdd() {
     setEditingConcert(null);

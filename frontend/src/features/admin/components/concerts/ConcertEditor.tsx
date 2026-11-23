@@ -194,6 +194,7 @@ export function ConcertEditor({
 
                 <AddConcertSongPopover
                   songs={songs}
+                  originalSongIds={originalConcert.song_ids}
                   selectedSongIds={editedConcert.song_ids}
                   onAddSong={addSong}
                   onRemoveSong={removeSong}

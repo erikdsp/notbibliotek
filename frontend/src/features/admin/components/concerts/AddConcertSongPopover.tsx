@@ -11,6 +11,7 @@ import type { Song } from "@/core/types";
 
 type AddConcertSongPopoverProps = {
   songs: Song[];
+  originalSongIds: string[];
   selectedSongIds: string[];
   onAddSong: (songId: string) => void;
   onRemoveSong: (songId: string) => void;
@@ -18,10 +19,14 @@ type AddConcertSongPopoverProps = {
 
 export function AddConcertSongPopover({
   songs,
+  originalSongIds,
   selectedSongIds,
   onAddSong,
   onRemoveSong,
 }: AddConcertSongPopoverProps) {
+  const relevantSongs = songs.filter(
+    (song) => originalSongIds.includes(song.id) || song.archived_at === null,
+  );
   return (
     <Popover>
       <PopoverTrigger
@@ -32,7 +37,7 @@ export function AddConcertSongPopover({
       </PopoverTrigger>
 
       <PopoverContent align="start" className="w-64 space-y-2">
-        {songs.map((song) => (
+        {relevantSongs.map((song) => (
           <Label
             key={song.id}
             className="flex cursor-pointer items-center gap-2 text-sm"
