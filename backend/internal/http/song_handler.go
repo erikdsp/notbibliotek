@@ -38,12 +38,12 @@ func parseGetAllQuery(rawQuery string) (application.SongQuery, error) {
 		Instruments: queryValues["instrument"],
 	}
 
-	if archived := queryValues.Get("archived"); archived != "" {
-		queryValue, err := strconv.ParseBool(archived)
+	if include_archived := queryValues.Get("include_archived"); include_archived != "" {
+		queryValue, err := strconv.ParseBool(include_archived)
 		if err != nil {
 			return application.SongQuery{}, fmt.Errorf("invalid archived: %w", err)
 		}
-		query.Archived = queryValue
+		query.IncludeArchived = queryValue
 	}
 
 	if includeScore := queryValues.Get("include_score"); includeScore != "" {

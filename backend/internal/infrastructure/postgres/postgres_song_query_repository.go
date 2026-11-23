@@ -348,9 +348,7 @@ func buildSongDetailsQuery(query application.SongQuery) sq.SelectBuilder {
 
 	sql = addJoinParts(sql, query.Parts, query.Instruments, query.IncludeUnconnectedParts)
 
-	if query.Archived {
-		sql = sql.Where("s.archived_at IS NOT NULL")
-	} else {
+	if !query.IncludeArchived {
 		sql = sql.Where("s.archived_at IS NULL")
 	}
 

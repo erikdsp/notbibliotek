@@ -44,7 +44,7 @@ type PartDetails struct {
 
 // type for handling query parameters for multiple songs
 type SongQuery struct {
-	Archived                bool
+	IncludeArchived         bool
 	Search                  string
 	Concerts                []string
 	Parts                   []string
