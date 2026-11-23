@@ -156,7 +156,7 @@ func TestWhenGetAllSongsIsCalledWithArchivedFlagThenSongRepositoryGetAllIsCalled
 	f := newSongServiceFixture()
 
 	query := SongQuery{
-		Archived: true,
+		IncludeArchived: true,
 	}
 
 	_, err := f.service.GetAllSongs(query)
@@ -331,7 +331,7 @@ type mockSongQueryRepository struct {
 
 func (m *mockSongQueryRepository) GetAll(query SongQuery) ([]SongDetails, error) {
 	m.getAllCalled = true
-	m.archivedArg = query.Archived
+	m.archivedArg = query.IncludeArchived
 
 	songs := []SongDetails{}
 	for _, song := range m.songs {

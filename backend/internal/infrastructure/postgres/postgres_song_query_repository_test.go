@@ -325,9 +325,9 @@ func Test_WhenRowHasIncompletePartThenToApplicationReturnsCorrectError(t *testin
 	}
 }
 
-func Test_WhenArchivedIsTrueThenSongDetailsQueryFiltersForArchivedSongs(t *testing.T) {
+func Test_WhenIncludeArchivedIsTrueThenSongDetailsQueryDoesNotFilterArchivedSongs(t *testing.T) {
 	query := application.SongQuery{
-		Archived: true,
+		IncludeArchived: true,
 	}
 
 	builder := buildSongDetailsQuery(query)
@@ -337,14 +337,14 @@ func Test_WhenArchivedIsTrueThenSongDetailsQueryFiltersForArchivedSongs(t *testi
 		t.Fatalf("failed to build SQL: %v", err)
 	}
 
-	if !strings.Contains(sql, "s.archived_at IS NOT NULL") {
-		t.Errorf("expected archived filter, got query: %s", sql)
+	if strings.Contains(sql, "s.archived_at IS") {
+		t.Errorf("expected no archived filter, got query: %s", sql)
 	}
 }
 
 func Test_WhenArchivedIsFalseThenSongDetailsQueryFiltersForNonArchivedSongs(t *testing.T) {
 	query := application.SongQuery{
-		Archived: false,
+		IncludeArchived: false,
 	}
 
 	builder := buildSongDetailsQuery(query)
