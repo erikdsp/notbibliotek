@@ -145,8 +145,8 @@ export function SongEditorForm({
     }
   }
 
-  function handleOpenChange(nextOpen: boolean) {
-    if (!nextOpen) {
+  function handleOpenChange(open: boolean) {
+    if (!open) {
       requestClose();
     }
   }
