@@ -24,7 +24,7 @@ export function ConcertsTab() {
     error: concertsError,
   } = useConcerts();
 
-  const songsFilter: SongFilters = {
+  const songFilters: SongFilters = {
     include_archived: true
   }
 
@@ -32,7 +32,7 @@ export function ConcertsTab() {
     data: songs,
     isLoading: songsIsLoading,
     error: songsError,
-  } = useSongs(songsFilter);
+  } = useSongs(songFilters);
 
   function handleAdd() {
     setEditingConcert(null);
