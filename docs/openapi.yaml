@@ -1297,7 +1297,8 @@ components:
           type: string
           format: date
     UpdateSongRequest:
-      type: object
+      type: object  
+      minProperties: 1
       properties:
         title:
           type: string
