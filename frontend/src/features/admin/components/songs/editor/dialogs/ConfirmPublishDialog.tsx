@@ -9,7 +9,8 @@ import {
 import { Button } from "@/components/ui/button";
 import type { Instrument } from "@/core/types";
 import type { EditablePart, EditableScore } from "@/features/admin/types";
-import { PublishScoreSummary, PublishPartsSummary } from "@/features/admin/components/songs/editor/dialogs";
+import { PublishScoreSummary } from "@/features/admin/components/songs/editor/dialogs/PublishScoreSummary";
+import { PublishPartsSummary } from "@/features/admin/components/songs/editor/dialogs/PublishPartsSummary";
 
 type ConfirmPublishDialogProps = {
   open: boolean;
