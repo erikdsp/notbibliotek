@@ -20,6 +20,7 @@ import { nameToKey } from "@/features/admin/lib/name-to-key";
 import { AddConcertSongPopover } from "@/features/admin/components/concerts/AddConcertSongPopover";
 import { SelectedConcertSongs } from "@/features/admin/components/concerts/SelectedConcertSongs";
 import { saveSongConnections } from "@/features/admin/services";
+import { UnsavedChangesOnCloseDialog } from "@/features/admin/components/shared/dialogs";
 
 const log = createLogger("ConcertEditor");
 
@@ -41,6 +42,7 @@ export function ConcertEditor({
   const [editedConcert, setEditedConcert] = useState<EditableConcert>(
     makeEditableConcert(editingConcert),
   );
+  const [confirmClose, setConfirmClose] = useState(false);
   const isEditing = editingConcert !== null;
   const concertKeys = new Set(concerts.map((c) => c.key));
 
@@ -61,6 +63,20 @@ export function ConcertEditor({
   const isValid =
     editedConcert.name.trim().length > 0 &&
     editedConcert.date.trim().length > 0;
+
+  function requestClose() {
+    if (isDirty) {
+      setConfirmClose(true);
+    } else {
+      onOpenChange(false);
+    }
+  }
+
+  function handleOpenChange(open: boolean) {
+    if (!open) {
+      requestClose();
+    }
+  }
 
   function updateConcert(update: Partial<EditableConcert>) {
     setEditedConcert((current) => ({
@@ -145,92 +161,99 @@ export function ConcertEditor({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>
-            {isEditing ? "Edit Concert" : "Add Concert"}
-          </DialogTitle>
-          <DialogDescription className="sr-only">
-            {isEditing ? "Edit an existing concert" : "Add a new concert"}
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {isEditing ? "Edit Concert" : "Add Concert"}
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              {isEditing ? "Edit an existing concert" : "Add a new concert"}
+            </DialogDescription>
+          </DialogHeader>
 
-        <form onSubmit={handleSubmit}>
-          <FieldGroup className="py-4">
-            <Field>
-              <FieldLabel htmlFor="name">Name</FieldLabel>
-              <Input
-                id="name"
-                value={editedConcert.name}
-                placeholder="Concert name"
-                onChange={(event) =>
-                  updateConcert({ name: event.target.value })
-                }
-              />
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="name">Date</FieldLabel>
-              <Input
-                id="date"
-                type="date"
-                value={editedConcert.date}
-                onChange={(event) =>
-                  updateConcert({ date: event.target.value })
-                }
-              />
-            </Field>
-
-            <Field>
-              <FieldLabel>Songs</FieldLabel>
-
-              <div className="flex flex-col items-start gap-2 rounded-md border p-2">
-                <SelectedConcertSongs
-                  selectedSongIds={editedConcert.song_ids}
-                  songs={songs}
-                  onRemoveSong={removeSong}
+          <form onSubmit={handleSubmit}>
+            <FieldGroup className="py-4">
+              <Field>
+                <FieldLabel htmlFor="name">Name</FieldLabel>
+                <Input
+                  id="name"
+                  value={editedConcert.name}
+                  placeholder="Concert name"
+                  onChange={(event) =>
+                    updateConcert({ name: event.target.value })
+                  }
                 />
+              </Field>
 
-                <AddConcertSongPopover
-                  songs={songs}
-                  originalSongIds={originalConcert.song_ids}
-                  selectedSongIds={editedConcert.song_ids}
-                  onAddSong={addSong}
-                  onRemoveSong={removeSong}
+              <Field>
+                <FieldLabel htmlFor="name">Date</FieldLabel>
+                <Input
+                  id="date"
+                  type="date"
+                  value={editedConcert.date}
+                  onChange={(event) =>
+                    updateConcert({ date: event.target.value })
+                  }
                 />
-              </div>
-            </Field>
-          </FieldGroup>
+              </Field>
 
-          {(createConcertMutation.isError || updateConcertMutation.isError) && (
-            <p role="alert" className="text-sm text-destructive pb-4">
-              Failed to save concert. Please try again.
-            </p>
-          )}
+              <Field>
+                <FieldLabel>Songs</FieldLabel>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={
-                !isDirty ||
-                !isValid ||
-                createConcertMutation.isPending ||
-                updateConcertMutation.isPending
-              }
-            >
-              {isEditing ? "Save Changes" : "Add"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+                <div className="flex flex-col items-start gap-2 rounded-md border p-2">
+                  <SelectedConcertSongs
+                    selectedSongIds={editedConcert.song_ids}
+                    songs={songs}
+                    onRemoveSong={removeSong}
+                  />
+
+                  <AddConcertSongPopover
+                    songs={songs}
+                    originalSongIds={originalConcert.song_ids}
+                    selectedSongIds={editedConcert.song_ids}
+                    onAddSong={addSong}
+                    onRemoveSong={removeSong}
+                  />
+                </div>
+              </Field>
+            </FieldGroup>
+
+            {(createConcertMutation.isError ||
+              updateConcertMutation.isError) && (
+              <p role="alert" className="text-sm text-destructive pb-4">
+                Failed to save concert. Please try again.
+              </p>
+            )}
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={requestClose}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={
+                  !isDirty ||
+                  !isValid ||
+                  createConcertMutation.isPending ||
+                  updateConcertMutation.isPending
+                }
+              >
+                {isEditing ? "Save Changes" : "Add"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      <UnsavedChangesOnCloseDialog
+        open={confirmClose}
+        onOpenChange={setConfirmClose}
+        onDiscardAndClose={() => {
+          setConfirmClose(false);
+          onOpenChange(false);
+        }}
+      />
+    </>
   );
 }
