@@ -19,12 +19,12 @@ type SongsTableProps = {
 export function SongsTable({ songs, openEditor }: SongsTableProps) {
   return (
     <div className="mt-4 rounded-lg border p-1">
-      <Table>
+      <Table className="table-fixed">
         <TableHeader className="border-b-2">
           <TableRow className="text-base">
-            <TableHead className="font-normal">Title</TableHead>
+            <TableHead className="w-[55%] font-normal">Title</TableHead>
             <TableHead className="font-normal">Current Version</TableHead>
-            <TableHead className="font-normal w-20 text-right">Edit</TableHead>
+            <TableHead className="w-20 text-right font-normal ">Edit</TableHead>
           </TableRow>
         </TableHeader>
 

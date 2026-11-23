@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { SongEditor } from "./SongEditor";
 import { useInstruments, useSongs } from "@/hooks";
 import { SongsTable } from "@/features/admin/components/songs/table/SongsTable";
+import type { SongFilters } from "@/services/songs-service";
 
 const log = createLogger("SongsTab");
 
@@ -18,11 +19,15 @@ export function SongsTab() {
     isLoading: instrumentsIsLoading,
     error: instrumentsError,
   } = useInstruments();
+
+  const songFilters: SongFilters = {
+    include_archived: true,
+  };
   const {
     data: songs,
     isLoading: songsIsLoading,
     error: songsError,
-  } = useSongs();
+  } = useSongs(songFilters);
 
   function openEditor(songId: string | null) {
     setIsAddingSong(songId === null);
@@ -46,9 +51,13 @@ export function SongsTab() {
 
   const safeInstruments = instruments ?? [];
   const safeSongs = songs ?? [];
+  const activeSongs = safeSongs.filter(
+    (song) => song.archived_at === null,
+  );
+  const archivedSongs = safeSongs.filter((song) => song.archived_at !== null);
 
   return (
-    <section className="mx-auto max-w-4xl rounded-lg">
+    <section className="mx-auto max-w-3xl rounded-lg">
       <Button
         variant="outline"
         className="mx-auto flex"
@@ -58,7 +67,16 @@ export function SongsTab() {
         Add Song
       </Button>
 
-      <SongsTable songs={safeSongs} openEditor={openEditor} />
+      <SongsTable songs={activeSongs} openEditor={openEditor} />
+
+      {archivedSongs.length > 0 && (
+        <>
+          <h3 className="ml-4 mt-12 mb-2 text-base font-normal ">
+            Archived Songs
+          </h3>
+          <SongsTable songs={archivedSongs} openEditor={openEditor} />
+        </>
+      )}
 
       {editorOpen && (
         <SongEditor
