@@ -3,7 +3,6 @@ import type {
   Instrument,
   SongResponse,
 } from "@/core/types";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Collapsible,
   CollapsibleContent,
@@ -15,6 +14,7 @@ import { GroupedSelect } from "@/components/grouped-select/GroupedSelect";
 import { createInstrumentOptions } from "@/features/musician/lib/create-instrument-options";
 import { createConcertOptions } from "@/features/musician/lib/create-concert-options";
 import { createSongOptions } from "@/features/musician/lib/create-song-options";
+import { concertTimespanOptions } from "@/features/musician/constants/concert-timespan-options";
 
 type SheetMusicFilterProps = {
   concerts: ConcertDetailedResponse[];
@@ -30,8 +30,8 @@ type SheetMusicFilterProps = {
   selectedSongId: string | null;
   onSongChange: (value: string | null) => void;
 
-  includeScore: boolean;
-  onIncludeScoreChange: (checked: boolean) => void;
+  selectedTimespan: string | null;
+  onTimespanChange: (value: string | null) => void;
 
   moreOptionsOpen: boolean;
   onMoreOptionsOpenChange: (open: boolean) => void;
@@ -47,8 +47,8 @@ export function SheetMusicFilters({
   onInstrumentChange,
   selectedSongId,
   onSongChange,
-  includeScore,
-  onIncludeScoreChange,
+  selectedTimespan,
+  onTimespanChange,
   moreOptionsOpen,
   onMoreOptionsOpenChange,
 }: SheetMusicFilterProps) {
@@ -56,10 +56,12 @@ export function SheetMusicFilters({
   const concertOptions = createConcertOptions(concerts);
   const songOptions = createSongOptions(songs);
 
+  const columns = "md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_7rem]";
+
   return (
     <Collapsible open={moreOptionsOpen} onOpenChange={onMoreOptionsOpenChange}>
-      <div className="flex flex-col mb-2 gap-4 md:flex-row md:gap-15">
-        <div className="flex flex-1 flex-col gap-2">
+      <div className={`grid grid-cols-1 mb-2 gap-4 md:gap-x-15 ${columns}`}>
+        <div className="flex flex-col gap-2">
           <div>Instrument</div>
           <div>
             <GroupedSelect
@@ -67,12 +69,12 @@ export function SheetMusicFilters({
               value={selectedInstrument}
               onSelect={onInstrumentChange}
               placeholder="Select an instrument"
-              className="w-66"
+              className="w-full min-w-66"
             />
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col gap-2">
+        <div className="flex flex-col gap-2">
           <div>Set List / Concert</div>
           <div>
             <GroupedSelect
@@ -85,7 +87,7 @@ export function SheetMusicFilters({
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-col gap-2">
+        <div className="flex flex-col gap-2">
           <div>More options</div>
           <div className="flex h-9 items-center">
             <CollapsibleTrigger
@@ -105,20 +107,8 @@ export function SheetMusicFilters({
       </div>
 
       <CollapsibleContent>
-        <div className="flex flex-col gap-4 mt-4 md:flex-row md:gap-15">
-          <div className="flex shrink-0 flex-col gap-2">
-            <div className="flex items-center text-sm text-muted-foreground gap-1 mt-2 w-66 invisible">
-              <div>Include score</div>
-              <div className="flex h-9 pl-3 items-center">
-                <Checkbox
-                  checked={includeScore}
-                  onCheckedChange={onIncludeScoreChange}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-1 flex-col gap-2">
+        <div className={`grid grid-cols-1 gap-4 mt-4 md:gap-x-15 ${columns}`}>
+          <div className="flex flex-col gap-2">
             <div>
               Song <span className="text-sm">(score and all parts)</span>
             </div>
@@ -128,7 +118,20 @@ export function SheetMusicFilters({
                 value={selectedSongId}
                 onSelect={onSongChange}
                 placeholder="Select a song"
-                className="w-80"
+                className="w-full min-w-66"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <div>Timespan <span className="text-sm">(Past Concerts)</span> </div>
+            <div>
+              <GroupedSelect
+                options={concertTimespanOptions}
+                value={selectedTimespan}
+                onSelect={onTimespanChange}
+                placeholder="Select a timespan"
+                className="w-full min-w-80"
               />
             </div>
           </div>

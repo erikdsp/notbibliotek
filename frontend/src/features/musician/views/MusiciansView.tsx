@@ -28,7 +28,7 @@ export function MusiciansView() {
     null,
   );
   const [selectedSongId, setSelectedSongId] = useState<string | null>(null);
-  const [includeScore, setIncludeScore] = useState(false);
+  const [selectedTimespan, setSelectedTimespan] = useState<string | null>("1");
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
   const [preview, setPreview] = useState<{
     file: FileMetadata;
@@ -44,7 +44,7 @@ export function MusiciansView() {
     concert: concertSelected ? selectedConcert : undefined,
     instrument: instrumentSelected ? [selectedInstrument] : undefined,
     include_unconnected_parts: includeUnconnectedParts || undefined,
-    include_score: includeScore || undefined,
+    include_score: false,
   };
 
   const showDetailedList = instrumentSelected || includeUnconnectedParts;
@@ -177,8 +177,8 @@ export function MusiciansView() {
             onInstrumentChange={handleSelectInstrument}
             selectedSongId={selectedSongId}
             onSongChange={handleSelectSong}
-            includeScore={includeScore}
-            onIncludeScoreChange={setIncludeScore}
+            selectedTimespan={selectedTimespan}
+            onTimespanChange={setSelectedTimespan}
             moreOptionsOpen={moreOptionsOpen}
             onMoreOptionsOpenChange={setMoreOptionsOpen}
           />
