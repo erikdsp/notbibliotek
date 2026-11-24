@@ -21,7 +21,7 @@ type SheetMusicFilterProps = {
   instruments: Instrument[];
   songs: SongResponse[];
 
-  selectedConcert: string | null;
+  selectedConcertKey: string | null;
   onConcertChange: (value: string | null) => void;
 
   selectedInstrument: string | null;
@@ -41,7 +41,7 @@ export function SheetMusicFilters({
   concerts,
   instruments,
   songs,
-  selectedConcert,
+  selectedConcertKey,
   onConcertChange,
   selectedInstrument,
   onInstrumentChange,
@@ -79,7 +79,7 @@ export function SheetMusicFilters({
           <div>
             <GroupedSelect
               options={concertOptions}
-              value={selectedConcert}
+              value={selectedConcertKey}
               onSelect={onConcertChange}
               placeholder="Select a set list / concert"
               className="w-full min-w-80"

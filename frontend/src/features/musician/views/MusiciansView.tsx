@@ -1,29 +1,34 @@
-import { Separator } from "@/components/ui/separator";
+import { useState } from "react";
+
 import { useSongs } from "@/hooks/use-songs";
 import { useConcerts } from "@/hooks/use-concerts";
 import { useInstruments } from "@/hooks/use-instruments";
-
-import { useState } from "react";
-import { SheetMusicFilters } from "@/features/musician/components/SheetMusicFilters";
-import type { SongFilters } from "@/services/songs-service";
-import { createLogger } from "@/utils/logger";
-import { oddPartsValue } from "@/features/musician/constants/select-options";
 import { useDownloadFile } from "@/hooks/use-download-file";
-import type { FileMetadata } from "@/core/types/file";
-import { SheetMusicSection } from "@/features/musician/components/SheetMusicSection";
 import { usePdfPreview } from "@/hooks/use-pdf-preview";
-import { PdfPreviewDialog } from "@/components/pdf-preview/PdfPreviewDialog";
-import { resetValue } from "@/types";
 import { useDownloadConcert } from "@/hooks/use-download-concert";
-import { getDownloadConcertRequest } from "@/features/musician/mappers/get-download-concert-request";
 import { useDownloadSong } from "@/hooks/use-download-song";
 import { useDownloadAllSongs } from "@/hooks/use-download-all-songs";
+
+import type { SongFilters } from "@/services/songs-service";
+import type { FileMetadata } from "@/core/types/file";
+import { resetValue } from "@/types";
+import { oddPartsValue } from "@/features/musician/constants/select-options";
+
+import { Separator } from "@/components/ui/separator";
+import { SheetMusicFilters } from "@/features/musician/components/SheetMusicFilters";
+import { SheetMusicSection } from "@/features/musician/components/SheetMusicSection";
+import { PdfPreviewDialog } from "@/components/pdf-preview/PdfPreviewDialog";
+
+import { createLogger } from "@/utils/logger";
+import { getDownloadConcertRequest } from "@/features/musician/mappers/get-download-concert-request";
 import { getDownloadAllSongsRequest } from "@/features/musician/mappers/get-download-all-songs-request";
 
 const log = createLogger("MusiciansView");
 
 export function MusiciansView() {
-  const [selectedConcert, setSelectedConcert] = useState<string | null>(null);
+  const [selectedConcertKey, setSelectedConcertKey] = useState<string | null>(
+    null,
+  );
   const [selectedInstrument, setSelectedInstrument] = useState<string | null>(
     null,
   );
@@ -35,13 +40,13 @@ export function MusiciansView() {
     title: string;
   } | null>(null);
 
-  const concertSelected = selectedConcert !== null;
+  const concertSelected = selectedConcertKey !== null;
   const instrumentSelected =
     selectedInstrument !== null && selectedInstrument !== oddPartsValue;
   const includeUnconnectedParts = selectedInstrument === oddPartsValue;
 
   const filters: SongFilters = {
-    concert: concertSelected ? selectedConcert : undefined,
+    concert: concertSelected ? selectedConcertKey : undefined,
     instrument: instrumentSelected ? [selectedInstrument] : undefined,
     include_unconnected_parts: includeUnconnectedParts || undefined,
     include_score: false,
@@ -81,26 +86,32 @@ export function MusiciansView() {
     error: previewError,
   } = usePdfPreview(preview?.file.id ?? null);
 
-  const selectedConcertDetails = concerts.find((c) => c.key == selectedConcert);
+  const selectedConcertDetails = concerts.find(
+    (c) => c.key == selectedConcertKey,
+  );
 
   function handlePreview(file: FileMetadata, title: string) {
     setPreview({ file, title });
   }
 
-  function handleSelectInstrument(instrumentId: string | null) {
-    setSelectedInstrument(instrumentId !== resetValue ? instrumentId : null);
+  function handleSelectInstrument(instrumentValue: string | null) {
+    setSelectedInstrument(
+      instrumentValue !== resetValue ? instrumentValue : null,
+    );
     setSelectedSongId(null);
   }
 
-  function handleSelectConcert(concertId: string | null) {
-    setSelectedConcert(concertId !== resetValue ? concertId : null);
+  function handleSelectConcert(concertValue: string | null) {
+    setSelectedConcertKey(concertValue !== resetValue ? concertValue : null);
     setSelectedSongId(null);
   }
 
-  function handleSelectSong(selectedSongId: string | null) {
-    setSelectedSongId(selectedSongId !== resetValue ? selectedSongId : null);
+  function handleSelectSong(selectedSongValue: string | null) {
+    setSelectedSongId(
+      selectedSongValue !== resetValue ? selectedSongValue : null,
+    );
     setSelectedInstrument(null);
-    setSelectedConcert(null);
+    setSelectedConcertKey(null);
   }
 
   const downloadFile = useDownloadFile();
@@ -171,7 +182,7 @@ export function MusiciansView() {
             concerts={concerts}
             instruments={instruments}
             songs={allSongs}
-            selectedConcert={selectedConcert}
+            selectedConcertKey={selectedConcertKey}
             onConcertChange={handleSelectConcert}
             selectedInstrument={selectedInstrument}
             onInstrumentChange={handleSelectInstrument}
@@ -192,9 +203,7 @@ export function MusiciansView() {
             concertSelected={concertSelected}
             instrumentSelected={instrumentSelected}
             selectedSongId={selectedSongId}
-            isDownloading={
-              downloadFile.isPending || downloadAllSongs.isPending
-            }
+            isDownloading={downloadFile.isPending || downloadAllSongs.isPending}
             onDownload={handleDownload}
             onPreview={handlePreview}
             onDownloadAll={handleDownloadAll}
