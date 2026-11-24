@@ -5,6 +5,9 @@ import { formatDate } from "@/utils";
 export function createConcertOptions(
   concerts: ConcertDetailedResponse[],
 ): SelectOptionSection[] {
+  const today = new Date().toLocaleDateString("sv-SE");
+  const upcomingConcerts = concerts.filter((concert) => concert.date >= today);
+  const pastConcerts = concerts.filter((concert) => concert.date < today);
 
   const result: SelectOptionSection[] = [
     {
@@ -13,14 +16,24 @@ export function createConcertOptions(
       ],
       hideWhenNoSelection: true,
     },
-    { options: [] },
+    { sectionLabel: "Upcoming concerts", options: [] },
   ];
 
-  for (const concert of concerts) {
+  for (const concert of upcomingConcerts) {
     result[1].options.push({
       label: `${concert.name} - ${formatDate(concert.date)}`,
       value: concert.key,
     });
+  }
+
+  if (pastConcerts.length > 0) {
+    result.push({ sectionLabel: "Past concerts", options: [] });
+    for (const concert of pastConcerts) {
+      result[2].options.push({
+        label: `${concert.name} - ${formatDate(concert.date)}`,
+        value: concert.key,
+      });
+    }
   }
 
   return result;
