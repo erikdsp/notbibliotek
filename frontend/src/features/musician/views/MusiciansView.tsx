@@ -22,6 +22,7 @@ import { PdfPreviewDialog } from "@/components/pdf-preview/PdfPreviewDialog";
 import { createLogger } from "@/utils/logger";
 import { getDownloadConcertRequest } from "@/features/musician/mappers/get-download-concert-request";
 import { getDownloadAllSongsRequest } from "@/features/musician/mappers/get-download-all-songs-request";
+import { filterConcertsByTimespan } from "@/features/musician/lib/filter-concerts-by-timespan";
 
 const log = createLogger("MusiciansView");
 
@@ -73,6 +74,12 @@ export function MusiciansView() {
     isLoading: concertsIsLoading,
     isError: concertsIsError,
   } = useConcerts();
+
+  const filteredConcerts = filterConcertsByTimespan({
+    concerts,
+    timespanMonths: selectedTimespan,
+    selectedConcertKey,
+  });
 
   const {
     data: instruments = [],
@@ -179,7 +186,7 @@ export function MusiciansView() {
           <Separator />
 
           <SheetMusicFilters
-            concerts={concerts}
+            concerts={filteredConcerts}
             instruments={instruments}
             songs={allSongs}
             selectedConcertKey={selectedConcertKey}
