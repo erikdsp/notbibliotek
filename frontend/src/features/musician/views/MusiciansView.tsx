@@ -176,10 +176,10 @@ export function MusiciansView() {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-6 py-6 pb-16">
-        <section className="flex flex-1 flex-col items-center justify-center gap-4 px-5 py-6 lg:gap-6 lg:p-0">
+      <main className="container mx-auto px-3 lg:px-6 py-6 pb-16">
+        <section className="flex flex-1 flex-col items-center justify-center gap-4 px-0 md:px-3 py-6 lg:gap-6 lg:p-0">
           <div>
-            <h1 className="font-josefin text-5xl font-bold mt-6 mb-4">
+            <h1 className="font-josefin text-5xl font-bold mt-6 mb-4 text-center">
               Orchestra Sheet Music Library
             </h1>
           </div>

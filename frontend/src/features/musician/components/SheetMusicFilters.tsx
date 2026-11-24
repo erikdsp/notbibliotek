@@ -56,11 +56,11 @@ export function SheetMusicFilters({
   const concertOptions = createConcertOptions(concerts);
   const songOptions = createSongOptions(songs);
 
-  const columns = "md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_7rem]";
+  const columns = "md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_7rem]";
 
   return (
-    <Collapsible open={moreOptionsOpen} onOpenChange={onMoreOptionsOpenChange}>
-      <div className={`grid grid-cols-1 mb-2 gap-4 md:gap-x-15 ${columns}`}>
+    <Collapsible open={moreOptionsOpen} onOpenChange={onMoreOptionsOpenChange} className="w-full px-2 lg:px-6" >
+      <div className={`grid grid-cols-1 mb-2 gap-4 lg:gap-x-10 ${columns}`}>
         <div className="flex flex-col gap-2">
           <div>Instrument</div>
           <div>
@@ -69,7 +69,7 @@ export function SheetMusicFilters({
               value={selectedInstrument}
               onSelect={onInstrumentChange}
               placeholder="Select an instrument"
-              className="w-full min-w-66"
+              className="w-full min-w-0 md:min-w-60"
             />
           </div>
         </div>
@@ -82,13 +82,13 @@ export function SheetMusicFilters({
               value={selectedConcertKey}
               onSelect={onConcertChange}
               placeholder="Select a set list / concert"
-              className="w-full min-w-80"
+              className="w-full min-w-0 md:min-w-80"
             />
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <div>More options</div>
+        <div className="flex flex-row items-center gap-6 justify-self-end md:col-span-2 lg:col-span-1 lg:flex-col lg:gap-2">
+          <div className="">More options</div>
           <div className="flex h-9 items-center">
             <CollapsibleTrigger
               render={
@@ -107,7 +107,7 @@ export function SheetMusicFilters({
       </div>
 
       <CollapsibleContent>
-        <div className={`grid grid-cols-1 gap-4 mt-4 md:gap-x-15 ${columns}`}>
+        <div className={`grid grid-cols-1 gap-4 mt-4 md:gap-x-10 ${columns}`}>
           <div className="flex flex-col gap-2">
             <div>
               Song <span className="text-sm">(score and all parts)</span>
@@ -118,7 +118,7 @@ export function SheetMusicFilters({
                 value={selectedSongId}
                 onSelect={onSongChange}
                 placeholder="Select a song"
-                className="w-full min-w-66"
+                className="w-full min-w-0 md:min-w-60"
               />
             </div>
           </div>
@@ -131,7 +131,7 @@ export function SheetMusicFilters({
                 value={selectedTimespan}
                 onSelect={onTimespanChange}
                 placeholder="Select a timespan"
-                className="w-full min-w-80"
+                className="w-full min-w-0 md:min-w-80"
               />
             </div>
           </div>
