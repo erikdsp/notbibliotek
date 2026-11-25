@@ -9,9 +9,8 @@ import { getCurrentVersion } from "@/features/musician/lib/get-current-version";
 
 type SheetMusicTableProps = {
   songs: SongResponse[];
-  showDetailedList: boolean;
-  instrumentSelected: boolean;
-  selectedSongId: string | null;
+  partsSelected: boolean;
+  selectedSong: SongResponse | undefined;
   isDownloading: boolean;
   onDownload: (file: FileMetadata) => void;
   onPreview: (file: FileMetadata, title: string) => void;
@@ -19,15 +18,13 @@ type SheetMusicTableProps = {
 
 export function SheetMusicTable({
   songs,
-  showDetailedList,
-  instrumentSelected,
-  selectedSongId,
+  partsSelected,
+  selectedSong,
   isDownloading,
   onDownload,
   onPreview,
 }: SheetMusicTableProps) {
-  const isSongMode = selectedSongId !== null;
-  const selectedSong = songs.find((song) => song.id === selectedSongId);
+  const isSongMode = selectedSong !== undefined;
   const currentVersion = getCurrentVersion(selectedSong);
 
   if (isSongMode && !currentVersion) {
@@ -40,7 +37,9 @@ export function SheetMusicTable({
         {isSongMode ? (
           <SongTableHeadRow />
         ) : (
-          <SetlistTableHeadRow showDetailedList={showDetailedList} />
+          <SetlistTableHeadRow
+            showDetailedList={partsSelected}
+          />
         )}
       </TableHeader>
 
@@ -55,8 +54,7 @@ export function SheetMusicTable({
         ) : (
           <SetlistTableRows
             songs={songs}
-            showDetailedList={showDetailedList}
-            instrumentSelected={instrumentSelected}
+            partsSelected={partsSelected}
             isDownloading={isDownloading}
             onDownload={onDownload}
             onPreview={onPreview}

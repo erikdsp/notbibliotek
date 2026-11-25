@@ -46,14 +46,15 @@ export function MusiciansView() {
     selectedInstrument !== null && selectedInstrument !== oddPartsValue;
   const includeUnconnectedParts = selectedInstrument === oddPartsValue;
 
+  const songSelected = selectedSongId !== null;
+  const partsSelected = instrumentSelected || includeUnconnectedParts;
+
   const filters: SongFilters = {
     concert: concertSelected ? selectedConcertKey : undefined,
     instrument: instrumentSelected ? [selectedInstrument] : undefined,
     include_unconnected_parts: includeUnconnectedParts || undefined,
     include_score: true,
   };
-
-  const showDetailedList = instrumentSelected || includeUnconnectedParts;
 
   const {
     data: allSongs = [],
@@ -62,12 +63,12 @@ export function MusiciansView() {
   } = useSongs();
 
   const {
-    data: songs = [],
+    data: filteredSongs = [],
     isLoading: songsIsLoading,
     isError: songsIsError,
   } = useSongs(filters);
 
-  log.debug("song filters: ", filters, "songs: ", songs);
+  log.debug("song filters: ", filters, "filteredSongs: ", filteredSongs);
 
   const {
     data: concerts = [],
@@ -96,6 +97,7 @@ export function MusiciansView() {
   const selectedConcertDetails = concerts.find(
     (c) => c.key == selectedConcertKey,
   );
+  const selectedSong = allSongs.find((song) => song.id === selectedSongId);
 
   function handlePreview(file: FileMetadata, title: string) {
     setPreview({ file, title });
@@ -122,17 +124,22 @@ export function MusiciansView() {
   }
 
   const downloadFile = useDownloadFile();
+  const downloadAllSongs = useDownloadAllSongs();
+  const downloadConcert = useDownloadConcert();
+  const downloadSong = useDownloadSong();
 
-  function handleDownload(file: FileMetadata) {
+  const isDownloading =
+    downloadFile.isPending ||
+    downloadAllSongs.isPending ||
+    downloadConcert.isPending ||
+    downloadSong.isPending;
+
+  function handleDownloadFile(file: FileMetadata) {
     downloadFile.mutate({
       fileId: file.id,
       fileName: file.name,
     });
   }
-
-  const downloadConcert = useDownloadConcert();
-  const downloadAllSongs = useDownloadAllSongs();
-  const downloadSong = useDownloadSong();
 
   function handleDownloadAll() {
     if (selectedSongId !== null) {
@@ -204,14 +211,13 @@ export function MusiciansView() {
           <Separator />
 
           <SheetMusicSection
-            songs={songs}
+            songSelected={songSelected}
+            partsSelected={partsSelected}
+            songs={filteredSongs}
             selectedConcertDetails={selectedConcertDetails}
-            showDetailedList={showDetailedList}
-            concertSelected={concertSelected}
-            instrumentSelected={instrumentSelected}
-            selectedSongId={selectedSongId}
-            isDownloading={downloadFile.isPending || downloadAllSongs.isPending}
-            onDownload={handleDownload}
+            selectedSong={selectedSong}
+            isDownloading={isDownloading}
+            onDownload={handleDownloadFile}
             onPreview={handlePreview}
             onDownloadAll={handleDownloadAll}
           />
