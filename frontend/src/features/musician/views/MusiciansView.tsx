@@ -46,14 +46,15 @@ export function MusiciansView() {
     selectedInstrument !== null && selectedInstrument !== oddPartsValue;
   const includeUnconnectedParts = selectedInstrument === oddPartsValue;
 
+  const songSelected = selectedSongId !== null;
+  const partsSelected = instrumentSelected || includeUnconnectedParts;
+
   const filters: SongFilters = {
     concert: concertSelected ? selectedConcertKey : undefined,
     instrument: instrumentSelected ? [selectedInstrument] : undefined,
     include_unconnected_parts: includeUnconnectedParts || undefined,
-    include_score: false,
+    include_score: true,
   };
-
-  const showDetailedList = instrumentSelected || includeUnconnectedParts;
 
   const {
     data: allSongs = [],
@@ -62,12 +63,12 @@ export function MusiciansView() {
   } = useSongs();
 
   const {
-    data: songs = [],
+    data: filteredSongs = [],
     isLoading: songsIsLoading,
     isError: songsIsError,
   } = useSongs(filters);
 
-  log.debug("song filters: ", filters, "songs: ", songs);
+  log.debug("song filters: ", filters, "filteredSongs: ", filteredSongs);
 
   const {
     data: concerts = [],
@@ -96,6 +97,7 @@ export function MusiciansView() {
   const selectedConcertDetails = concerts.find(
     (c) => c.key == selectedConcertKey,
   );
+  const selectedSong = allSongs.find((song) => song.id === selectedSongId);
 
   function handlePreview(file: FileMetadata, title: string) {
     setPreview({ file, title });
@@ -122,17 +124,22 @@ export function MusiciansView() {
   }
 
   const downloadFile = useDownloadFile();
+  const downloadAllSongs = useDownloadAllSongs();
+  const downloadConcert = useDownloadConcert();
+  const downloadSong = useDownloadSong();
 
-  function handleDownload(file: FileMetadata) {
+  const isDownloading =
+    downloadFile.isPending ||
+    downloadAllSongs.isPending ||
+    downloadConcert.isPending ||
+    downloadSong.isPending;
+
+  function handleDownloadFile(file: FileMetadata) {
     downloadFile.mutate({
       fileId: file.id,
       fileName: file.name,
     });
   }
-
-  const downloadConcert = useDownloadConcert();
-  const downloadAllSongs = useDownloadAllSongs();
-  const downloadSong = useDownloadSong();
 
   function handleDownloadAll() {
     if (selectedSongId !== null) {
@@ -176,10 +183,10 @@ export function MusiciansView() {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-6 py-6 pb-16">
-        <section className="flex flex-1 flex-col items-center justify-center gap-4 px-5 py-6 lg:gap-6 lg:p-0">
+      <main className="container mx-auto px-3 lg:px-6 py-6 pb-16">
+        <section className="flex flex-1 flex-col items-center justify-center gap-4 md:px-3 lg:gap-6 lg:p-0">
           <div>
-            <h1 className="font-josefin text-5xl font-bold mt-6 mb-4">
+            <h1 className="font-josefin text-5xl font-bold mt-6 mb-4 text-center">
               Orchestra Sheet Music Library
             </h1>
           </div>
@@ -204,14 +211,13 @@ export function MusiciansView() {
           <Separator />
 
           <SheetMusicSection
-            songs={songs}
+            songSelected={songSelected}
+            partsSelected={partsSelected}
+            songs={filteredSongs}
             selectedConcertDetails={selectedConcertDetails}
-            showDetailedList={showDetailedList}
-            concertSelected={concertSelected}
-            instrumentSelected={instrumentSelected}
-            selectedSongId={selectedSongId}
-            isDownloading={downloadFile.isPending || downloadAllSongs.isPending}
-            onDownload={handleDownload}
+            selectedSong={selectedSong}
+            isDownloading={isDownloading}
+            onDownload={handleDownloadFile}
             onPreview={handlePreview}
             onDownloadAll={handleDownloadAll}
           />

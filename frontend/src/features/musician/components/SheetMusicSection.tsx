@@ -1,18 +1,20 @@
-import { Button } from "@/components/ui/button";
 import type { ConcertDetailedResponse, SongResponse } from "@/core/types";
 import type { FileMetadata } from "@/core/types/file";
-import { SheetMusicTable } from "@/features/musician/components/SheetMusicTable";
-import { getCurrentVersion } from "@/features/musician/lib/get-current-version";
-import { formatDateTime } from "@/utils/format-time";
-import { Download } from "lucide-react";
+import { SetlistList } from "@/features/musician/components/SetlistList";
+import { SetlistTable } from "@/features/musician/components/SetlistTable";
+import { SheetMusicSectionHeader } from "@/features/musician/components/SheetMusicSectionHeader";
+import { SongList } from "@/features/musician/components/SongList";
+import {
+  getSetlistHeaderData,
+  getSongHeaderData,
+} from "@/features/musician/lib/get-header-data";
 
 type SheetMusicSectionProps = {
+  songSelected: boolean;
+  partsSelected: boolean;
   songs: SongResponse[];
   selectedConcertDetails: ConcertDetailedResponse | undefined;
-  showDetailedList: boolean;
-  concertSelected: boolean;
-  instrumentSelected: boolean;
-  selectedSongId: string | null;
+  selectedSong: SongResponse | undefined;
   isDownloading: boolean;
   onDownload: (file: FileMetadata) => void;
   onPreview: (file: FileMetadata, title: string) => void;
@@ -20,65 +22,64 @@ type SheetMusicSectionProps = {
 };
 
 export function SheetMusicSection({
+  songSelected,
+  partsSelected,
   songs,
   selectedConcertDetails,
-  showDetailedList,
-  instrumentSelected,
-  selectedSongId,
+  selectedSong,
   isDownloading,
   onDownload,
   onPreview,
   onDownloadAll,
 }: SheetMusicSectionProps) {
-  const selectedSong = songs.find((song) => song.id === selectedSongId);
-  const currentVersion = getCurrentVersion(selectedSong);
-  const showSetlistButtons = false;
+  if (songSelected && selectedSong === undefined) {
+    return <p role="alert">Selected song could not be found.</p>;
+  }
+
+  const headerData = selectedSong
+    ? getSongHeaderData({ selectedSong })
+    : getSetlistHeaderData({ partsSelected, selectedConcertDetails });
 
   return (
     <section
-      className={`flex flex-col items-center w-full ${showDetailedList ? "max-w-4xl" : "max-w-2xl"}`}
+      className={`flex flex-col items-center w-full ${partsSelected ? "max-w-4xl" : "max-w-2xl"}`}
     >
-      <div className={`w-full rounded-lg border p-6`}>
-        <h2 className="text-2xl font-bold mb-4">
-          {selectedSong
-            ? `${selectedSong.title}`
-            : selectedConcertDetails
-              ? selectedConcertDetails.name
-              : "All Songs in the Library"}
-        </h2>
-        {selectedConcertDetails && (
-          <p className="mb-2">{selectedConcertDetails.date}</p>
-        )}
-        {selectedSong && (
-          <p className="mb-2 italic">
-            {currentVersion
-              ? `Current version: ${formatDateTime(currentVersion.published_at)}`
-              : "No published version"}
-          </p>
-        )}
-
-        <SheetMusicTable
-          songs={songs}
-          showDetailedList={showDetailedList}
-          instrumentSelected={instrumentSelected}
-          selectedSongId={selectedSongId}
+      <div className={`w-full rounded-lg border p-6 `}>
+        <SheetMusicSectionHeader
+          headerData={headerData}
           isDownloading={isDownloading}
-          onDownload={onDownload}
-          onPreview={onPreview}
+          onDownloadAll={onDownloadAll}
         />
-      </div>
 
-      <div className="pt-6 flex flex-1 flex-col items-center gap-4">
-        {showSetlistButtons && (
-          <Button variant="outline" disabled>
-            <Download /> Download Set List
-          </Button>
-        )}
-        {(showDetailedList || currentVersion) && (
-          <Button onClick={onDownloadAll} disabled={isDownloading}>
-            <Download /> Download Sheet Music{" "}
-            {showSetlistButtons && "and Set List"} (.zip)
-          </Button>
+        {songSelected ? (
+          <SongList
+            selectedSong={selectedSong}
+            isDownloading={isDownloading}
+            onDownload={onDownload}
+            onPreview={onPreview}
+          />
+        ) : (
+          <>
+            <div className="lg:hidden">
+              <SetlistList
+                songs={songs}
+                partsSelected={partsSelected}
+                isDownloading={isDownloading}
+                onDownload={onDownload}
+                onPreview={onPreview}
+              />
+            </div>
+
+            <div className="hidden lg:block">
+              <SetlistTable
+                songs={songs}
+                partsSelected={partsSelected}
+                isDownloading={isDownloading}
+                onDownload={onDownload}
+                onPreview={onPreview}
+              />
+            </div>
+          </>
         )}
       </div>
     </section>

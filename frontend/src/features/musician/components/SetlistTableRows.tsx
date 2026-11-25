@@ -9,8 +9,7 @@ import { getCurrentVersion } from "@/features/musician/lib/get-current-version";
 
 type SetlistTableRowsProps = {
   songs: SongResponse[];
-  showDetailedList: boolean;
-  instrumentSelected: boolean;
+  partsSelected: boolean;
   isDownloading: boolean;
   onDownload: (file: FileMetadata) => void;
   onPreview: (file: FileMetadata, title: string) => void;
@@ -18,8 +17,7 @@ type SetlistTableRowsProps = {
 
 export function SetlistTableRows({
   songs,
-  showDetailedList,
-  instrumentSelected,
+  partsSelected,
   isDownloading,
   onDownload,
   onPreview,
@@ -39,12 +37,11 @@ export function SetlistTableRows({
           );
         }
 
-        if (currentVersion.parts.length === 0 || !showDetailedList) {
+        if (currentVersion.parts.length === 0 || !partsSelected) {
           return (
             <TableRow key={song.id}>
               <TableCell className="font-medium">{song.title}</TableCell>
               <TableCell className="italic">
-                {instrumentSelected && "Missing"}
               </TableCell>
               <TableCell>
                 {formatDateTime(currentVersion.published_at)}

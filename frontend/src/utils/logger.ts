@@ -52,12 +52,12 @@ const globalLogLevel = (import.meta.env.VITE_GLOBAL_LOG_LEVEL ?? undefined) as
 type LogFn = (...args: unknown[]) => void;
 
 /**
- * Parses the environment variable `VITE_DEBUG_MODULES` to determine
+ * Parses the environment variable `VITE_LOG_MODULES` to determine
  * which modules are enabled and their optional minimum log levels.
  *
  * Environment format:
  * ```
- * VITE_DEBUG_MODULES=ModuleA,ModuleB:warn
+ * VITE_LOG_MODULES=ModuleA,ModuleB:warn
  * ```
  * - `ModuleA` → defaults to "debug" (logs all levels)
  * - `ModuleB:warn` → logs only "warn" and "error"
@@ -66,7 +66,7 @@ type LogFn = (...args: unknown[]) => void;
  *
  * @type {[string, LogLevel][]}
  */
-const modulesWithLevels = (import.meta.env.VITE_DEBUG_MODULES ?? "")
+const modulesWithLevels = (import.meta.env.VITE_LOG_MODULES ?? "")
   .split(",")
   .map((m: string) => m.trim())
   .filter(Boolean)
@@ -80,7 +80,7 @@ const modulesWithLevels = (import.meta.env.VITE_DEBUG_MODULES ?? "")
  *
  * - Keys are module names.
  * - Values are the minimum `LogLevel` for that module.
- * - Only modules present in `VITE_DEBUG_MODULES` are included.
+ * - Only modules present in `VITE_LOG_MODULES` are included.
  *
  */
 const EnabledModules = new Map<string, LogLevel>(modulesWithLevels);
@@ -97,7 +97,7 @@ const isDev = import.meta.env.DEV;
  * - `error` messages always log.
  * - A global minimum level can be enforced via `VITE_GLOBAL_LOG_LEVEL`
  *   (e.g. `"warn"` logs all `warn` and `error` messages regardless of module settings).
- * - In development, modules listed in `VITE_DEBUG_MODULES` may define
+ * - In development, modules listed in `VITE_LOG_MODULES` may define
  *   their own minimum log level (e.g. `ModuleA:info`).
  * - Messages must satisfy either the global minimum level or the
  *   module-specific minimum level to be logged.
@@ -113,7 +113,7 @@ const isDev = import.meta.env.DEV;
  *
  * @example
  * ```ts
- * const log = createLogger("MimicView");
+ * const log = createLogger("MusiciansView");
  * log.debug("Debug data", nodes);
  * log.warn("Potential issue detected");
  * log.error("Critical failure");
