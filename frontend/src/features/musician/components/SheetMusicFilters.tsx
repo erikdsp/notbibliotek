@@ -59,7 +59,7 @@ export function SheetMusicFilters({
   const columns = "md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_7rem]";
 
   return (
-    <Collapsible open={moreOptionsOpen} onOpenChange={onMoreOptionsOpenChange} className="w-full px-2 lg:px-6" >
+    <Collapsible open={moreOptionsOpen} onOpenChange={onMoreOptionsOpenChange} className="w-full max-w-4xl px-2 lg:px-6" >
       <div className={`grid grid-cols-1 mb-2 gap-4 lg:gap-x-10 ${columns}`}>
         <div className="flex flex-col gap-2">
           <div>Instrument</div>
