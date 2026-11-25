@@ -50,7 +50,7 @@ export function MusiciansView() {
     concert: concertSelected ? selectedConcertKey : undefined,
     instrument: instrumentSelected ? [selectedInstrument] : undefined,
     include_unconnected_parts: includeUnconnectedParts || undefined,
-    include_score: false,
+    include_score: true,
   };
 
   const showDetailedList = instrumentSelected || includeUnconnectedParts;
