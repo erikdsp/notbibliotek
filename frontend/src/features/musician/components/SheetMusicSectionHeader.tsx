@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import type { SheetMusicSectionHeaderData } from "@/features/musician/lib/get-sheet-music-section-header-data";
+import type { SheetMusicSectionHeaderData } from "@/features/musician/lib/get-header-data";
 import { Download } from "lucide-react";
 
 type SheetMusicSectionHeaderProps = {
@@ -17,7 +17,7 @@ export function SheetMusicSectionHeader({
 
   return (
     <div
-      className={`flex flex-col py-2 md:py-0 my-0 md:my-3 md:flex-row w-full items-start justify-between`}
+      className={`flex flex-col py-2 md:py-3 my-0 md:my-0 md:flex-row w-full items-start justify-between`}
     >
       <div className={`flex w-fit`}>
         <div>

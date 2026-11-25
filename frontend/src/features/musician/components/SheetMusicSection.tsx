@@ -1,8 +1,12 @@
 import type { ConcertDetailedResponse, SongResponse } from "@/core/types";
 import type { FileMetadata } from "@/core/types/file";
+import { SetlistTable } from "@/features/musician/components/SetlistTable";
 import { SheetMusicSectionHeader } from "@/features/musician/components/SheetMusicSectionHeader";
-import { SheetMusicTable } from "@/features/musician/components/SheetMusicTable";
-import { getSheetMusicSectionHeaderData } from "@/features/musician/lib/get-sheet-music-section-header-data";
+import { SongTable } from "@/features/musician/components/SongTable";
+import {
+  getSetlistHeaderData,
+  getSongHeaderData,
+} from "@/features/musician/lib/get-header-data";
 
 type SheetMusicSectionProps = {
   songSelected: boolean;
@@ -27,17 +31,13 @@ export function SheetMusicSection({
   onPreview,
   onDownloadAll,
 }: SheetMusicSectionProps) {
-
-  const headerData = getSheetMusicSectionHeaderData({
-    songSelected,
-    partsSelected,
-    selectedSong,
-    selectedConcertDetails,
-  });
-
-  if (headerData === null) {
+  if (songSelected && selectedSong === undefined) {
     return <p role="alert">Selected song could not be found.</p>;
   }
+
+  const headerData = selectedSong
+    ? getSongHeaderData({ selectedSong })
+    : getSetlistHeaderData({ partsSelected, selectedConcertDetails });
 
   return (
     <section
@@ -50,14 +50,22 @@ export function SheetMusicSection({
           onDownloadAll={onDownloadAll}
         />
 
-        <SheetMusicTable
-          songs={songs}
-          partsSelected={partsSelected}
-          selectedSong={selectedSong}
-          isDownloading={isDownloading}
-          onDownload={onDownload}
-          onPreview={onPreview}
-        />
+        {songSelected ? (
+          <SongTable
+            selectedSong={selectedSong}
+            isDownloading={isDownloading}
+            onDownload={onDownload}
+            onPreview={onPreview}
+          />
+        ) : (
+          <SetlistTable
+            songs={songs}
+            partsSelected={partsSelected}
+            isDownloading={isDownloading}
+            onDownload={onDownload}
+            onPreview={onPreview}
+          />
+        )}
       </div>
     </section>
   );

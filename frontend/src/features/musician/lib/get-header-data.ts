@@ -8,36 +8,34 @@ export type SheetMusicSectionHeaderData = {
   showDownloadZipButton: boolean;
 };
 
-type GetSheetMusicSectionHeaderDataParams = {
-  songSelected: boolean;
+type GetSongHeaderDataParams = {
+  selectedSong: SongResponse;
+};
+
+export function getSongHeaderData({
+  selectedSong,
+}: GetSongHeaderDataParams): SheetMusicSectionHeaderData {
+  const currentVersion = getCurrentVersion(selectedSong);
+
+  return {
+    title: selectedSong.title,
+    subTitle: currentVersion
+      ? `Current version: ${formatDateTime(currentVersion.published_at)}`
+      : "No published version",
+    showDownloadZipButton: true,
+  };
+}
+
+type GetSetlistHeaderDataParams = {
   partsSelected: boolean;
-  selectedSong: SongResponse | undefined;
   selectedConcertDetails: ConcertDetailedResponse | undefined;
 };
 
-export function getSheetMusicSectionHeaderData({
-  songSelected,
+export function getSetlistHeaderData({
   partsSelected,
-  selectedSong,
   selectedConcertDetails,
-}: GetSheetMusicSectionHeaderDataParams): SheetMusicSectionHeaderData | null {
-  const showDownloadZipButton = partsSelected || songSelected;
-
-  if (songSelected) {
-    if (selectedSong === undefined) {
-      return null;
-    }
-
-    const currentVersion = getCurrentVersion(selectedSong);
-
-    return {
-      title: selectedSong.title,
-      subTitle: currentVersion
-        ? `Current version: ${formatDateTime(currentVersion.published_at)}`
-        : "No published version",
-      showDownloadZipButton,
-    };
-  }
+}: GetSetlistHeaderDataParams): SheetMusicSectionHeaderData {
+  const showDownloadZipButton = partsSelected;
 
   if (selectedConcertDetails !== undefined) {
     return {
