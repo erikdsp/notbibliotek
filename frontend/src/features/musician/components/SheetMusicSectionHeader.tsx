@@ -26,7 +26,7 @@ export function SheetMusicSectionHeader({
         </div>
       </div>
       <div
-        className={`py-6 md:py-0 empty:py-0 flex flex-col w-fit self-center md:self-auto items-center gap-4`}
+        className={`pt-6 md:py-0 empty:py-0 flex flex-col w-fit self-center md:self-auto items-center gap-4`}
       >
         {showDownloadZipButton && (
           <Button onClick={onDownloadAll} disabled={isDownloading}>

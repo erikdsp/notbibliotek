@@ -1,8 +1,9 @@
 import type { ConcertDetailedResponse, SongResponse } from "@/core/types";
 import type { FileMetadata } from "@/core/types/file";
+import { SetlistList } from "@/features/musician/components/SetlistList";
 import { SetlistTable } from "@/features/musician/components/SetlistTable";
 import { SheetMusicSectionHeader } from "@/features/musician/components/SheetMusicSectionHeader";
-import { SongTable } from "@/features/musician/components/SongTable";
+import { SongList } from "@/features/musician/components/SongList";
 import {
   getSetlistHeaderData,
   getSongHeaderData,
@@ -51,20 +52,34 @@ export function SheetMusicSection({
         />
 
         {songSelected ? (
-          <SongTable
+          <SongList
             selectedSong={selectedSong}
             isDownloading={isDownloading}
             onDownload={onDownload}
             onPreview={onPreview}
           />
         ) : (
-          <SetlistTable
-            songs={songs}
-            partsSelected={partsSelected}
-            isDownloading={isDownloading}
-            onDownload={onDownload}
-            onPreview={onPreview}
-          />
+          <>
+            <div className="lg:hidden">
+              <SetlistList
+                songs={songs}
+                partsSelected={partsSelected}
+                isDownloading={isDownloading}
+                onDownload={onDownload}
+                onPreview={onPreview}
+              />
+            </div>
+
+            <div className="hidden lg:block">
+              <SetlistTable
+                songs={songs}
+                partsSelected={partsSelected}
+                isDownloading={isDownloading}
+                onDownload={onDownload}
+                onPreview={onPreview}
+              />
+            </div>
+          </>
         )}
       </div>
     </section>
